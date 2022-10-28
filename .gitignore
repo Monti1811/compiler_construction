@@ -1,5 +1,6 @@
 build/
 llvm/
+.vs
 
 # Created by https://www.gitignore.io/api/c,c++
 
