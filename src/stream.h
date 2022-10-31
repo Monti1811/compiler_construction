@@ -1,10 +1,17 @@
+#pragma once
+
 #include <fstream>
 #include <string>
 #include "diagnostic.h"
 
-struct LocatableStream {
+class LocatableStream {
     public:
-    LocatableStream(std::string filename);
+    LocatableStream(std::string filename)
+        : m_filename(filename)
+    {
+        m_line = 1;
+        m_column = 1;
+    };
 
     char get();
     char peek();

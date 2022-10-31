@@ -1,23 +1,6 @@
 #include <string>
 #include "lexer.h"
-#include "../../impl_ideas/diagnostic.h"
-
-Lexer::Lexer(
-    std::string filename,
-    SymbolInternalizer internalizer,
-) : m_internalizer(internalizer) {
-    m_stream = LocatableStream(filename);
-}
-
-Lexer::Lexer(
-    std::string filename,
-) {
-    m_stream = LocatableStream(filename);
-}
-
-Lexer::Lexer(
-    SymbolInternalizer internalizer,
-) : m_internalizer(internalizer) {}
+#include "diagnostic.h"
 
 Token Lexer::next() {
     // TODO
@@ -26,12 +9,12 @@ Token Lexer::next() {
 
 Token Lexer::readStringLiteral() {
     // Save location
-    Locatable loc = m_stream::loc();
+    Locatable loc = m_stream.loc();
 
     // Read initial quotation mark
     m_stream.get();
 
-    string inner;
+    std::string inner;
     while (char c = m_stream.get() != '"') {
         inner += c;
         if (c == '\\') {
@@ -44,7 +27,7 @@ Token Lexer::readStringLiteral() {
     // char* test = "hallo
     // welt";
 
-    Symbol sym = internalizer::internalize(inner);
+    Symbol sym = m_internalizer.internalize(inner);
     return Token(loc, TokenKind::TK_STRING_LITERAL, sym);
 }
 

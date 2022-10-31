@@ -1,10 +1,4 @@
-
-LocatableStream(std::string filename) : m_filename(filename) {
-    m_stream = std::ifstream(filename);
-
-    m_line = 1;
-    m_column = 1;
-}
+#include "stream.h"
 
 char LocatableStream::get() {
     char c = m_stream.get();
@@ -14,6 +8,7 @@ char LocatableStream::get() {
     } else {
         m_column++;
     }
+    return c;
 }
 
 char LocatableStream::peek() {
