@@ -1,6 +1,8 @@
-#include <string>
 #include "lexer.h"
-#include "diagnostic.h"
+
+#include <string>
+
+#include "../util/diagnostic.h"
 
 Token Lexer::next() {
     // TODO

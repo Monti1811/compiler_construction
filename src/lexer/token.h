@@ -1,7 +1,7 @@
 #pragma once
 
-#include "diagnostic.h"
-#include "symbol_internalizer.h"
+#include "../util/diagnostic.h"
+#include "../util/symbol_internalizer.h"
 
 #define KIND_ACTION(KD, STR) KD,
 

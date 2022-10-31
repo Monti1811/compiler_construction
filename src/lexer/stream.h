@@ -2,7 +2,8 @@
 
 #include <fstream>
 #include <string>
-#include "diagnostic.h"
+
+#include "../util/diagnostic.h"
 
 class LocatableStream {
     public:

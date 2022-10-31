@@ -2,7 +2,9 @@
 
 #include <fstream>
 #include <string>
-#include "symbol_internalizer.h"
+
+#include "../util/symbol_internalizer.h"
+
 #include "token.h"
 #include "stream.h"
 
