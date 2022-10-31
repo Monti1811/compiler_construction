@@ -8,8 +8,7 @@
 
 #undef KEYWORD_ACTION
 
-KIND_ACTION(TK_IDENTIFIER, "identifier")
-
+// Punctuators
 KIND_ACTION(TK_ASTERISK, "punctuator")  // "*"
 KIND_ACTION(TK_COMMA, "punctuator")     // ","
 KIND_ACTION(TK_SEMICOLON, "punctuator") // ";"
@@ -18,6 +17,17 @@ KIND_ACTION(TK_RPAREN, "punctuator")    // ")"
 KIND_ACTION(TK_LBRACE, "punctuator")    // "{"
 KIND_ACTION(TK_RBRACE, "punctuator")    // "}"
 // TODO add remaining token kinds
+
+// Identifier
+KIND_ACTION(TK_IDENTIFIER, "identifier")
+
+// Constants
+KIND_ACTION(TK_DECIMAL_CONSTANT, "constant")
+KIND_ACTION(TK_ZERO_CONSTANT, "constant")
+KIND_ACTION(TK_CHARACTER_CONSTANT, "constant")
+
+// String literals
+KIND_ACTION(TK_STRING_LITERAL, "string-literal")
 
 KIND_ACTION(TK_EOI, "end-of-input")
 
