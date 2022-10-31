@@ -16,6 +16,7 @@ class Lexer {
 
     private:
     Token readStringLiteral();
+    void fail(std::string message);
     
     LocatableStream m_stream;
     SymbolInternalizer m_internalizer;

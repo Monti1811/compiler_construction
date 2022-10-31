@@ -9,6 +9,8 @@ class LocatableStream {
     LocatableStream(std::string filename)
         : m_filename(filename)
     {
+        m_stream = std::ifstream(filename);
+
         m_line = 1;
         m_column = 1;
     };

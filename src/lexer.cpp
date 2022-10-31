@@ -15,11 +15,19 @@ Token Lexer::readStringLiteral() {
     m_stream.get();
 
     std::string inner;
-    while (char c = m_stream.get() != '"') {
+
+    char c = m_stream.get();
+    while (c != '"') {
+        if (c == 0) {
+            fail("Unexpected end of file");
+        }
+
         inner += c;
         if (c == '\\') {
             inner += m_stream.get();
         }
+
+        c = m_stream.get();
     }
 
     // TODO: Do we have to disallow newlines inside of strings?
@@ -27,7 +35,10 @@ Token Lexer::readStringLiteral() {
     // char* test = "hallo
     // welt";
 
-    Symbol sym = m_internalizer.internalize(inner);
+    Symbol sym = m_internalizer.internalize('"' + inner + '"');
     return Token(loc, TokenKind::TK_STRING_LITERAL, sym);
 }
 
+void Lexer::fail(std::string message) {
+    errorloc(m_stream.loc(), message);
+}
