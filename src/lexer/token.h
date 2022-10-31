@@ -1,7 +1,7 @@
 #pragma once
 
-#include "diagnostic.h"
-#include "symbol_internalizer.h"
+#include "../../impl_ideas/diagnostic.h"
+#include "../../impl_ideas/symbol_internalizer.h"
 
 #define KIND_ACTION(KD, STR) KD,
 
@@ -17,6 +17,8 @@ struct Token : public Locatable {
     Symbol Text;
 
     Token(Locatable& loc, TokenKind kind, Symbol text);
+
+    ~Token();
 
     friend std::ostream& operator<<(std::ostream& stream, const Token& tok);
 };
