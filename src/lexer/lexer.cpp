@@ -23,9 +23,19 @@ Token Lexer::next() {
         case '\t':
         case '\n':
         case '\v':
-        case '\r': 
+        {
             m_stream.get();
             return next();
+        }
+        case '\r': 
+        {
+            m_stream.get();
+            if (m_stream.peek() == '\n') {
+                m_stream.get();
+            }
+            return next();
+        }
+       
         
         case '\'':
             return readCharConstant();
@@ -585,6 +595,7 @@ bool isAlphabetic(char x) {
 bool isPunctuator(char x) {
     if ((x >= '!' && x <= '/')
         || (x >= ':' && x <= '?')
+        || (x >= '[' && x <= '^')
         || (x >= '{' && x <= '~')) {
         return true;
     }
