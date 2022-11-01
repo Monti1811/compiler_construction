@@ -18,6 +18,10 @@ class Lexer {
 
     private:
     Token readStringLiteral();
+    Token readConstant();
+    Token readIdKeyword();
+    Token readNumberConstant();
+
     void fail(std::string message);
     
     LocatableStream m_stream;

@@ -11,6 +11,9 @@ enum TokenKind {
 
 #undef KIND_ACTION
 
+
+
+
 struct Token : public Locatable {
    public:
     TokenKind Kind;
@@ -18,5 +21,11 @@ struct Token : public Locatable {
 
     Token(Locatable& loc, TokenKind kind, Symbol text);
 
+    static TokenKind getKeywordToken(std::string str);
+    static bool containsKeyword(std::string str);
+
     friend std::ostream& operator<<(std::ostream& stream, const Token& tok);
 };
+
+
+
