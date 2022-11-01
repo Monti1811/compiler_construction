@@ -7,7 +7,7 @@
 // Helper functions
 
 bool isNumber(char x);
-bool isIdKeyword(char x);
+bool isAlphabetic(char x);
 bool isPunctuator(char x);
 
 
@@ -18,7 +18,7 @@ Token Lexer::next() {
     Locatable loc = m_stream.loc();
     if (isNumber(next_char)) {
         return readNumberConstant();
-    } else if (isIdKeyword(next_char)) {
+    } else if (isAlphabetic(next_char)) {
         return readIdKeyword();
     } else if (isPunctuator(next_char)) {
         return readPunctuator();
@@ -183,7 +183,7 @@ Token Lexer::readIdKeyword() {
     str += next_char_val;
     char next_char = m_stream.peek();
     // While there is still another valid char add it to the buffer
-    while (isNumber(next_char) || isIdKeyword(next_char)) {
+    while (isNumber(next_char) || isAlphabetic(next_char)) {
         str += next_char;
         m_stream.get();
         next_char = m_stream.peek();
