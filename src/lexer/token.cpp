@@ -70,7 +70,6 @@ std::map<std::string, TokenKind> string_to_enum = {
 };
 
 bool Token::containsKeyword(std::string str) {
-    TokenKind tok;
     // Checks the map to see if the token exists
     std::map<std::string, TokenKind>::iterator it = string_to_enum.find(str);
     if (it != string_to_enum.end()) {
