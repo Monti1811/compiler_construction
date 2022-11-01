@@ -42,18 +42,14 @@ Token Lexer::next() {
         case '}':
             Symbol sym = m_internalizer.internalize("}");
             return Token(loc, TokenKind::TK_RBRACE, sym);
-        case '\'':
-            return readCharConstant();
-        case '"':
-            return readStringLiteral();
         case ' ':
         case '\t':
         case '\n':
         case '\v':
-        case '\r': {
+        case '\r': 
             m_stream.get();
             return next();
-        }
+        
         case '\'':
             return readCharConstant();
         case '\"':
