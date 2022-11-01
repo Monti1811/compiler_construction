@@ -15,14 +15,9 @@ bool isPunctuator(char x);
 Token Lexer::next() {
 
     char next_char = m_stream.peek();
+
     Locatable loc = m_stream.loc();
-    if (isNumber(next_char)) {
-        return readNumberConstant();
-    } else if (isAlphabetic(next_char)) {
-        return readIdKeyword();
-    } else if (isPunctuator(next_char)) {
-        return readPunctuator();
-    }
+
     switch (next_char) {
         case ' ':
         case '\t':
@@ -35,14 +30,22 @@ Token Lexer::next() {
         case '\'':
             return readCharConstant();
         case '\"':
+            return readStringLiteral();
         case EOF:
             return eof();
         default: {
-            fail("Unknown token");
-            return eof();
         }
     }
 
+    if (isNumber(next_char)) {
+        return readNumberConstant();
+    } else if (isAlphabetic(next_char)) {
+        return readIdKeyword();
+    } else if (isPunctuator(next_char)) {
+        return readPunctuator();
+    }
+    fail("Unknown token");
+    return eof();
 }
 
 char Lexer::readEscapeChar() {
@@ -289,11 +292,13 @@ Token Lexer::readPunctuator() {
             switch (m_stream.peek()) {
                 case '+': 
                 {
+                    m_stream.get();
                     Symbol sym = m_internalizer.internalize("++");
                     return Token(loc, TokenKind::TK_PLUSPLUS, sym);
                 }
                 case '=': 
                 {
+                    m_stream.get();
                     Symbol sym = m_internalizer.internalize("+=");
                     return Token(loc, TokenKind::TK_PLUS_EQUAL, sym);
                 }
@@ -310,11 +315,13 @@ Token Lexer::readPunctuator() {
             switch (m_stream.peek()) {
                 case '-': 
                 {
+                    m_stream.get();
                     Symbol sym = m_internalizer.internalize("--");
                     return Token(loc, TokenKind::TK_MINUSMINUS, sym);
                 }
                 case '=': 
                 {
+                    m_stream.get();
                     Symbol sym = m_internalizer.internalize("-=");
                     return Token(loc, TokenKind::TK_MINUS_EQUAL, sym);
                 }
@@ -331,11 +338,13 @@ Token Lexer::readPunctuator() {
             switch (m_stream.peek()) {
                 case '&': 
                 {
+                    m_stream.get();
                     Symbol sym = m_internalizer.internalize("&&");
                     return Token(loc, TokenKind::TK_AND_AND, sym);
                 }
                 case '=': 
                 {
+                    m_stream.get();
                     Symbol sym = m_internalizer.internalize("&=");
                     return Token(loc, TokenKind::TK_AND_EQUAL, sym);
                 }
@@ -352,11 +361,13 @@ Token Lexer::readPunctuator() {
             switch (m_stream.peek()) {
                 case '|': 
                 {
+                    m_stream.get();
                     Symbol sym = m_internalizer.internalize("||");
                     return Token(loc, TokenKind::TK_OR_OR, sym);
                 }
                 case '=': 
                 {
+                    m_stream.get();
                     Symbol sym = m_internalizer.internalize("|=");
                     return Token(loc, TokenKind::TK_PIPE_EQUAL, sym);
                 }
@@ -471,25 +482,30 @@ Token Lexer::readPunctuator() {
                 case '<': 
                 {
                     if (m_stream.peek_twice() == '=') {
+                        m_stream.read(2);
                         Symbol sym = m_internalizer.internalize("<<=");
                         return Token(loc, TokenKind::TK_LESS_LESS_EQUAL, sym);
                     } else {
+                        m_stream.get();
                         Symbol sym = m_internalizer.internalize("<<");
                         return Token(loc, TokenKind::TK_LESS_LESS, sym);
                     }
                 }
                 case '=': 
                 {
+                    m_stream.get();
                     Symbol sym = m_internalizer.internalize("<=");
                     return Token(loc, TokenKind::TK_LESS_EQUAL, sym);
                 }
                 case '%': 
                 {
+                    m_stream.get();
                     Symbol sym = m_internalizer.internalize("<%");
                     return Token(loc, TokenKind::TK_LBRACE, sym);
                 }
                 case ':': 
                 {
+                    m_stream.get();
                     Symbol sym = m_internalizer.internalize("<:");
                     return Token(loc, TokenKind::TK_LBRACKET, sym);
                 }
@@ -507,20 +523,24 @@ Token Lexer::readPunctuator() {
                 case '<': 
                 {
                     if (m_stream.peek_twice() == '=') {
+                        m_stream.read(2);
                         Symbol sym = m_internalizer.internalize(">>=");
                         return Token(loc, TokenKind::TK_GREATER_GREATER_EQUAL, sym);
                     } else {
+                        m_stream.get();
                         Symbol sym = m_internalizer.internalize(">>");
                         return Token(loc, TokenKind::TK_GREATER_GREATER, sym);
                     }
                 }
                 case '=': 
                 {
+                    m_stream.get();
                     Symbol sym = m_internalizer.internalize(">=");
                     return Token(loc, TokenKind::TK_GREATER_EQUAL, sym);
                 }
                 default:
                 {
+                    m_stream.get();
                     Symbol sym = m_internalizer.internalize(element);
                     return Token(loc, TokenKind::TK_GREATER, sym);
                 }
