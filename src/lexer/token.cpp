@@ -69,13 +69,7 @@ std::map<std::string, TokenKind> string_to_enum = {
     {"_Thread_local", TK__THREAD_LOCAL},
 };
 
-bool Token::containsKeyword(std::string str) {
-    // Checks the map to see if the token exists
-    std::map<std::string, TokenKind>::iterator it = string_to_enum.find(str);
-    if (it != string_to_enum.end()) {
-        return true;
-    }
-    return false;
+    return string_to_enum.count(str) > 0;
 }
 
 TokenKind Token::getKeywordToken(std::string str) {
