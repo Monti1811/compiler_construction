@@ -8,6 +8,7 @@
 
 bool isNumber(char x);
 bool isIdKeyword(char x);
+bool isPunctuator(char x);
 
 
 
@@ -19,29 +20,10 @@ Token Lexer::next() {
         return readNumberConstant();
     } else if (isIdKeyword(next_char)) {
         return readIdKeyword();
+    } else if (isPunctuator(next_char)) {
+        return readPunctuator();
     }
     switch (next_char) {
-        case '*':
-            Symbol sym = m_internalizer.internalize("*");
-            return Token(loc, TokenKind::TK_ASTERISK, sym);
-        case ',':
-            Symbol sym = m_internalizer.internalize(",");
-            return Token(loc, TokenKind::TK_COMMA, sym);
-        case ';':
-            Symbol sym = m_internalizer.internalize(";");
-            return Token(loc, TokenKind::TK_SEMICOLON, sym);
-        case '(':
-            Symbol sym = m_internalizer.internalize("(");
-            return Token(loc, TokenKind::TK_LPAREN, sym);
-        case ')':
-            Symbol sym = m_internalizer.internalize(")");
-            return Token(loc, TokenKind::TK_RPAREN, sym);
-        case '{':
-            Symbol sym = m_internalizer.internalize("{");
-            return Token(loc, TokenKind::TK_LBRACE, sym);
-        case '}':
-            Symbol sym = m_internalizer.internalize("}");
-            return Token(loc, TokenKind::TK_RBRACE, sym);
         case ' ':
         case '\t':
         case '\n':
@@ -216,6 +198,42 @@ Token Lexer::readIdKeyword() {
     return Token(loc, tok, sym);
 }
 
+Token Lexer::readPunctuator() {
+    char element = m_stream.get();
+    switch (element) {
+        case '*':
+            if (m_stream.peek() == '=') {
+                m_stream.get();
+                Symbol sym = m_internalizer.internalize("*=");
+                return Token(loc, TokenKind::TK_ASTERISK_EQUAL, sym);
+            } else {
+                Symbol sym = m_internalizer.internalize("*");
+                return Token(loc, TokenKind::TK_ASTERISK, sym);
+            }
+            
+        case ',':
+            Symbol sym = m_internalizer.internalize(",");
+            return Token(loc, TokenKind::TK_COMMA, sym);
+        case ';':
+            Symbol sym = m_internalizer.internalize(";");
+            return Token(loc, TokenKind::TK_SEMICOLON, sym);
+        case '(':
+            Symbol sym = m_internalizer.internalize("(");
+            return Token(loc, TokenKind::TK_LPAREN, sym);
+        case ')':
+            Symbol sym = m_internalizer.internalize(")");
+            return Token(loc, TokenKind::TK_RPAREN, sym);
+        case '{':
+            Symbol sym = m_internalizer.internalize("{");
+            return Token(loc, TokenKind::TK_LBRACE, sym);
+        case '}':
+            Symbol sym = m_internalizer.internalize("}");
+            return Token(loc, TokenKind::TK_RBRACE, sym);
+        default:
+            break;
+    }
+}
+
 
 
 void Lexer::fail(std::string message) {
@@ -234,9 +252,20 @@ bool isNumber(char x) {
 
 // Checks if a the character is a lower/uppercase letter or underscore
 bool isIdKeyword(char x) {
-    if ((int)x == 95
-        || ((int)x > 96 && (int)x < 123)
-        || ((int)x > 64 && (int)x < 91)) {
+    int y = (int)x;
+    if (y == 95
+        || (y > 96 && y< 123)
+        || (y > 64 && y < 91)) {
+        return true;
+    }
+}
+
+// Checks if a the character is a punctuator
+bool isPunctuator(char x) {
+    int y = (int)x;
+    if ((y > 32 && y< 48)
+        || (y > 57 && y < 64)
+        || (y > 122 && y < 127)) {
         return true;
     }
 }

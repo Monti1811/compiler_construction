@@ -22,6 +22,7 @@ class Lexer {
     Token readNumberConstant();
     Token readStringLiteral();
     Token readIdKeyword();
+    Token readPunctuator();
 
     Token eof();
 
