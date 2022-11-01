@@ -159,7 +159,7 @@ Token Lexer::readNumberConstant() {
         // Buffer for the number
         std::string num;
         // Add the first read character to the buffer
-        num.append(1, char(next_char_val));
+        num += next_char_val;
         char next_char = m_stream.peek();
         // While there is still another number, add it to the buffer and go to the next character
         while (isNumber(next_char)) {
