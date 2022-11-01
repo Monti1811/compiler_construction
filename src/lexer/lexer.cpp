@@ -131,7 +131,7 @@ Token Lexer::readStringLiteral() {
 
     // TODO: Do we have to disallow newlines inside of strings?
     // e.g.:
-    // char* test = "hallo
+    // char* test = "hallonext_char_val
     // welt";
 
     Symbol sym = m_internalizer.internalize('"' + inner + '"');
@@ -163,7 +163,7 @@ Token Lexer::readNumberConstant() {
         char next_char = m_stream.peek();
         // While there is still another number, add it to the buffer and go to the next character
         while (isNumber(next_char)) {
-            num.append(1, next_char);
+            num += next_char;
             m_stream.get();
             next_char = m_stream.peek();
         }
@@ -180,11 +180,11 @@ Token Lexer::readIdKeyword() {
     // Buffer for the number
     std::string str;
     // Add the first read character to the buffer
-    str.append(1, next_char_val);
+    str += next_char_val;
     char next_char = m_stream.peek();
     // While there is still another valid char add it to the buffer
     while (isNumber(next_char) || isIdKeyword(next_char)) {
-        str.append(1, next_char);
+        str += next_char;
         m_stream.get();
         next_char = m_stream.peek();
     }
@@ -545,18 +545,17 @@ void Lexer::fail(std::string message) {
 
 // Checks if wether x is between 0 and 9 in ascii
 bool isNumber(char x) {
-    if ((int)x > 47 && (int)x < 58) {
+    if  (x > '0' && x < '9') {
         return true;
     }
     return false;
 }
 
 // Checks if a the character is a lower/uppercase letter or underscore
-bool isIdKeyword(char x) {
-    int y = (int)x;
-    if (y == 95
-        || (y > 96 && y< 123)
-        || (y > 64 && y < 91)) {
+bool isAlphabetic(char x) {
+    if (x == '_'
+        || (x >= 'a'  && x <= 'z')
+        || (x >= 'A' && x <= 'Z')) {
         return true;
     }
     return false;
@@ -564,10 +563,9 @@ bool isIdKeyword(char x) {
 
 // Checks if a the character is a punctuator
 bool isPunctuator(char x) {
-    int y = (int)x;
-    if ((y > 32 && y< 48)
-        || (y > 57 && y < 64)
-        || (y > 122 && y < 127)) {
+    if ((x >= '!' && x <= '/')
+        || (x >= ':' && x <= '?')
+        || (x >= '{' && x <= '~')) {
         return true;
     }
     return false;

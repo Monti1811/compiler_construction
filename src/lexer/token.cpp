@@ -1,5 +1,5 @@
 #include "token.h"
-#include <map>
+#include <unordered_map>
 
 Token::Token(Locatable& loc, TokenKind kind, Symbol text)
     : Locatable(loc), Kind(kind), Text(text) {}
@@ -23,7 +23,7 @@ std::ostream& operator<<(std::ostream& stream, const Token& tok) {
     return stream;
 }
 
-std::map<std::string, TokenKind> string_to_enum = {
+std::unordered_map<std::string, TokenKind> string_to_enum = {
     {"auto", TK_AUTO},
     {"break", TK_BREAK},
     {"case", TK_CASE},
@@ -69,6 +69,8 @@ std::map<std::string, TokenKind> string_to_enum = {
     {"_Thread_local", TK__THREAD_LOCAL},
 };
 
+bool Token::containsKeyword(std::string str) {
+    // Checks the map to see if the token exists
     return string_to_enum.count(str) > 0;
 }
 
