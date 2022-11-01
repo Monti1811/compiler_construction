@@ -23,6 +23,7 @@ class Lexer {
     Token readStringLiteral();
     Token readIdKeyword();
     Token readPunctuator();
+    void findEndCommentary();
 
     Token eof();
 

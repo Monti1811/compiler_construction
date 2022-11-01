@@ -9,6 +9,8 @@
 bool isNumber(char x);
 bool isAlphabetic(char x);
 bool isPunctuator(char x);
+bool isCommentaryLine(LocatableStream& m_stream);
+bool isCommentaryMultiLine(LocatableStream& m_stream);
 
 
 //TODO omitted tokens should probably not stop the entire lexing process
@@ -34,9 +36,7 @@ Token Lexer::next() {
                 m_stream.get();
             }
             return next();
-        }
-       
-        
+        }       
         case '\'':
             return readCharConstant();
         case '\"':
@@ -51,6 +51,13 @@ Token Lexer::next() {
         return readNumberConstant();
     } else if (isAlphabetic(next_char)) {
         return readIdKeyword();
+    } else if (isCommentaryLine(m_stream)) {
+        std::string str = m_stream.getline();
+        std::cout << "Line:" << str << std::endl;
+        return next();
+    } else if (isCommentaryMultiLine(m_stream)) {
+        findEndCommentary();
+        return next();
     } else if (isPunctuator(next_char)) {
         return readPunctuator();
     }
@@ -564,6 +571,15 @@ Token Lexer::readPunctuator() {
     }
 }
 
+void Lexer::findEndCommentary() {
+    while ((m_stream.peek() != EOF || m_stream.peek() != '*' || m_stream.peek_twice() != '/')) {
+        m_stream.get();
+    }
+    if (m_stream.peek() == EOF) {
+        fail("Multiline commentary was not closed!");
+    }
+    m_stream.read(2);
+}
 
 
 void Lexer::fail(std::string message) {
@@ -600,4 +616,12 @@ bool isPunctuator(char x) {
         return true;
     }
     return false;
+}
+
+bool isCommentaryLine(LocatableStream& m_stream) {
+    return m_stream.peek() == '/' && m_stream.peek_twice() == '/';
+}
+
+bool isCommentaryLine(LocatableStream& m_stream) {
+    return m_stream.peek() == '/' && m_stream.peek_twice() == '*';
 }

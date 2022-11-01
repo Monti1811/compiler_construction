@@ -12,6 +12,7 @@ class LocatableStream {
         , m_filename(filename) {}
 
     char get();
+    std::string getline();
     char peek();
     char peek_twice();
     std::string read(int length);

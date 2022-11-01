@@ -11,6 +11,13 @@ char LocatableStream::get() {
     return c;
 }
 
+std::string LocatableStream::getline() {
+    std::string str;
+    m_stream.getline(&str[0], 512);
+    m_column++;
+    return str;
+}
+
 char LocatableStream::peek() {
     return m_stream.peek();
 }
