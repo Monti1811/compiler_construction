@@ -565,7 +565,7 @@ void Lexer::fail(std::string message) {
 
 // Checks if wether x is between 0 and 9 in ascii
 bool isNumber(char x) {
-    if  (x > '0' && x < '9') {
+    if  (x >= '0' && x <= '9') {
         return true;
     }
     return false;
