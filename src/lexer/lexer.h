@@ -17,7 +17,11 @@ class Lexer {
     Token next();
 
    private:
+    char readEscapeChar();
+    Token readCharConstant();
     Token readStringLiteral();
+
+    Token eof();
     void fail(std::string message);
     
     LocatableStream m_stream;
