@@ -9,21 +9,24 @@
 #include "stream.h"
 
 class Lexer {
-    public:
-    Lexer(std::string filename, SymbolInternalizer internalizer)
+   public:
+    Lexer(std::string const& filename, SymbolInternalizer& internalizer)
         : m_stream(LocatableStream(filename))
         , m_internalizer(internalizer) {}
 
     Token next();
 
-    private:
-    Token readStringLiteral();
-    Token readConstant();
-    Token readIdKeyword();
+   private:
+    char readEscapeChar();
+    Token readCharConstant();
     Token readNumberConstant();
+    Token readStringLiteral();
+    Token readIdKeyword();
+
+    Token eof();
 
     void fail(std::string message);
     
     LocatableStream m_stream;
-    SymbolInternalizer m_internalizer;
+    SymbolInternalizer& m_internalizer;
 };

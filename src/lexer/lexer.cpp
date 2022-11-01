@@ -12,7 +12,7 @@ bool isIdKeyword(char x);
 
 
 Token Lexer::next() {
-    // TODO
+
     char next_char = m_stream.peek();
     Locatable loc = m_stream.loc();
     if (isNumber(next_char)) {
@@ -43,13 +43,88 @@ Token Lexer::next() {
             Symbol sym = m_internalizer.internalize("}");
             return Token(loc, TokenKind::TK_RBRACE, sym);
         case '\'':
-            return readConstant();
+            return readCharConstant();
         case '"':
             return readStringLiteral();
-        default:
-            break;
+        case ' ':
+        case '\t':
+        case '\n':
+        case '\v':
+        case '\r': {
+            m_stream.get();
+            return next();
+        }
+        case '\'':
+            return readCharConstant();
+        case '\"':
+        case EOF:
+            return eof();
+        default: {
+            fail("Unknown token");
+            return eof();
     }
-    return readStringLiteral();
+
+}
+
+char Lexer::readEscapeChar() {
+    Locatable loc = m_stream.loc();
+
+    switch(char c = m_stream.get()) {
+        case '\'':
+        case '"':
+        case '?':
+        case '\\':
+        case 'a':
+        case 'b':
+        case 'f':
+        case 'n':
+        case 'r':
+        case 't':
+        case 'v':
+            return c;
+        case EOF:
+            fail("Unexpected end of file");
+            return EOF;
+        default:
+            fail("Invalid escape sequence");
+            return EOF;
+    }
+}
+
+Token Lexer::readCharConstant() {
+    Locatable loc = m_stream.loc();
+
+    // Read initial quotation mark
+    m_stream.get();
+
+    std::string inner;
+
+    switch (char c = m_stream.get()) {
+        case EOF:
+            fail("Unexpected end of file");
+            break;
+        case '\'':
+            fail("Character literals must not be empty");
+            break;
+        case '\n':
+            fail("Character literals must not contain a newline");
+            break;
+        case '\\': {
+            inner += c;
+            inner += readEscapeChar();
+            break;
+        }
+        default:
+            inner += c;
+    }
+
+    // Read final quotation mark
+    if (m_stream.get() != '\'') {
+        fail("Character literals must only contain a single character");
+    }
+
+    Symbol sym = m_internalizer.internalize('\'' + inner + '\'');
+    return Token(loc, TokenKind::TK_CHARACTER_CONSTANT, sym);
 }
 
 Token Lexer::readStringLiteral() {
@@ -63,13 +138,13 @@ Token Lexer::readStringLiteral() {
 
     char c = m_stream.get();
     while (c != '"') {
-        if (c == 0) {
+        if (c == EOF) {
             fail("Unexpected end of file");
         }
 
         inner += c;
         if (c == '\\') {
-            inner += m_stream.get();
+            inner += readEscapeChar();
         }
 
         c = m_stream.get();
@@ -82,6 +157,12 @@ Token Lexer::readStringLiteral() {
 
     Symbol sym = m_internalizer.internalize('"' + inner + '"');
     return Token(loc, TokenKind::TK_STRING_LITERAL, sym);
+}
+
+Token Lexer::eof() {
+    Symbol sym = m_internalizer.internalize("");
+    Locatable loc = m_stream.loc();
+    return Token(loc, TokenKind::TK_EOI, sym);
 }
 
 
@@ -137,7 +218,7 @@ Token Lexer::readIdKeyword() {
         tok = TokenKind::TK_IDENTIFIER;
     }
     return Token(loc, tok, sym);
-} 
+}
 
 
 
@@ -157,7 +238,7 @@ bool isNumber(char x) {
 
 // Checks if a the character is a lower/uppercase letter or underscore
 bool isIdKeyword(char x) {
-    if ((int)x == 95 
+    if ((int)x == 95
         || ((int)x > 96 && (int)x < 123)
         || ((int)x > 64 && (int)x < 91)) {
         return true;

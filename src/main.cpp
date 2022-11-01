@@ -9,8 +9,11 @@ int main(int, char **const) {
     std::string filename("test.c");
     Lexer lexer(filename, internalizer);
 
-    Token test = lexer.next();
-    cout << test << std::endl;
+    Token token = lexer.next();
+    while (token.Kind != TokenKind::TK_EOI) {
+        cout << token << std::endl;
+        token = lexer.next();
+    }
 
-    return EXIT_FAILURE;
+    return EXIT_SUCCESS;
 }
