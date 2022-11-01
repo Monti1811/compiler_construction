@@ -622,6 +622,6 @@ bool isCommentaryLine(LocatableStream& m_stream) {
     return m_stream.peek() == '/' && m_stream.peek_twice() == '/';
 }
 
-bool isCommentaryLine(LocatableStream& m_stream) {
+bool isCommentaryMultiLine(LocatableStream& m_stream) {
     return m_stream.peek() == '/' && m_stream.peek_twice() == '*';
 }
