@@ -63,14 +63,18 @@ Token Lexer::readCharConstant() {
     switch (char c = m_stream.get()) {
         case EOF:
             fail("Unexpected end of file");
+            break;
         case '\'':
             fail("Character literals must not be empty");
+            break;
         case '\n':
             fail("Character literals must not contain a newline");
-        case '\\':
+            break;
+        case '\\': {
             inner += c;
             inner += readEscapeChar();
             break;
+        }
         default:
             inner += c;
     }
