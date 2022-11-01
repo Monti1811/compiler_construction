@@ -40,6 +40,7 @@ Token Lexer::next() {
         default: {
             fail("Unknown token");
             return eof();
+        }
     }
 
 }
@@ -200,8 +201,10 @@ Token Lexer::readIdKeyword() {
 
 Token Lexer::readPunctuator() {
     char element = m_stream.get();
+    Locatable loc = m_stream.loc();
     switch (element) {
         case '*':
+        {
             if (m_stream.peek() == '=') {
                 m_stream.get();
                 Symbol sym = m_internalizer.internalize("*=");
@@ -210,27 +213,41 @@ Token Lexer::readPunctuator() {
                 Symbol sym = m_internalizer.internalize("*");
                 return Token(loc, TokenKind::TK_ASTERISK, sym);
             }
-            
+        }   
         case ',':
+        {
             Symbol sym = m_internalizer.internalize(",");
             return Token(loc, TokenKind::TK_COMMA, sym);
+        }
         case ';':
+        {
             Symbol sym = m_internalizer.internalize(";");
             return Token(loc, TokenKind::TK_SEMICOLON, sym);
+        }
         case '(':
+        {
             Symbol sym = m_internalizer.internalize("(");
             return Token(loc, TokenKind::TK_LPAREN, sym);
+        }
         case ')':
+        {
             Symbol sym = m_internalizer.internalize(")");
             return Token(loc, TokenKind::TK_RPAREN, sym);
+        }
         case '{':
+        {
             Symbol sym = m_internalizer.internalize("{");
             return Token(loc, TokenKind::TK_LBRACE, sym);
+        }
         case '}':
+        {
             Symbol sym = m_internalizer.internalize("}");
             return Token(loc, TokenKind::TK_RBRACE, sym);
+        }
         default:
-            break;
+            fail("Invalid punctuator");
+            Symbol sym = m_internalizer.internalize("Error");
+            return Token(loc, TokenKind::TK_EOI, sym);
     }
 }
 
@@ -248,6 +265,7 @@ bool isNumber(char x) {
     if ((int)x > 47 && (int)x < 58) {
         return true;
     }
+    return false;
 }
 
 // Checks if a the character is a lower/uppercase letter or underscore
@@ -258,6 +276,7 @@ bool isIdKeyword(char x) {
         || (y > 64 && y < 91)) {
         return true;
     }
+    return false;
 }
 
 // Checks if a the character is a punctuator
@@ -268,4 +287,5 @@ bool isPunctuator(char x) {
         || (y > 122 && y < 127)) {
         return true;
     }
+    return false;
 }
