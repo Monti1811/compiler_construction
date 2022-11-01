@@ -572,13 +572,15 @@ Token Lexer::readPunctuator() {
 }
 
 void Lexer::findEndCommentary() {
-    while ((m_stream.peek() != EOF || m_stream.peek() != '*' || m_stream.peek_twice() != '/')) {
-        m_stream.get();
+    if (m_stream.peek() == '*' && m_stream.peek_twice() == '/') {
+        m_stream.read(2);
+        return;
     }
     if (m_stream.peek() == EOF) {
         fail("Multiline commentary was not closed!");
     }
-    m_stream.read(2);
+    m_stream.get();
+    findEndCommentary();
 }
 
 
