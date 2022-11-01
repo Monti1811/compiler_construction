@@ -11,7 +11,7 @@ bool isAlphabetic(char x);
 bool isPunctuator(char x);
 
 
-
+//TODO omitted tokens should probably not stop the entire lexing process
 Token Lexer::next() {
 
     char next_char = m_stream.peek();
