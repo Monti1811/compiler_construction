@@ -13,3 +13,8 @@ Symbol SymbolInternalizer::internalize(const char* str) {
     const auto& p = StringSet.emplace(str);
     return std::addressof(*p.first);
 }
+
+Symbol SymbolInternalizer::internalize(const char character) {
+    const auto& p = StringSet.emplace(std::string(1, character));
+    return std::addressof(*p.first);
+}

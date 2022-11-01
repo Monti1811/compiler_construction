@@ -13,6 +13,9 @@ class LocatableStream {
 
     char get();
     char peek();
+    char peek_twice();
+    std::string read(int length);
+    std::string peek_forward(int length);
 
     Locatable loc();
     

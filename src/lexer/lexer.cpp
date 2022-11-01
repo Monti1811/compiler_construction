@@ -151,7 +151,7 @@ Token Lexer::readNumberConstant() {
     char next_char_val = m_stream.get();
     // Check if the character is only a 0 and no other number
     if (next_char_val == '0' && !isNumber(m_stream.peek())) {
-        Symbol sym = m_internalizer.internalize("0");
+        Symbol sym = m_internalizer.internalize(next_char_val);
         return Token(loc, TokenKind::TK_ZERO_CONSTANT, sym);
     // Character is a digit
     } else {
@@ -210,40 +210,323 @@ Token Lexer::readPunctuator() {
                 Symbol sym = m_internalizer.internalize("*=");
                 return Token(loc, TokenKind::TK_ASTERISK_EQUAL, sym);
             } else {
-                Symbol sym = m_internalizer.internalize("*");
+                Symbol sym = m_internalizer.internalize(element);
                 return Token(loc, TokenKind::TK_ASTERISK, sym);
             }
         }   
         case ',':
         {
-            Symbol sym = m_internalizer.internalize(",");
+            Symbol sym = m_internalizer.internalize(element);
             return Token(loc, TokenKind::TK_COMMA, sym);
         }
         case ';':
         {
-            Symbol sym = m_internalizer.internalize(";");
+            Symbol sym = m_internalizer.internalize(element);
             return Token(loc, TokenKind::TK_SEMICOLON, sym);
         }
         case '(':
         {
-            Symbol sym = m_internalizer.internalize("(");
+            Symbol sym = m_internalizer.internalize(element);
             return Token(loc, TokenKind::TK_LPAREN, sym);
         }
         case ')':
         {
-            Symbol sym = m_internalizer.internalize(")");
+            Symbol sym = m_internalizer.internalize(element);
             return Token(loc, TokenKind::TK_RPAREN, sym);
         }
         case '{':
         {
-            Symbol sym = m_internalizer.internalize("{");
+            Symbol sym = m_internalizer.internalize(element);
             return Token(loc, TokenKind::TK_LBRACE, sym);
         }
         case '}':
         {
-            Symbol sym = m_internalizer.internalize("}");
+            Symbol sym = m_internalizer.internalize(element);
             return Token(loc, TokenKind::TK_RBRACE, sym);
         }
+        case '[':
+        {
+            Symbol sym = m_internalizer.internalize(element);
+            return Token(loc, TokenKind::TK_LBRACKET, sym);
+        }
+        case ']':
+        {
+            Symbol sym = m_internalizer.internalize(element);
+            return Token(loc, TokenKind::TK_RBRACKET, sym);
+        }
+        case '?':
+        {
+            Symbol sym = m_internalizer.internalize(element);
+            return Token(loc, TokenKind::TK_QUESTION_MARK, sym);
+        }
+        case '.':
+        {
+            // Check if it's '...' or '.'
+            if (m_stream.peek() == '.' && m_stream.peek_twice() == '.') {
+                m_stream.get();
+                m_stream.get();
+                Symbol sym = m_internalizer.internalize("...");
+                return Token(loc, TokenKind::TK_DOT_DOT_DOT, sym);
+            } else {
+                Symbol sym = m_internalizer.internalize(element);
+                return Token(loc, TokenKind::TK_DOT, sym);
+            }
+        }
+        case '#':
+        {
+            if (m_stream.peek() == '#') {
+                m_stream.get();
+                Symbol sym = m_internalizer.internalize("##");
+                return Token(loc, TokenKind::TK_POUND, sym);
+            } else {
+                Symbol sym = m_internalizer.internalize(element);
+                return Token(loc, TokenKind::TK_POUND_POUND, sym);
+            }
+        } 
+        // Check if it's '+', '++' or '+='
+        case '+':
+        {
+            switch (m_stream.peek()) {
+                case '+': 
+                {
+                    Symbol sym = m_internalizer.internalize("++");
+                    return Token(loc, TokenKind::TK_PLUSPLUS, sym);
+                }
+                case '=': 
+                {
+                    Symbol sym = m_internalizer.internalize("+=");
+                    return Token(loc, TokenKind::TK_PLUS_EQUAL, sym);
+                }
+                default:
+                {
+                    Symbol sym = m_internalizer.internalize(element);
+                    return Token(loc, TokenKind::TK_PLUS, sym);
+                }
+            }
+        } 
+        // Check if it's '-', '--' or '-='
+        case '-':
+        {
+            switch (m_stream.peek()) {
+                case '-': 
+                {
+                    Symbol sym = m_internalizer.internalize("--");
+                    return Token(loc, TokenKind::TK_MINUSMINUS, sym);
+                }
+                case '=': 
+                {
+                    Symbol sym = m_internalizer.internalize("-=");
+                    return Token(loc, TokenKind::TK_MINUS_EQUAL, sym);
+                }
+                default:
+                {
+                    Symbol sym = m_internalizer.internalize(element);
+                    return Token(loc, TokenKind::TK_MINUS, sym);
+                }
+            }
+        } 
+        // Check if it's '&', '&&' or '&='
+        case '&':
+        {
+            switch (m_stream.peek()) {
+                case '&': 
+                {
+                    Symbol sym = m_internalizer.internalize("&&");
+                    return Token(loc, TokenKind::TK_AND_AND, sym);
+                }
+                case '=': 
+                {
+                    Symbol sym = m_internalizer.internalize("&=");
+                    return Token(loc, TokenKind::TK_AND_EQUAL, sym);
+                }
+                default:
+                {
+                    Symbol sym = m_internalizer.internalize(element);
+                    return Token(loc, TokenKind::TK_AND, sym);
+                }
+            }
+        } 
+        // Check if it's '|', '||' or '|='
+        case '|':
+        {
+            switch (m_stream.peek()) {
+                case '|': 
+                {
+                    Symbol sym = m_internalizer.internalize("||");
+                    return Token(loc, TokenKind::TK_OR_OR, sym);
+                }
+                case '=': 
+                {
+                    Symbol sym = m_internalizer.internalize("|=");
+                    return Token(loc, TokenKind::TK_PIPE_EQUAL, sym);
+                }
+                default:
+                {
+                    Symbol sym = m_internalizer.internalize(element);
+                    return Token(loc, TokenKind::TK_PIPE, sym);
+                }
+            }
+        } 
+        case '~':
+        {
+            Symbol sym = m_internalizer.internalize(element);
+            return Token(loc, TokenKind::TK_TILDE, sym);
+        }
+        case '!':
+        {
+            if (m_stream.peek() == '=') {
+                m_stream.get();
+                Symbol sym = m_internalizer.internalize("!=");
+                return Token(loc, TokenKind::TK_NOT_EQUAL, sym);
+            } else {
+                Symbol sym = m_internalizer.internalize(element);
+                return Token(loc, TokenKind::TK_BANG, sym);
+            }
+        }
+        case '=':
+        {
+            if (m_stream.peek() == '=') {
+                m_stream.get();
+                Symbol sym = m_internalizer.internalize("==");
+                return Token(loc, TokenKind::TK_EQUAL_EQUAL, sym);
+            } else {
+                Symbol sym = m_internalizer.internalize(element);
+                return Token(loc, TokenKind::TK_EQUAL, sym);
+            }
+        }
+        case ':':
+        {
+            if (m_stream.peek() == '>') {
+                m_stream.get();
+                Symbol sym = m_internalizer.internalize(":>");
+                return Token(loc, TokenKind::TK_RBRACKET, sym);
+            } else {
+                Symbol sym = m_internalizer.internalize(element);
+                return Token(loc, TokenKind::TK_COLON, sym);
+            }
+        }
+        case '^':
+        {
+            if (m_stream.peek() == '=') {
+                m_stream.get();
+                Symbol sym = m_internalizer.internalize("^=");
+                return Token(loc, TokenKind::TK_HAT_EQUAL, sym);
+            } else {
+                Symbol sym = m_internalizer.internalize(element);
+                return Token(loc, TokenKind::TK_HAT, sym);
+            }
+        }
+        case '/':
+        {
+            if (m_stream.peek() == '=') {
+                m_stream.get();
+                Symbol sym = m_internalizer.internalize("/=");
+                return Token(loc, TokenKind::TK_SLASH_EQUAL, sym);
+            } else {
+                Symbol sym = m_internalizer.internalize(element);
+                return Token(loc, TokenKind::TK_SLASH, sym);
+            }
+        }
+        // Checks if it's a '%', '%=', '%>', '%:' or '%:%:'
+        case '%':
+        {
+            switch (m_stream.peek()) {
+                case '=': 
+                {
+                    m_stream.get();
+                    Symbol sym = m_internalizer.internalize("%=");
+                    return Token(loc, TokenKind::TK_PERCENT_EQUAL, sym);
+                }
+                case '>':
+                {
+                    m_stream.get();
+                    Symbol sym = m_internalizer.internalize("%>");
+                    return Token(loc, TokenKind::TK_RBRACE, sym);
+                }
+                case ':':
+                {
+                    std::string str = m_stream.peek_forward(3);
+                    if (str == ":%:") {
+                        m_stream.read(3);
+                        Symbol sym = m_internalizer.internalize("%:%:");
+                        return Token(loc, TokenKind::TK_POUND_POUND, sym);
+                    } else {
+                        m_stream.get();
+                        Symbol sym = m_internalizer.internalize("%:");
+                        return Token(loc, TokenKind::TK_POUND, sym);
+                    }
+                    
+                }
+                default:
+                {
+                    Symbol sym = m_internalizer.internalize(element);
+                    return Token(loc, TokenKind::TK_PERCENT, sym);
+                }
+            }
+        }
+        // Check if it's '<', '<<', '<<=', '<%', '<:' or '<='
+        case '<':
+        {
+            switch (m_stream.peek()) {
+                case '<': 
+                {
+                    if (m_stream.peek_twice() == '=') {
+                        Symbol sym = m_internalizer.internalize("<<=");
+                        return Token(loc, TokenKind::TK_LESS_LESS_EQUAL, sym);
+                    } else {
+                        Symbol sym = m_internalizer.internalize("<<");
+                        return Token(loc, TokenKind::TK_LESS_LESS, sym);
+                    }
+                }
+                case '=': 
+                {
+                    Symbol sym = m_internalizer.internalize("<=");
+                    return Token(loc, TokenKind::TK_LESS_EQUAL, sym);
+                }
+                case '%': 
+                {
+                    Symbol sym = m_internalizer.internalize("<%");
+                    return Token(loc, TokenKind::TK_LBRACE, sym);
+                }
+                case ':': 
+                {
+                    Symbol sym = m_internalizer.internalize("<:");
+                    return Token(loc, TokenKind::TK_LBRACKET, sym);
+                }
+                default:
+                {
+                    Symbol sym = m_internalizer.internalize(element);
+                    return Token(loc, TokenKind::TK_LESS, sym);
+                }
+            }
+        } 
+        // Check if it's '>', '>>', '>>=' or '>='
+        case '>':
+        {
+            switch (m_stream.peek()) {
+                case '<': 
+                {
+                    if (m_stream.peek_twice() == '=') {
+                        Symbol sym = m_internalizer.internalize(">>=");
+                        return Token(loc, TokenKind::TK_GREATER_GREATER_EQUAL, sym);
+                    } else {
+                        Symbol sym = m_internalizer.internalize(">>");
+                        return Token(loc, TokenKind::TK_GREATER_GREATER, sym);
+                    }
+                }
+                case '=': 
+                {
+                    Symbol sym = m_internalizer.internalize(">=");
+                    return Token(loc, TokenKind::TK_GREATER_EQUAL, sym);
+                }
+                default:
+                {
+                    Symbol sym = m_internalizer.internalize(element);
+                    return Token(loc, TokenKind::TK_GREATER, sym);
+                }
+            }
+        } 
+
         default:
             fail("Invalid punctuator");
             Symbol sym = m_internalizer.internalize("Error");
