@@ -29,6 +29,10 @@ class SymbolInternalizer {
     /// to be preserved by the caller.
     Symbol internalize(const char* str);
 
+    /// Internalize the given argument. The character is copied and does not need
+    /// to be preserved by the caller.
+    Symbol internalize(const char character);
+
    private:
     std::unordered_set<std::string> StringSet;
 };

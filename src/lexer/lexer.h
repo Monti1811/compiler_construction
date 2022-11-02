@@ -19,9 +19,14 @@ class Lexer {
    private:
     char readEscapeChar();
     Token readCharConstant();
+    Token readNumberConstant();
     Token readStringLiteral();
+    Token readIdKeyword();
+    Token readPunctuator();
+    void findEndCommentary();
 
     Token eof();
+
     void fail(std::string message);
     
     LocatableStream m_stream;
