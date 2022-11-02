@@ -168,8 +168,8 @@ Token Lexer::readNumberConstant() {
     // Save location
     Locatable loc = m_stream.loc();
     char next_char_val = m_stream.get();
-    // Check if the character is only a 0 and no other number
-    if (next_char_val == '0' && !isNumber(m_stream.peek())) {
+    // Check if the character is a 0 
+    if (next_char_val == '0') {
         Symbol sym = m_internalizer.internalize(next_char_val);
         return Token(loc, TokenKind::TK_ZERO_CONSTANT, sym);
     // Character is a digit
