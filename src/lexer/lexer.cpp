@@ -52,8 +52,7 @@ Token Lexer::next() {
     } else if (isAlphabetic(next_char)) {
         return readIdKeyword();
     } else if (isCommentaryLine(m_stream)) {
-        std::string str = m_stream.getline();
-        std::cout << "Line:" << str << std::endl;
+        m_stream.getline();
         return next();
     } else if (isCommentaryMultiLine(m_stream)) {
         findEndCommentary();
@@ -572,12 +571,12 @@ Token Lexer::readPunctuator() {
 }
 
 void Lexer::findEndCommentary() {
-    if (m_stream.peek() == '*' && m_stream.peek_twice() == '/') {
-        m_stream.read(2);
-        return;
-    }
     if (m_stream.peek() == EOF) {
         fail("Multiline commentary was not closed!");
+    }
+    if (m_stream.peek_forward(2) == "*/") {
+        m_stream.read(2);
+        return;
     }
     m_stream.get();
     findEndCommentary();
