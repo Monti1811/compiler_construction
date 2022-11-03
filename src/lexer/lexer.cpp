@@ -50,12 +50,12 @@ Token Lexer::next() {
     } else if (isAlphabetic(next_char)) {
         return readIdentOrKeyword();
     } else if (isCommentLine(m_stream)) {
-        m_stream.read(2);
-        findEndLineComment(loc);
+        m_stream.get_str(2);
+        findLineCommentEnd(loc);
         return next();
     } else if (isCommentMultiLine(m_stream)) {
-        m_stream.read(2);
-        findEndComment();
+        m_stream.get_str(2);
+        findCommentEnd(loc);
         return next();
     } else if (Token::isPunctuator(next_char)) {
         return readPunctuator();
@@ -239,7 +239,7 @@ Token Lexer::readPunctuator() {
 
     auto setToken = [&](TokenKind new_kind, size_t length = 1) {
         kind = new_kind;
-        symbol += m_stream.read(length);
+        symbol += m_stream.get_str(length);
     };
 
     switch (kind) {
@@ -250,7 +250,7 @@ Token Lexer::readPunctuator() {
             break;
         }
         case TK_DOT: {
-            if (m_stream.peek() == '.' && m_stream.peek_twice() == '.') {
+            if (m_stream.peek_str(2) == "..") {
                 setToken(TokenKind::TK_DOT_DOT_DOT, 2);
             }
             break;
@@ -349,7 +349,7 @@ Token Lexer::readPunctuator() {
                     setToken(TokenKind::TK_RBRACE);
                     break;
                 case ':': {
-                    std::string str = m_stream.peek_forward(3);
+                    std::string str = m_stream.peek_str(3);
                     if (str == ":%:") {
                         setToken(TokenKind::TK_POUND_POUND, 3);
                     } else {
@@ -364,7 +364,7 @@ Token Lexer::readPunctuator() {
         case TK_LESS: {
             switch (m_stream.peek()) {
                 case '<': {
-                    if (m_stream.peek_twice() == '=') {
+                    if (m_stream.peek(1) == '=') {
                         setToken(TokenKind::TK_LESS_LESS_EQUAL, 2);
                     } else {
                         setToken(TK_LESS_LESS);
@@ -388,7 +388,7 @@ Token Lexer::readPunctuator() {
         {
             switch (m_stream.peek()) {
                 case '<': {
-                    if (m_stream.peek_twice() == '=') {
+                    if (m_stream.peek(1) == '=') {
                         setToken(TokenKind::TK_GREATER_GREATER_EQUAL, 2);
                     } else {
                         setToken(TokenKind::TK_GREATER_GREATER);
@@ -411,10 +411,10 @@ Token Lexer::readPunctuator() {
 
 void Lexer::findCommentEnd(Locatable& loc) {
     if (m_stream.peek() == EOF) {
-        fail("Multiline commentary was not closed!", loc);
+        fail("Multiline comment was not closed!", loc);
     }
-    if (m_stream.peek_forward(2) == "*/") {
-        m_stream.read(2);
+    if (m_stream.peek_str(2) == "*/") {
+        m_stream.get_str(2);
         return;
     }
     m_stream.get();
@@ -479,9 +479,9 @@ bool isAlphabetic(char x) {
 }
 
 bool isCommentLine(LocatableStream& m_stream) {
-    return m_stream.peek() == '/' && m_stream.peek_twice() == '/';
+    return m_stream.peek_str(2) == "//";
 }
 
 bool isCommentMultiLine(LocatableStream& m_stream) {
-    return m_stream.peek() == '/' && m_stream.peek_twice() == '*';
+    return m_stream.peek_str(2) == "/*";
 }
