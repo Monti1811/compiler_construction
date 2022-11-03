@@ -55,7 +55,7 @@ Token Lexer::next() {
         m_stream.getline();
         return next();
     } else if (isCommentaryMultiLine(m_stream)) {
-        findEndCommentary();
+        findEndCommentary(loc);
         return next();
     } else if (isPunctuator(next_char)) {
         return readPunctuator();
@@ -99,13 +99,13 @@ Token Lexer::readCharConstant() {
 
     switch (char c = m_stream.get()) {
         case EOF:
-            fail("Unexpected end of file");
+            fail("Unexpected end of file", loc);
             break;
         case '\'':
-            fail("Character literals must not be empty");
+            fail("Character literals must not be empty", loc);
             break;
         case '\n':
-            fail("Character literals must not contain a newline");
+            fail("Character literals must not contain a newline", loc);
             break;
         case '\\': {
             inner += c;
@@ -118,7 +118,7 @@ Token Lexer::readCharConstant() {
 
     // Read final quotation mark
     if (m_stream.get() != '\'') {
-        fail("Character literals must only contain a single character");
+        fail("Character literals must only contain a single character", loc);
     }
 
     Symbol sym = m_internalizer.internalize('\'' + inner + '\'');
@@ -137,7 +137,7 @@ Token Lexer::readStringLiteral() {
     char c = m_stream.get();
     while (c != '"') {
         if (c == EOF) {
-            fail("Unexpected end of file");
+            fail("Unexpected end of file", loc);
         }
 
         inner += c;
@@ -174,7 +174,6 @@ Token Lexer::readNumberConstant() {
         return Token(loc, TokenKind::TK_ZERO_CONSTANT, sym);
     // Character is a digit
     } else {
-        // TODO: Should leading zeros be forwarded to the string that is saved?
         // Buffer for the number
         std::string num;
         // Add the first read character to the buffer
@@ -570,16 +569,16 @@ Token Lexer::readPunctuator() {
     }
 }
 
-void Lexer::findEndCommentary() {
+void Lexer::findEndCommentary(Locatable& loc) {
     if (m_stream.peek() == EOF) {
-        fail("Multiline commentary was not closed!");
+        fail("Multiline commentary was not closed!", loc);
     }
     if (m_stream.peek_forward(2) == "*/") {
         m_stream.read(2);
         return;
     }
     m_stream.get();
-    findEndCommentary();
+    findEndCommentary(loc);
 }
 
 
@@ -587,6 +586,9 @@ void Lexer::fail(std::string message) {
     errorloc(m_stream.loc(), message);
 }
 
+void Lexer::fail(std::string message, Locatable& loc) {
+    errorloc(loc, message);
+}
 
 // Helpers
 

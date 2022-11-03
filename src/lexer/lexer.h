@@ -23,11 +23,12 @@ class Lexer {
     Token readStringLiteral();
     Token readIdKeyword();
     Token readPunctuator();
-    void findEndCommentary();
+    void findEndCommentary(Locatable& loc);
 
     Token eof();
 
     void fail(std::string message);
+    void fail(std::string message, Locatable& loc);
     
     LocatableStream m_stream;
     SymbolInternalizer& m_internalizer;
