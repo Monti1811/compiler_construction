@@ -212,9 +212,9 @@ Token Lexer::readStringLiteral() {
 }
 
 Token Lexer::readPunctuator() {
-    char ch = m_stream.get();
     Locatable loc = m_stream.loc();
 
+    char ch = m_stream.get();
     TokenKind kind = Token::getPunctuatorToken(ch);
     std::string symbol(1, ch);
 
