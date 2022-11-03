@@ -97,6 +97,9 @@ Token Lexer::readCharConstant() {
     // Read initial quotation mark
     m_stream.get();
 
+    // TODO: Is it correct to save the character constants as a string? Especially as the 
+    // special symbols are split so they won't work the same way as they would otherwise
+    // i.e: "\" + "n" != "\n"
     std::string inner;
 
     switch (char c = m_stream.get()) {
