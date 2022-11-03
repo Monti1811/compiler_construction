@@ -15,7 +15,6 @@ bool isMultiLineCommentStart(LocatableStream& m_stream);
 
 //TODO omitted tokens should probably not stop the entire lexing process
 Token Lexer::next() {
-
     char next_char = m_stream.peek();
 
     Locatable loc = m_stream.loc();
@@ -63,6 +62,36 @@ Token Lexer::next() {
 
     fail("Unknown token");
     return eof();
+}
+
+Token Lexer::readIdentOrKeyword() {
+    // Save location
+    Locatable loc = m_stream.loc();
+
+    // Buffer for the number
+    std::string str;
+
+    // Add the first read character to the buffer
+    char next_char = m_stream.get();
+    str += next_char;
+
+    // While there is still another valid char, add it to the buffer
+    next_char = m_stream.peek();
+    while (isNumber(next_char) || isAlphabetic(next_char)) {
+        str += next_char;
+        m_stream.get();
+        next_char = m_stream.peek();
+    }
+
+    TokenKind kind;
+    // If the string is a keyword, get the correct token, otherwise it's an identifier
+    if (Token::isKeyword(str)) {
+        kind = Token::getKeywordToken(str);
+    } else {
+        kind = TokenKind::TK_IDENTIFIER;
+    }
+
+    return makeToken(loc, kind, str);
 }
 
 char Lexer::readEscapeChar() {
@@ -128,6 +157,31 @@ Token Lexer::readCharConstant() {
     return makeToken(loc, TokenKind::TK_CHARACTER_CONSTANT, '\'' + inner + '\'');
 }
 
+Token Lexer::readNumberConstant() {
+    // Save location
+    Locatable loc = m_stream.loc();
+    char next_char_val = m_stream.get();
+    // Check if the character is a 0 
+    if (next_char_val == '0') {
+        return makeToken(loc, TokenKind::TK_ZERO_CONSTANT, next_char_val);
+    // Character is a digit
+    } else {
+        // Buffer for the number
+        std::string num;
+        // Add the first read character to the buffer
+        num += next_char_val;
+        char next_char = m_stream.peek();
+        // While there is still another number, add it to the buffer and go to the next character
+        while (isNumber(next_char)) {
+            num += next_char;
+            m_stream.get();
+            next_char = m_stream.peek();
+        }
+
+        return makeToken(loc, TokenKind::TK_DECIMAL_CONSTANT, num);
+    }
+}
+
 Token Lexer::readStringLiteral() {
     // Save location
     Locatable loc = m_stream.loc();
@@ -157,72 +211,6 @@ Token Lexer::readStringLiteral() {
     // welt";
 
     return makeToken(loc, TokenKind::TK_STRING_LITERAL, '"' + inner + '"');
-}
-
-Token Lexer::eof() {
-    Locatable loc = m_stream.loc();
-    return makeToken(loc, TokenKind::TK_EOI, "");
-}
-
-template<typename T>
-Token Lexer::makeToken(Locatable loc, TokenKind kind, T symbol) {
-    Symbol sym = m_internalizer.internalize(symbol);
-    return Token(loc, kind, sym);
-}
-
-Token Lexer::readNumberConstant() {
-    // Save location
-    Locatable loc = m_stream.loc();
-    char next_char_val = m_stream.get();
-    // Check if the character is a 0 
-    if (next_char_val == '0') {
-        return makeToken(loc, TokenKind::TK_ZERO_CONSTANT, next_char_val);
-    // Character is a digit
-    } else {
-        // Buffer for the number
-        std::string num;
-        // Add the first read character to the buffer
-        num += next_char_val;
-        char next_char = m_stream.peek();
-        // While there is still another number, add it to the buffer and go to the next character
-        while (isNumber(next_char)) {
-            num += next_char;
-            m_stream.get();
-            next_char = m_stream.peek();
-        }
-
-        return makeToken(loc, TokenKind::TK_DECIMAL_CONSTANT, num);
-    }
-}
-
-Token Lexer::readIdentOrKeyword() {
-    // Save location
-    Locatable loc = m_stream.loc();
-
-    // Buffer for the number
-    std::string str;
-
-    // Add the first read character to the buffer
-    char next_char = m_stream.get();
-    str += next_char;
-
-    // While there is still another valid char, add it to the buffer
-    next_char = m_stream.peek();
-    while (isNumber(next_char) || isAlphabetic(next_char)) {
-        str += next_char;
-        m_stream.get();
-        next_char = m_stream.peek();
-    }
-
-    TokenKind kind;
-    // If the string is a keyword, get the correct token, otherwise it's an identifier
-    if (Token::isKeyword(str)) {
-        kind = Token::getKeywordToken(str);
-    } else {
-        kind = TokenKind::TK_IDENTIFIER;
-    }
-
-    return makeToken(loc, kind, str);
 }
 
 Token Lexer::readPunctuator() {
@@ -441,7 +429,6 @@ bool isEndOfLine(LocatableStream& m_stream, Locatable& loc) {
     }
     return false;
 }
-
 void Lexer::findLineCommentEnd(Locatable& loc) {
     char next_char = m_stream.peek();
     bool multiline_comment = false;
@@ -454,6 +441,17 @@ void Lexer::findLineCommentEnd(Locatable& loc) {
         return;
     }
     findLineCommentEnd(loc);
+}
+
+Token Lexer::eof() {
+    Locatable loc = m_stream.loc();
+    return makeToken(loc, TokenKind::TK_EOI, "");
+}
+
+template<typename T>
+Token Lexer::makeToken(Locatable loc, TokenKind kind, T symbol) {
+    Symbol sym = m_internalizer.internalize(symbol);
+    return Token(loc, kind, sym);
 }
 
 void Lexer::fail(std::string message) {
