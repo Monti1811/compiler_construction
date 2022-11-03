@@ -368,7 +368,7 @@ Token Lexer::readPunctuator() {
         // Check if it's '>', '>>', '>>=' or '>='
         case TK_GREATER: {
             switch (m_stream.peek()) {
-                case '<': {
+                case '>': {
                     if (m_stream.peek(1) == '=') {
                         setToken(TokenKind::TK_GREATER_GREATER_EQUAL, 2);
                     } else {
