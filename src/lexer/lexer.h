@@ -27,8 +27,8 @@ class Lexer {
 
     Token readPunctuator();
 
-    void findCommentEnd(Locatable& loc);
-    void findLineCommentEnd(Locatable& loc);
+    void readMultiComment();
+    void readLineComment();
 
     Token eof();
     template<typename T> Token makeToken(Locatable loc, TokenKind kind, T symbol);

@@ -10,14 +10,8 @@
 bool isNumber(char x);
 bool isAlphabetic(char x);
 
-bool isLineCommentStart(LocatableStream& m_stream);
-bool isMultiLineCommentStart(LocatableStream& m_stream);
-
-//TODO omitted tokens should probably not stop the entire lexing process
 Token Lexer::next() {
     char next_char = m_stream.peek();
-
-    Locatable loc = m_stream.loc();
 
     switch (next_char) {
         case ' ':
@@ -44,19 +38,30 @@ Token Lexer::next() {
             return eof();
     }
 
+    // [0-9]
     if (isNumber(next_char)) {
         return readNumberConstant();
-    } else if (isAlphabetic(next_char)) {
+    }
+
+    // [a-zA-Z_]
+    if (isAlphabetic(next_char)) {
         return readIdentOrKeyword();
-    } else if (isLineCommentStart(m_stream)) {
-        m_stream.get_str(2);
-        findLineCommentEnd(loc);
+    }
+    
+    // `//`
+    if (m_stream.peek_str(2) == "//") {
+        readLineComment();
         return next();
-    } else if (isMultiLineCommentStart(m_stream)) {
-        m_stream.get_str(2);
-        findCommentEnd(loc);
+    }
+    
+    // `/*`
+    if (m_stream.peek_str(2) == "/*") {
+        readMultiComment();
         return next();
-    } else if (Token::isPunctuator(next_char)) {
+    }
+    
+    // Special characters
+    if (Token::isPunctuator(next_char)) {
         return readPunctuator();
     }
 
@@ -396,51 +401,34 @@ Token Lexer::readPunctuator() {
     return makeToken(loc, kind, symbol);
 }
 
-void Lexer::findCommentEnd(Locatable& loc) {
-    if (m_stream.peek() == EOF) {
-        fail("Multiline comment was not closed!", loc);
-    }
-    if (m_stream.peek_str(2) == "*/") {
-        m_stream.get_str(2);
-        return;
-    }
-    m_stream.get();
-    findCommentEnd(loc);
-}
+void Lexer::readMultiComment() {
+    Locatable loc = m_stream.loc();
 
-bool isEndOfLine(LocatableStream& m_stream, Locatable& loc) {
-    switch (m_stream.peek()) {
-        case '\n':
-            return true;
-        case '\r':
-        {
-            if (m_stream.peek() == '\n') {
-                m_stream.get();
-                return true;
-            } else {
-                return true;
+    // read initial `/*`
+    m_stream.get_str(2);
+
+    while (true) {
+        while (true) {
+            char c = m_stream.get();
+            if (c == '*') {
+                break;
+            } else if (c == EOF) {
+                fail("Multiline comment was not closed", loc);
             }
         }
-        case EOF:
-        {
-            errorloc(loc, "Line commentary was not closed!");
-            return false;
+
+        char c = m_stream.get();
+        if (c == '/') {
+            break;
+        } else if (c == EOF) {
+            fail("Multiline comment was not closed", loc);
         }
     }
-    return false;
 }
-void Lexer::findLineCommentEnd(Locatable& loc) {
-    char next_char = m_stream.peek();
-    bool multiline_comment = false;
-    if (next_char == '\\') {
-        m_stream.get();
-        multiline_comment = true;
-    }
-    m_stream.get();
-    if (isEndOfLine(m_stream, loc) && !multiline_comment) {
-        return;
-    }
-    findLineCommentEnd(loc);
+
+void Lexer::readLineComment() {
+    // The '//' has already been peeked - we can just read everything until the next newline
+    m_stream.get_line();
 }
 
 Token Lexer::eof() {
@@ -472,12 +460,4 @@ bool isNumber(char x) {
 // Checks if a the character is a lower/uppercase letter or underscore
 bool isAlphabetic(char x) {
     return (x == '_') || (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z');
-}
-
-bool isLineCommentStart(LocatableStream& m_stream) {
-    return m_stream.peek_str(2) == "//";
-}
-
-bool isMultiLineCommentStart(LocatableStream& m_stream) {
-    return m_stream.peek_str(2) == "/*";
 }

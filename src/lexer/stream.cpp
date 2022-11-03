@@ -2,8 +2,14 @@
 
 char LocatableStream::get() {
     char c = m_stream.get();
-    // TODO handle \r\n and \r
     if (c == '\n') {
+        m_column = 1;
+        m_line++;
+    } else if (c == '\r') {
+        if (m_stream.peek() == '\n') {
+            m_stream.get();
+        }
+        c = '\n';
         m_column = 1;
         m_line++;
     } else {
@@ -22,9 +28,11 @@ std::string LocatableStream::get_str(int length) {
 
 std::string LocatableStream::get_line() {
     std::string str;
-    m_stream.getline(&str[0], 512);
-    // FIXME: Broken
-    m_column++;
+    char c = get();
+    while (c != '\n') {
+        str += c;
+        c = get();
+    }
     return str;
 }
 
