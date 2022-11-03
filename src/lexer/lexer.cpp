@@ -402,19 +402,20 @@ void Lexer::readMultiComment() {
     m_stream.get_str(2);
 
     while (true) {
-        while (true) {
-            char c = m_stream.get();
-            if (c == '*') {
-                break;
-            } else if (c == EOF) {
-                fail("Multiline comment was not closed", loc);
+        char c = m_stream.get();
+
+        if (c == '*') {
+            while (true) {
+                c = m_stream.get();
+                if (c == '/') {
+                    return;
+                } else if (c != '*') {
+                    break;
+                }
             }
         }
 
-        char c = m_stream.get();
-        if (c == '/') {
-            break;
-        } else if (c == EOF) {
+        if (c == EOF) {
             fail("Multiline comment was not closed", loc);
         }
     }
