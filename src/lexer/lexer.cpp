@@ -10,8 +10,8 @@
 bool isNumber(char x);
 bool isAlphabetic(char x);
 
-bool isCommentLine(LocatableStream& m_stream);
-bool isCommentMultiLine(LocatableStream& m_stream);
+bool isLineCommentStart(LocatableStream& m_stream);
+bool isMultiLineCommentStart(LocatableStream& m_stream);
 
 //TODO omitted tokens should probably not stop the entire lexing process
 Token Lexer::next() {
@@ -49,17 +49,18 @@ Token Lexer::next() {
         return readNumberConstant();
     } else if (isAlphabetic(next_char)) {
         return readIdentOrKeyword();
-    } else if (isCommentLine(m_stream)) {
+    } else if (isLineCommentStart(m_stream)) {
         m_stream.get_str(2);
         findLineCommentEnd(loc);
         return next();
-    } else if (isCommentMultiLine(m_stream)) {
+    } else if (isMultiLineCommentStart(m_stream)) {
         m_stream.get_str(2);
         findCommentEnd(loc);
         return next();
     } else if (Token::isPunctuator(next_char)) {
         return readPunctuator();
     }
+
     fail("Unknown token");
     return eof();
 }
@@ -84,7 +85,7 @@ char Lexer::readEscapeChar() {
             fail("Unexpected end of file");
             return EOF;
         default:
-            fail("Invalid escape sequence");
+            fail("Invalid escape sequence", loc);
             return EOF;
     }
 }
@@ -194,7 +195,6 @@ Token Lexer::readNumberConstant() {
     }
 }
 
-
 Token Lexer::readIdentOrKeyword() {
     // Save location
     Locatable loc = m_stream.loc();
@@ -230,7 +230,7 @@ Token Lexer::readPunctuator() {
     Locatable loc = m_stream.loc();
 
     if (Token::isPunctuator(ch)) {
-        fail("Invalid punctuator"); // TODO: fail with loc
+        fail("Invalid punctuator", loc);
         return eof();
     }
 
@@ -384,8 +384,7 @@ Token Lexer::readPunctuator() {
             break;
         } 
         // Check if it's '>', '>>', '>>=' or '>='
-        case TK_GREATER:
-        {
+        case TK_GREATER: {
             switch (m_stream.peek()) {
                 case '<': {
                     if (m_stream.peek(1) == '=') {
@@ -457,7 +456,6 @@ void Lexer::findLineCommentEnd(Locatable& loc) {
     findLineCommentEnd(loc);
 }
 
-
 void Lexer::fail(std::string message) {
     errorloc(m_stream.loc(), message);
 }
@@ -478,10 +476,10 @@ bool isAlphabetic(char x) {
     return (x == '_') || (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z');
 }
 
-bool isCommentLine(LocatableStream& m_stream) {
+bool isLineCommentStart(LocatableStream& m_stream) {
     return m_stream.peek_str(2) == "//";
 }
 
-bool isCommentMultiLine(LocatableStream& m_stream) {
+bool isMultiLineCommentStart(LocatableStream& m_stream) {
     return m_stream.peek_str(2) == "/*";
 }
