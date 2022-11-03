@@ -42,6 +42,7 @@ std::unordered_map<std::string, TokenKind> string_to_enum = {
     {"if", TK_IF},
     {"inline", TK_INLINE},
     {"int", TK_INT},
+    {"long", TK_LONG},
     {"register", TK_REGISTER},
     {"restrict", TK_RESTRICT},
     {"return", TK_RETURN},

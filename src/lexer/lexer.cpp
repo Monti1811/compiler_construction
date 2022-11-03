@@ -52,10 +52,12 @@ Token Lexer::next() {
     } else if (isAlphabetic(next_char)) {
         return readIdKeyword();
     } else if (isCommentaryLine(m_stream)) {
-        m_stream.getline();
+        m_stream.read(2);
+        findEndLineCommentary(loc);
         return next();
     } else if (isCommentaryMultiLine(m_stream)) {
-        findEndCommentary();
+        m_stream.read(2);
+        findEndCommentary(loc);
         return next();
     } else if (isPunctuator(next_char)) {
         return readPunctuator();
@@ -95,17 +97,20 @@ Token Lexer::readCharConstant() {
     // Read initial quotation mark
     m_stream.get();
 
+    // TODO: Is it correct to save the character constants as a string? Especially as the 
+    // special symbols are split so they won't work the same way as they would otherwise
+    // i.e: "\" + "n" != "\n"
     std::string inner;
 
     switch (char c = m_stream.get()) {
         case EOF:
-            fail("Unexpected end of file");
+            fail("Unexpected end of file", loc);
             break;
         case '\'':
-            fail("Character literals must not be empty");
+            fail("Character literals must not be empty", loc);
             break;
         case '\n':
-            fail("Character literals must not contain a newline");
+            fail("Character literals must not contain a newline", loc);
             break;
         case '\\': {
             inner += c;
@@ -118,7 +123,7 @@ Token Lexer::readCharConstant() {
 
     // Read final quotation mark
     if (m_stream.get() != '\'') {
-        fail("Character literals must only contain a single character");
+        fail("Character literals must only contain a single character", loc);
     }
 
     Symbol sym = m_internalizer.internalize('\'' + inner + '\'');
@@ -137,7 +142,7 @@ Token Lexer::readStringLiteral() {
     char c = m_stream.get();
     while (c != '"') {
         if (c == EOF) {
-            fail("Unexpected end of file");
+            fail("Unexpected end of file", loc);
         }
 
         inner += c;
@@ -174,7 +179,6 @@ Token Lexer::readNumberConstant() {
         return Token(loc, TokenKind::TK_ZERO_CONSTANT, sym);
     // Character is a digit
     } else {
-        // TODO: Should leading zeros be forwarded to the string that is saved?
         // Buffer for the number
         std::string num;
         // Add the first read character to the buffer
@@ -570,16 +574,52 @@ Token Lexer::readPunctuator() {
     }
 }
 
-void Lexer::findEndCommentary() {
+void Lexer::findEndCommentary(Locatable& loc) {
     if (m_stream.peek() == EOF) {
-        fail("Multiline commentary was not closed!");
+        fail("Multiline commentary was not closed!", loc);
     }
     if (m_stream.peek_forward(2) == "*/") {
         m_stream.read(2);
         return;
     }
     m_stream.get();
-    findEndCommentary();
+    findEndCommentary(loc);
+}
+
+bool isEndOfLine(LocatableStream& m_stream, Locatable& loc) {
+    switch (m_stream.peek()) {
+        case '\n':
+            return true;
+        case '\r':
+        {
+            if (m_stream.peek() == '\n') {
+                m_stream.get();
+                return true;
+            } else {
+                return true;
+            }
+        }
+        case EOF:
+        {
+            errorloc(loc, "Line commentary was not closed!");
+            return false;
+        }
+    }
+    return false;
+}
+
+void Lexer::findEndLineCommentary(Locatable& loc) {
+    char next_char = m_stream.peek();
+    bool multiline_comment = false;
+    if (next_char == '\\') {
+        m_stream.get();
+        multiline_comment = true;
+    }
+    m_stream.get();
+    if (isEndOfLine(m_stream, loc) && !multiline_comment) {
+        return;
+    }
+    findEndLineCommentary(loc);
 }
 
 
@@ -587,6 +627,9 @@ void Lexer::fail(std::string message) {
     errorloc(m_stream.loc(), message);
 }
 
+void Lexer::fail(std::string message, Locatable& loc) {
+    errorloc(loc, message);
+}
 
 // Helpers
 
