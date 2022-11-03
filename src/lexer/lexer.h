@@ -21,7 +21,7 @@ class Lexer {
     Token readCharConstant();
     Token readNumberConstant();
     Token readStringLiteral();
-    Token readIdKeyword();
+    Token readIdentOrKeyword();
     Token readPunctuator();
 
     void findCommentEnd(Locatable& loc);

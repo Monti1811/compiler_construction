@@ -9,10 +9,9 @@
 
 bool isNumber(char x);
 bool isAlphabetic(char x);
-bool isPunctuator(char x);
+
 bool isCommentLine(LocatableStream& m_stream);
 bool isCommentMultiLine(LocatableStream& m_stream);
-
 
 //TODO omitted tokens should probably not stop the entire lexing process
 Token Lexer::next() {
@@ -44,14 +43,12 @@ Token Lexer::next() {
             return readStringLiteral();
         case EOF:
             return eof();
-        default: {
-        }
     }
 
     if (isNumber(next_char)) {
         return readNumberConstant();
     } else if (isAlphabetic(next_char)) {
-        return readIdKeyword();
+        return readIdentOrKeyword();
     } else if (isCommentLine(m_stream)) {
         m_stream.read(2);
         findEndLineComment(loc);
@@ -60,7 +57,7 @@ Token Lexer::next() {
         m_stream.read(2);
         findEndComment();
         return next();
-    } else if (isPunctuator(next_char)) {
+    } else if (Token::isPunctuator(next_char)) {
         return readPunctuator();
     }
     fail("Unknown token");
@@ -198,75 +195,50 @@ Token Lexer::readNumberConstant() {
 }
 
 
-Token Lexer::readIdKeyword() {
+Token Lexer::readIdentOrKeyword() {
     // Save location
     Locatable loc = m_stream.loc();
-    char next_char_val = m_stream.get();
+
     // Buffer for the number
     std::string str;
+
     // Add the first read character to the buffer
-    str += next_char_val;
-    char next_char = m_stream.peek();
-    // While there is still another valid char add it to the buffer
+    char next_char = m_stream.get();
+    str += next_char;
+
+    // While there is still another valid char, add it to the buffer
+    next_char = m_stream.peek();
     while (isNumber(next_char) || isAlphabetic(next_char)) {
         str += next_char;
         m_stream.get();
         next_char = m_stream.peek();
     }
 
-    TokenKind tok;
+    TokenKind kind;
     // If the string is a keyword, get the correct token, otherwise it's an identifier
-    if (Token::containsKeyword(str)) {
-        tok = Token::getKeywordToken(str);
+    if (Token::isKeyword(str)) {
+        kind = Token::getKeywordToken(str);
     } else {
-        tok = TokenKind::TK_IDENTIFIER;
+        kind = TokenKind::TK_IDENTIFIER;
     }
 
-    return makeToken(loc, tok, str);
+    return makeToken(loc, kind, str);
 }
 
-const std::unordered_map<char, TokenKind> PUNCTUATOR_TOKENS = {
-    {'*', TK_ASTERISK},
-    {',', TK_COMMA},
-    {';', TK_SEMICOLON},
-    {'(', TK_LPAREN},
-    {')', TK_RPAREN},
-    {'{', TK_LBRACE},
-    {'}', TK_RBRACE},
-    {'[', TK_LBRACKET},
-    {']', TK_RBRACKET},
-    {'?', TK_QUESTION_MARK},
-    {'.', TK_DOT},
-    {'#', TK_POUND},
-    {'+', TK_PLUS},
-    {'-', TK_MINUS},
-    {'&', TK_AND},
-    {'|', TK_PIPE},
-    {'~', TK_TILDE},
-    {'!', TK_BANG},
-    {'=', TK_EQUAL},
-    {':', TK_COLON},
-    {'^', TK_HAT},
-    {'/', TK_SLASH},
-    {'%', TK_PERCENT},
-    {'<', TK_LESS},
-    {'>', TK_GREATER},
-};
-
 Token Lexer::readPunctuator() {
-    char element = m_stream.get();
+    char ch = m_stream.get();
     Locatable loc = m_stream.loc();
 
-    if (PUNCTUATOR_TOKENS.count(element) == 0) {
+    if (Token::isPunctuator(ch)) {
         fail("Invalid punctuator"); // TODO: fail with loc
         return eof();
     }
 
-    TokenKind kind = PUNCTUATOR_TOKENS.at(element);
-    std::string symbol(1, element);
+    TokenKind kind = Token::getPunctuatorToken(ch);
+    std::string symbol(1, ch);
 
-    auto setToken = [&](TokenKind _kind, size_t length = 1) {
-        kind = _kind;
+    auto setToken = [&](TokenKind new_kind, size_t length = 1) {
+        kind = new_kind;
         symbol += m_stream.read(length);
     };
 
@@ -498,31 +470,12 @@ void Lexer::fail(std::string message, Locatable& loc) {
 
 // Checks if wether x is between 0 and 9 in ascii
 bool isNumber(char x) {
-    if  (x >= '0' && x <= '9') {
-        return true;
-    }
-    return false;
+    return (x >= '0' && x <= '9');
 }
 
 // Checks if a the character is a lower/uppercase letter or underscore
 bool isAlphabetic(char x) {
-    if (x == '_'
-        || (x >= 'a'  && x <= 'z')
-        || (x >= 'A' && x <= 'Z')) {
-        return true;
-    }
-    return false;
-}
-
-// Checks if a the character is a punctuator
-bool isPunctuator(char x) {
-    if ((x >= '!' && x <= '/')
-        || (x >= ':' && x <= '?')
-        || (x >= '[' && x <= '^')
-        || (x >= '{' && x <= '~')) {
-        return true;
-    }
-    return false;
+    return (x == '_') || (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z');
 }
 
 bool isCommentLine(LocatableStream& m_stream) {
