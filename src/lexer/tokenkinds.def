@@ -9,64 +9,64 @@
 #undef KEYWORD_ACTION
 
 // Punctuators
-KIND_ACTION(TK_ASTERISK, "punctuator")  // "*"
-KIND_ACTION(TK_COMMA, "punctuator")     // ","
-KIND_ACTION(TK_SEMICOLON, "punctuator") // ";"
-KIND_ACTION(TK_COLON, "punctuator") // ":"
-KIND_ACTION(TK_LPAREN, "punctuator")    // "("
-KIND_ACTION(TK_RPAREN, "punctuator")    // ")"
-KIND_ACTION(TK_LBRACE, "punctuator")    // "{" or "<%"
-KIND_ACTION(TK_RBRACE, "punctuator")    // "}" or "%>"
-KIND_ACTION(TK_LBRACKET, "punctuator")    // "[" or "<:"
-KIND_ACTION(TK_RBRACKET, "punctuator")    // "]" or ":>"
-KIND_ACTION(TK_DOT, "punctuator")       // "."
-KIND_ACTION(TK_POUND, "punctuator")     // "#" or "%:"
-KIND_ACTION(TK_POUND_POUND, "punctuator")     // "##" or "%:%:"
-KIND_ACTION(TK_PLUS, "punctuator")     // "+"
-KIND_ACTION(TK_MINUS, "punctuator")    // "-"
-KIND_ACTION(TK_PLUSPLUS, "punctuator")    // "++"
-KIND_ACTION(TK_MINUSMINUS, "punctuator")    // "--"
-KIND_ACTION(TK_TILDE, "punctuator")    // "~"
-KIND_ACTION(TK_BANG, "punctuator")    // "!"
-KIND_ACTION(TK_AND, "punctuator")    // "&"
-KIND_ACTION(TK_SLASH, "punctuator")    // "/"
-KIND_ACTION(TK_PERCENT, "punctuator")    // "%"
-KIND_ACTION(TK_LESS_LESS, "punctuator")    // "<<"
-KIND_ACTION(TK_GREATER_GREATER, "punctuator")    // ">>"
-KIND_ACTION(TK_LESS, "punctuator")    // "<"
-KIND_ACTION(TK_GREATER, "punctuator")    // ">"
-KIND_ACTION(TK_LESS_EQUAL, "punctuator")    // "<="
-KIND_ACTION(TK_GREATER_EQUAL, "punctuator")    // ">="
-KIND_ACTION(TK_NOT_EQUAL, "punctuator")    // "!="
-KIND_ACTION(TK_HAT, "punctuator")    // "^"
-KIND_ACTION(TK_PIPE, "punctuator")    // "|"
-KIND_ACTION(TK_AND_AND, "punctuator")    // "&&"
-KIND_ACTION(TK_OR_OR, "punctuator")    // "||"
-KIND_ACTION(TK_QUESTION_MARK, "punctuator")    // "?"
-KIND_ACTION(TK_DOT_DOT_DOT, "punctuator")    // "..."
-KIND_ACTION(TK_EQUAL, "punctuator")    // "="
-KIND_ACTION(TK_EQUAL_EQUAL, "punctuator")    // "=="
-KIND_ACTION(TK_ASTERISK_EQUAL, "punctuator")    // "*="
-KIND_ACTION(TK_SLASH_EQUAL, "punctuator")    // "/="
-KIND_ACTION(TK_PERCENT_EQUAL, "punctuator")    // "%="
-KIND_ACTION(TK_PLUS_EQUAL, "punctuator")    // "+="
-KIND_ACTION(TK_MINUS_EQUAL, "punctuator")    // "-="
-KIND_ACTION(TK_LESS_LESS_EQUAL, "punctuator")    // "<<="
-KIND_ACTION(TK_GREATER_GREATER_EQUAL, "punctuator")    // ">>="
-KIND_ACTION(TK_AND_EQUAL, "punctuator")    // "&="
-KIND_ACTION(TK_HAT_EQUAL, "punctuator")    // "^="
-KIND_ACTION(TK_PIPE_EQUAL, "punctuator")    // "|="
+KIND_ACTION(TK_ASTERISK,                "punctuator")   // "*"
+KIND_ACTION(TK_COMMA,                   "punctuator")   // ","
+KIND_ACTION(TK_SEMICOLON,               "punctuator")   // ";"
+KIND_ACTION(TK_COLON,                   "punctuator")   // ":"
+KIND_ACTION(TK_LPAREN,                  "punctuator")   // "("
+KIND_ACTION(TK_RPAREN,                  "punctuator")   // ")"
+KIND_ACTION(TK_LBRACE,                  "punctuator")   // "{" or "<%"
+KIND_ACTION(TK_RBRACE,                  "punctuator")   // "}" or "%>"
+KIND_ACTION(TK_LBRACKET,                "punctuator")   // "[" or "<:"
+KIND_ACTION(TK_RBRACKET,                "punctuator")   // "]" or ":>"
+KIND_ACTION(TK_DOT,                     "punctuator")   // "."
+KIND_ACTION(TK_POUND,                   "punctuator")   // "#" or "%:"
+KIND_ACTION(TK_POUND_POUND,             "punctuator")   // "##" or "%:%:"
+KIND_ACTION(TK_PLUS,                    "punctuator")   // "+"
+KIND_ACTION(TK_MINUS,                   "punctuator")   // "-"
+KIND_ACTION(TK_PLUSPLUS,                "punctuator")   // "++"
+KIND_ACTION(TK_MINUSMINUS,              "punctuator")   // "--"
+KIND_ACTION(TK_TILDE,                   "punctuator")   // "~"
+KIND_ACTION(TK_BANG,                    "punctuator")   // "!"
+KIND_ACTION(TK_AND,                     "punctuator")   // "&"
+KIND_ACTION(TK_SLASH,                   "punctuator")   // "/"
+KIND_ACTION(TK_PERCENT,                 "punctuator")   // "%"
+KIND_ACTION(TK_LESS_LESS,               "punctuator")   // "<<"
+KIND_ACTION(TK_GREATER_GREATER,         "punctuator")   // ">>"
+KIND_ACTION(TK_LESS,                    "punctuator")   // "<"
+KIND_ACTION(TK_GREATER,                 "punctuator")   // ">"
+KIND_ACTION(TK_LESS_EQUAL,              "punctuator")   // "<="
+KIND_ACTION(TK_GREATER_EQUAL,           "punctuator")   // ">="
+KIND_ACTION(TK_NOT_EQUAL,               "punctuator")   // "!="
+KIND_ACTION(TK_HAT,                     "punctuator")   // "^"
+KIND_ACTION(TK_PIPE,                    "punctuator")   // "|"
+KIND_ACTION(TK_AND_AND,                 "punctuator")   // "&&"
+KIND_ACTION(TK_OR_OR,                   "punctuator")   // "||"
+KIND_ACTION(TK_QUESTION_MARK,           "punctuator")   // "?"
+KIND_ACTION(TK_DOT_DOT_DOT,             "punctuator")   // "..."
+KIND_ACTION(TK_EQUAL,                   "punctuator")   // "="
+KIND_ACTION(TK_EQUAL_EQUAL,             "punctuator")   // "=="
+KIND_ACTION(TK_ASTERISK_EQUAL,          "punctuator")   // "*="
+KIND_ACTION(TK_SLASH_EQUAL,             "punctuator")   // "/="
+KIND_ACTION(TK_PERCENT_EQUAL,           "punctuator")   // "%="
+KIND_ACTION(TK_PLUS_EQUAL,              "punctuator")   // "+="
+KIND_ACTION(TK_MINUS_EQUAL,             "punctuator")   // "-="
+KIND_ACTION(TK_LESS_LESS_EQUAL,         "punctuator")   // "<<="
+KIND_ACTION(TK_GREATER_GREATER_EQUAL,   "punctuator")   // ">>="
+KIND_ACTION(TK_AND_EQUAL,               "punctuator")   // "&="
+KIND_ACTION(TK_HAT_EQUAL,               "punctuator")   // "^="
+KIND_ACTION(TK_PIPE_EQUAL,              "punctuator")   // "|="
 
 // Identifier
-KIND_ACTION(TK_IDENTIFIER, "identifier")
+KIND_ACTION(TK_IDENTIFIER,              "identifier")
 
 // Constants
-KIND_ACTION(TK_DECIMAL_CONSTANT, "constant")
-KIND_ACTION(TK_ZERO_CONSTANT, "constant")
-KIND_ACTION(TK_CHARACTER_CONSTANT, "constant")
+KIND_ACTION(TK_DECIMAL_CONSTANT,        "constant")
+KIND_ACTION(TK_ZERO_CONSTANT,           "constant")
+KIND_ACTION(TK_CHARACTER_CONSTANT,      "constant")
 
 // String literals
-KIND_ACTION(TK_STRING_LITERAL, "string-literal")
+KIND_ACTION(TK_STRING_LITERAL,          "string-literal")
 
-KIND_ACTION(TK_EOI, "end-of-input")
+KIND_ACTION(TK_EOI,                     "end-of-input")
 
