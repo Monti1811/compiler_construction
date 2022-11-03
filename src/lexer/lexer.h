@@ -29,6 +29,9 @@ class Lexer {
 
     Token eof();
 
+    template<typename T>
+    Token makeToken(Locatable loc, TokenKind kind, T symbol);
+
     void fail(std::string message);
     void fail(std::string message, Locatable& loc);
     
