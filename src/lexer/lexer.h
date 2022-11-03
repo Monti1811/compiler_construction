@@ -24,6 +24,7 @@ class Lexer {
     Token readIdKeyword();
     Token readPunctuator();
     void findEndCommentary(Locatable& loc);
+    void findEndLineCommentary(Locatable& loc);
 
     Token eof();
 

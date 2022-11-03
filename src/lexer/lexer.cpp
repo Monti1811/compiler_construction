@@ -52,9 +52,11 @@ Token Lexer::next() {
     } else if (isAlphabetic(next_char)) {
         return readIdKeyword();
     } else if (isCommentaryLine(m_stream)) {
-        m_stream.getline();
+        m_stream.read(2);
+        findEndLineCommentary(loc);
         return next();
     } else if (isCommentaryMultiLine(m_stream)) {
+        m_stream.read(2);
         findEndCommentary(loc);
         return next();
     } else if (isPunctuator(next_char)) {
@@ -579,6 +581,42 @@ void Lexer::findEndCommentary(Locatable& loc) {
     }
     m_stream.get();
     findEndCommentary(loc);
+}
+
+bool isEndOfLine(LocatableStream& m_stream, Locatable& loc) {
+    switch (m_stream.peek()) {
+        case '\n':
+            return true;
+        case '\r':
+        {
+            if (m_stream.peek() == '\n') {
+                m_stream.get();
+                return true;
+            } else {
+                return true;
+            }
+        }
+        case EOF:
+        {
+            errorloc(loc, "Line commentary was not closed!");
+            return false;
+        }
+    }
+    return false;
+}
+
+void Lexer::findEndLineCommentary(Locatable& loc) {
+    char next_char = m_stream.peek();
+    bool multiline_comment = false;
+    if (next_char == '\\') {
+        m_stream.get();
+        multiline_comment = true;
+    }
+    m_stream.get();
+    if (isEndOfLine(m_stream, loc) && !multiline_comment) {
+        return;
+    }
+    findEndLineCommentary(loc);
 }
 
 
