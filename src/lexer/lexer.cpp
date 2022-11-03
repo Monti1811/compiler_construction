@@ -9,8 +9,8 @@
 bool isNumber(char x);
 bool isAlphabetic(char x);
 bool isPunctuator(char x);
-bool isCommentaryLine(LocatableStream& m_stream);
-bool isCommentaryMultiLine(LocatableStream& m_stream);
+bool isCommentLine(LocatableStream& m_stream);
+bool isCommentMultiLine(LocatableStream& m_stream);
 
 
 //TODO omitted tokens should probably not stop the entire lexing process
@@ -51,13 +51,13 @@ Token Lexer::next() {
         return readNumberConstant();
     } else if (isAlphabetic(next_char)) {
         return readIdKeyword();
-    } else if (isCommentaryLine(m_stream)) {
+    } else if (isCommentLine(m_stream)) {
         m_stream.read(2);
-        findEndLineCommentary(loc);
+        findEndLineComment(loc);
         return next();
-    } else if (isCommentaryMultiLine(m_stream)) {
+    } else if (isCommentMultiLine(m_stream)) {
         m_stream.read(2);
-        findEndCommentary(loc);
+        findEndComment();
         return next();
     } else if (isPunctuator(next_char)) {
         return readPunctuator();
@@ -574,7 +574,7 @@ Token Lexer::readPunctuator() {
     }
 }
 
-void Lexer::findEndCommentary(Locatable& loc) {
+void Lexer::findCommentEnd(Locatable& loc) {
     if (m_stream.peek() == EOF) {
         fail("Multiline commentary was not closed!", loc);
     }
@@ -583,7 +583,7 @@ void Lexer::findEndCommentary(Locatable& loc) {
         return;
     }
     m_stream.get();
-    findEndCommentary(loc);
+    findCommentEnd(loc);
 }
 
 bool isEndOfLine(LocatableStream& m_stream, Locatable& loc) {
@@ -608,7 +608,7 @@ bool isEndOfLine(LocatableStream& m_stream, Locatable& loc) {
     return false;
 }
 
-void Lexer::findEndLineCommentary(Locatable& loc) {
+void Lexer::findLineCommentEnd(Locatable& loc) {
     char next_char = m_stream.peek();
     bool multiline_comment = false;
     if (next_char == '\\') {
@@ -619,7 +619,7 @@ void Lexer::findEndLineCommentary(Locatable& loc) {
     if (isEndOfLine(m_stream, loc) && !multiline_comment) {
         return;
     }
-    findEndLineCommentary(loc);
+    findLineCommentEnd(loc);
 }
 
 
@@ -662,10 +662,10 @@ bool isPunctuator(char x) {
     return false;
 }
 
-bool isCommentaryLine(LocatableStream& m_stream) {
+bool isCommentLine(LocatableStream& m_stream) {
     return m_stream.peek() == '/' && m_stream.peek_twice() == '/';
 }
 
-bool isCommentaryMultiLine(LocatableStream& m_stream) {
+bool isCommentMultiLine(LocatableStream& m_stream) {
     return m_stream.peek() == '/' && m_stream.peek_twice() == '*';
 }
