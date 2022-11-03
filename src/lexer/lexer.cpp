@@ -216,11 +216,6 @@ Token Lexer::readPunctuator() {
     char ch = m_stream.get();
     Locatable loc = m_stream.loc();
 
-    if (Token::isPunctuator(ch)) {
-        fail("Invalid punctuator", loc);
-        return eof();
-    }
-
     TokenKind kind = Token::getPunctuatorToken(ch);
     std::string symbol(1, ch);
 
