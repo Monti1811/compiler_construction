@@ -1,7 +1,6 @@
 #include "lexer.h"
 
 #include <string>
-#include <unordered_map>
 
 #include "../util/diagnostic.h"
 
