@@ -11,62 +11,56 @@ bool isNumber(char x);
 bool isAlphabetic(char x);
 
 Token Lexer::next() {
-    char next_char = m_stream.peek();
+    while (true) {
+        char next_char = m_stream.peek();
 
-    switch (next_char) {
-        case ' ':
-        case '\t':
-        case '\n':
-        case '\v':
-        {
-            m_stream.get();
-            return next();
-        }
-        case '\r': 
-        {
-            m_stream.get();
-            if (m_stream.peek() == '\n') {
+        switch (next_char) {
+            case ' ':
+            case '\t':
+            case '\n':
+            case '\v': {
+                // also includes `\r` (converted in LocatableStream)
                 m_stream.get();
+                continue;
             }
-            return next();
-        }       
-        case '\'':
-            return readCharConstant();
-        case '\"':
-            return readStringLiteral();
-        case EOF:
-            return eof();
-    }
+            case '\'':
+                return readCharConstant();
+            case '\"':
+                return readStringLiteral();
+            case EOF:
+                return eof();
+        }
 
-    // [0-9]
-    if (isNumber(next_char)) {
-        return readNumberConstant();
-    }
+        // [0-9]
+        if (isNumber(next_char)) {
+            return readNumberConstant();
+        }
 
-    // [a-zA-Z_]
-    if (isAlphabetic(next_char)) {
-        return readIdentOrKeyword();
-    }
-    
-    // `//`
-    if (m_stream.peek_str(2) == "//") {
-        readLineComment();
-        return next();
-    }
-    
-    // `/*`
-    if (m_stream.peek_str(2) == "/*") {
-        readMultiComment();
-        return next();
-    }
-    
-    // Special characters
-    if (Token::isPunctuator(next_char)) {
-        return readPunctuator();
-    }
+        // [a-zA-Z_]
+        if (isAlphabetic(next_char)) {
+            return readIdentOrKeyword();
+        }
 
-    fail("Unknown token");
-    return eof();
+        // `//`
+        if (m_stream.peek_str(2) == "//") {
+            readLineComment();
+            continue;
+        }
+
+        // `/*`
+        if (m_stream.peek_str(2) == "/*") {
+            readMultiComment();
+            continue;
+        }
+
+        // Special characters
+        if (Token::isPunctuator(next_char)) {
+            return readPunctuator();
+        }
+
+        fail("Unknown token");
+        return eof();
+    }
 }
 
 Token Lexer::readIdentOrKeyword() {
