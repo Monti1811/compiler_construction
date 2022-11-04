@@ -18,9 +18,9 @@ char LocatableStream::get() {
     return c;
 }
 
-std::string LocatableStream::get_str(int length) {
+std::string LocatableStream::get_str(size_t length) {
     std::string str(length, '\0');
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         str.append(1, get());
     }
     return str;
@@ -47,10 +47,10 @@ char LocatableStream::peek(size_t offset) {
     return c;
 }
 
-std::string LocatableStream::peek_str(int length) {
+std::string LocatableStream::peek_str(size_t length) {
     std::string str(length, '\0');
     m_stream.read(&str[0], length);
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         m_stream.unget();
     }
     return str;
