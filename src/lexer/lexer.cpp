@@ -246,7 +246,7 @@ Token Lexer::readPunctuator() {
         case TK_PLUS: {
             switch (m_stream.peek()) {
                 case '+':
-                    setToken(TokenKind::TK_PLUSPLUS);
+                    setToken(TokenKind::TK_PLUS_PLUS);
                     break;
                 case '=':
                     setToken(TokenKind::TK_PLUS_EQUAL);
@@ -254,11 +254,14 @@ Token Lexer::readPunctuator() {
             }
             break;
         } 
-        // Check if it's '-', '--' or '-='
+        // Check if it's '-', '->', '--' or '-='
         case TK_MINUS: {
             switch (m_stream.peek()) {
+                case '>':
+                    setToken(TokenKind::TK_ARROW);
+                    break;
                 case '-':
-                    setToken(TokenKind::TK_MINUSMINUS);
+                    setToken(TokenKind::TK_MINUS_MINUS);
                     break;
                 case '=':
                     setToken(TokenKind::TK_MINUS_EQUAL);
@@ -282,7 +285,7 @@ Token Lexer::readPunctuator() {
         case TK_PIPE: {
             switch (m_stream.peek()) {
                 case '|':
-                    setToken(TokenKind::TK_OR_OR);
+                    setToken(TokenKind::TK_PIPE_PIPE);
                     break;
                 case '=':
                     setToken(TokenKind::TK_PIPE_EQUAL);
@@ -298,7 +301,7 @@ Token Lexer::readPunctuator() {
         }
         case TK_EQUAL: {
             if (m_stream.peek() == '=') {
-                setToken(TokenKind::TK_NOT_EQUAL);
+                setToken(TokenKind::TK_EQUAL_EQUAL);
             }
             break;
         }
@@ -348,7 +351,7 @@ Token Lexer::readPunctuator() {
                     if (m_stream.peek(1) == '=') {
                         setToken(TokenKind::TK_LESS_LESS_EQUAL, 2);
                     } else {
-                        setToken(TK_LESS_LESS);
+                        setToken(TokenKind::TK_LESS_LESS);
                     }
                     break;
                 }
