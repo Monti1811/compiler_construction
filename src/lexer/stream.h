@@ -12,14 +12,14 @@ class LocatableStream {
         , m_filename(filename) {}
 
     char get();
-    std::string getline();
-    char peek();
-    char peek_twice();
-    std::string read(int length);
-    std::string peek_forward(int length);
+    std::string get_str(size_t length);
+    std::string get_line();
+
+    char peek(size_t offset = 0);
+    std::string peek_str(size_t length);
 
     Locatable loc();
-    
+ 
    private:
     std::ifstream m_stream;
 

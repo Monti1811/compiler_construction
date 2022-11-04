@@ -5,49 +5,56 @@ char LocatableStream::get() {
     if (c == '\n') {
         m_column = 1;
         m_line++;
+    } else if (c == '\r') {
+        if (m_stream.peek() == '\n') {
+            m_stream.get();
+        }
+        c = '\n';
+        m_column = 1;
+        m_line++;
     } else {
         m_column++;
     }
     return c;
 }
 
-std::string LocatableStream::getline() {
-    std::string str;
-    m_stream.getline(&str[0], 512);
-    m_column++;
-    return str;
-}
-
-char LocatableStream::peek() {
-    return m_stream.peek();
-}
-
-char LocatableStream::peek_twice() {
-    m_stream.get();
-    char c = m_stream.peek();
-    m_stream.unget();
-    return c;
-}
-
-std::string LocatableStream::read(int length) {
+std::string LocatableStream::get_str(size_t length) {
     std::string str(length, '\0');
-    for (int i = 0; i < length; i++) {
+    for (size_t i = 0; i < length; i++) {
         str.append(1, get());
     }
     return str;
 }
 
-std::string LocatableStream::peek_forward(int length) {
-    std::string str(length, '\0');
-    m_stream.read(&str[0], length);
-    for (int i = 0; i < length; i++) {
-        m_stream.unget();
+std::string LocatableStream::get_line() {
+    std::string str;
+    char c = get();
+    while (c != '\n') {
+        str += c;
+        c = get();
     }
     return str;
 }
 
+char LocatableStream::peek(size_t offset) {
+    for (size_t i = 0; i < offset; i++) {
+        m_stream.get();
+    }
+    char c = m_stream.peek();
+    for (size_t i = 0; i < offset; i++) {
+        m_stream.unget();
+    }
+    return c;
+}
 
-
+std::string LocatableStream::peek_str(size_t length) {
+    std::string str(length, '\0');
+    m_stream.read(&str[0], length);
+    for (size_t i = 0; i < length; i++) {
+        m_stream.unget();
+    }
+    return str;
+}
 
 Locatable LocatableStream::loc() {
     return Locatable(m_filename, m_line, m_column);

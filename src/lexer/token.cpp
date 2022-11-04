@@ -23,7 +23,7 @@ std::ostream& operator<<(std::ostream& stream, const Token& tok) {
     return stream;
 }
 
-std::unordered_map<std::string, TokenKind> string_to_enum = {
+const std::unordered_map<std::string, TokenKind> KEYWORDS = {
     {"auto", TK_AUTO},
     {"break", TK_BREAK},
     {"case", TK_CASE},
@@ -70,11 +70,47 @@ std::unordered_map<std::string, TokenKind> string_to_enum = {
     {"_Thread_local", TK__THREAD_LOCAL},
 };
 
-bool Token::containsKeyword(std::string str) {
+bool Token::isKeyword(std::string str) {
     // Checks the map to see if the token exists
-    return string_to_enum.count(str) > 0;
+    return KEYWORDS.count(str) > 0;
 }
 
 TokenKind Token::getKeywordToken(std::string str) {
-    return string_to_enum[str];
+    return KEYWORDS.at(str);
+}
+
+const std::unordered_map<char, TokenKind> PUNCTUATORS = {
+    {'*', TK_ASTERISK},
+    {',', TK_COMMA},
+    {';', TK_SEMICOLON},
+    {'(', TK_LPAREN},
+    {')', TK_RPAREN},
+    {'{', TK_LBRACE},
+    {'}', TK_RBRACE},
+    {'[', TK_LBRACKET},
+    {']', TK_RBRACKET},
+    {'?', TK_QUESTION_MARK},
+    {'.', TK_DOT},
+    {'#', TK_POUND},
+    {'+', TK_PLUS},
+    {'-', TK_MINUS},
+    {'&', TK_AND},
+    {'|', TK_PIPE},
+    {'~', TK_TILDE},
+    {'!', TK_BANG},
+    {'=', TK_EQUAL},
+    {':', TK_COLON},
+    {'^', TK_HAT},
+    {'/', TK_SLASH},
+    {'%', TK_PERCENT},
+    {'<', TK_LESS},
+    {'>', TK_GREATER},
+};
+
+bool Token::isPunctuator(char ch) {
+    return PUNCTUATORS.count(ch) > 0;
+}
+
+TokenKind Token::getPunctuatorToken(char ch) {
+    return PUNCTUATORS.at(ch);
 }

@@ -17,16 +17,21 @@ class Lexer {
     Token next();
 
    private:
+    Token readIdentOrKeyword();
+
     char readEscapeChar();
     Token readCharConstant();
     Token readNumberConstant();
+
     Token readStringLiteral();
-    Token readIdKeyword();
+
     Token readPunctuator();
-    void findEndCommentary(Locatable& loc);
-    void findEndLineCommentary(Locatable& loc);
+
+    void readMultiComment();
+    void readLineComment();
 
     Token eof();
+    template<typename T> Token makeToken(Locatable loc, TokenKind kind, T symbol);
 
     void fail(std::string message);
     void fail(std::string message, Locatable& loc);
