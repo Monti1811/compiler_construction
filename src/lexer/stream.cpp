@@ -40,10 +40,10 @@ std::string LocatableStream::get_str(size_t length) {
 
 std::string LocatableStream::get_line() {
     std::string str;
-    char c = get();
-    while (c != '\n') {
+    char c = get_or_eof();
+    while (c != '\n' && c != '\0') {
         str += c;
-        c = get();
+        c = get_or_eof();
     }
     return str;
 }
