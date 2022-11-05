@@ -112,7 +112,7 @@ unsigned char Lexer::readEscapeChar() {
             fail("Unexpected end of file");
             return '\0';
         default:
-            fail("Invalid escape sequence");
+            fail("Invalid escape sequence", loc);
             return '\0';
     }
 }
@@ -130,13 +130,13 @@ Token Lexer::readCharConstant() {
 
     switch (unsigned char c = m_stream.get()) {
         case '\0':
-            fail("String literal is not terminated", loc);
+            fail("Unexpected end of file", loc);
             break;
         case '\'':
-            fail("Character literals must not be empty");
+            fail("Character literals must not be empty", loc);
             break;
         case '\n':
-            fail("Character literals must not contain a newline");
+            fail("Character literals must not contain a newline", loc);
             break;
         case '\\': {
             inner += c;
