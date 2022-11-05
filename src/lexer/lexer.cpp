@@ -12,13 +12,12 @@ bool isAlphabetic(char x);
 Token Lexer::next() {
     while (true) {
         char next_char = m_stream.peek();
-
         switch (next_char) {
             case ' ':
             case '\t':
             case '\n':
+            case '\r':
             case '\v': {
-                // also includes `\r` (converted in LocatableStream)
                 m_stream.get();
                 continue;
             }
