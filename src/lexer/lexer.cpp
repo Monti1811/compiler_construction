@@ -40,16 +40,16 @@ Token Lexer::next() {
             return readIdentOrKeyword();
         }
 
-        // `//`
-        if (m_stream.peek_str(2) == "//") {
-            readLineComment();
-            continue;
-        }
-
-        // `/*`
-        if (m_stream.peek_str(2) == "/*") {
-            readMultiComment();
-            continue;
+        // Comments
+        if (next_char == '/') {
+            unsigned char comment_char = m_stream.peek(1);
+            if (comment_char == '/') {
+                readLineComment();
+                continue;
+            } else if (comment_char == '*') {
+                readMultiComment();
+                continue;
+            }
         }
 
         // Special characters
@@ -112,7 +112,7 @@ unsigned char Lexer::readEscapeChar() {
             fail("Unexpected end of file");
             return '\0';
         default:
-            fail("Invalid escape sequence", loc);
+            fail("Invalid escape sequence");
             return '\0';
     }
 }
@@ -130,13 +130,13 @@ Token Lexer::readCharConstant() {
 
     switch (unsigned char c = m_stream.get()) {
         case '\0':
-            fail("Unexpected end of file", loc);
+            fail("String literal is not terminated", loc);
             break;
         case '\'':
-            fail("Character literals must not be empty", loc);
+            fail("Character literals must not be empty");
             break;
         case '\n':
-            fail("Character literals must not contain a newline", loc);
+            fail("Character literals must not contain a newline");
             break;
         case '\\': {
             inner += c;
