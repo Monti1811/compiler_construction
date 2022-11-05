@@ -6,12 +6,13 @@
 
 // Helper functions
 
-bool isNumber(char x);
-bool isAlphabetic(char x);
+bool isNumber(unsigned char x);
+bool isAlphabetic(unsigned char x);
 
 Token Lexer::next() {
     while (true) {
-        char next_char = m_stream.peek();
+        unsigned char next_char = m_stream.peek();
+
         switch (next_char) {
             case ' ':
             case '\t':
@@ -25,7 +26,7 @@ Token Lexer::next() {
                 return readCharConstant();
             case '\"':
                 return readStringLiteral();
-            case EOF:
+            case '\0':
                 return eof();
         }
 
@@ -69,7 +70,7 @@ Token Lexer::readIdentOrKeyword() {
     std::string str;
 
     // Add the first read character to the buffer
-    char next_char = m_stream.get();
+    unsigned char next_char = m_stream.get();
     str += next_char;
 
     // While there is still another valid char, add it to the buffer
@@ -91,10 +92,10 @@ Token Lexer::readIdentOrKeyword() {
     return makeToken(loc, kind, str);
 }
 
-char Lexer::readEscapeChar() {
+unsigned char Lexer::readEscapeChar() {
     Locatable loc = m_stream.loc();
 
-    switch(char c = m_stream.get()) {
+    switch(unsigned char c = m_stream.get()) {
         case '\'':
         case '"':
         case '?':
@@ -107,12 +108,12 @@ char Lexer::readEscapeChar() {
         case 't':
         case 'v':
             return c;
-        case EOF:
+        case '\0':
             fail("Unexpected end of file");
-            return EOF;
+            return '\0';
         default:
             fail("Invalid escape sequence", loc);
-            return EOF;
+            return '\0';
     }
 }
 
@@ -127,8 +128,8 @@ Token Lexer::readCharConstant() {
     // i.e: "\" + "n" != "\n"
     std::string inner;
 
-    switch (char c = m_stream.get()) {
-        case EOF:
+    switch (unsigned char c = m_stream.get()) {
+        case '\0':
             fail("Unexpected end of file", loc);
             break;
         case '\'':
@@ -157,7 +158,7 @@ Token Lexer::readCharConstant() {
 Token Lexer::readNumberConstant() {
     // Save location
     Locatable loc = m_stream.loc();
-    char next_char_val = m_stream.get();
+    unsigned char next_char_val = m_stream.get();
     // Check if the character is a 0 
     if (next_char_val == '0') {
         return makeToken(loc, TokenKind::TK_ZERO_CONSTANT, next_char_val);
@@ -167,7 +168,7 @@ Token Lexer::readNumberConstant() {
         std::string num;
         // Add the first read character to the buffer
         num += next_char_val;
-        char next_char = m_stream.peek();
+        unsigned char next_char = m_stream.peek();
         // While there is still another number, add it to the buffer and go to the next character
         while (isNumber(next_char)) {
             num += next_char;
@@ -188,9 +189,9 @@ Token Lexer::readStringLiteral() {
 
     std::string inner;
 
-    char c = m_stream.get();
+    unsigned char c = m_stream.get();
     while (c != '"') {
-        if (c == EOF) {
+        if (c == '\0') {
             fail("Unexpected end of file", loc);
         }
 
@@ -398,7 +399,7 @@ void Lexer::readMultiComment() {
     m_stream.get_str(2);
 
     while (true) {
-        char c = m_stream.get();
+        unsigned char c = m_stream.get();
 
         if (c == '*') {
             while (true) {
@@ -411,7 +412,7 @@ void Lexer::readMultiComment() {
             }
         }
 
-        if (c == EOF) {
+        if (c == '\0') {
             fail("Multiline comment was not closed", loc);
         }
     }
@@ -444,11 +445,11 @@ void Lexer::fail(std::string message, Locatable& loc) {
 // Helpers
 
 // Checks if wether x is between 0 and 9 in ascii
-bool isNumber(char x) {
+bool isNumber(unsigned char x) {
     return (x >= '0' && x <= '9');
 }
 
 // Checks if a the character is a lower/uppercase letter or underscore
-bool isAlphabetic(char x) {
+bool isAlphabetic(unsigned char x) {
     return (x == '_') || (x >= 'a' && x <= 'z') || (x >= 'A' && x <= 'Z');
 }

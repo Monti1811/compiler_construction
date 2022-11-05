@@ -1,7 +1,18 @@
 #include "stream.h"
 
-char LocatableStream::get() {
-    char c = m_stream.get();
+unsigned char LocatableStream::get_or_eof() {
+    unsigned char c = m_stream.get();
+
+    if (m_stream.eof()) {
+        return '\0';
+    }
+
+    return c;
+}
+
+unsigned char LocatableStream::get() {
+    char c = get_or_eof();
+
     if (c == '\n') {
         m_column = 1;
         m_line++;
@@ -15,13 +26,14 @@ char LocatableStream::get() {
     } else {
         m_column++;
     }
+
     return c;
 }
 
 std::string LocatableStream::get_str(size_t length) {
     std::string str(length, '\0');
     for (size_t i = 0; i < length; i++) {
-        str.append(1, get());
+        str += get();
     }
     return str;
 }
@@ -36,12 +48,12 @@ std::string LocatableStream::get_line() {
     return str;
 }
 
-char LocatableStream::peek(size_t offset) {
+unsigned char LocatableStream::peek(size_t offset) {
     for (size_t i = 0; i < offset; i++) {
-        m_stream.get();
+        get_or_eof();
     }
-    char c = m_stream.peek();
-    for (size_t i = 0; i < offset; i++) {
+    char c = get_or_eof();
+    for (size_t i = 0; i <= offset; i++) {
         m_stream.unget();
     }
     return c;
