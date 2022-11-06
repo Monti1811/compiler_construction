@@ -1,0 +1,2 @@
+1:1: string-literal "the char ÿ is annoying"
+2:1: char-constant 'ÿ'

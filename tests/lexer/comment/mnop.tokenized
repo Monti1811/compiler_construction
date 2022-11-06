@@ -1,0 +1,6 @@
+1:1: identifier m
+1:3: punctuator =
+1:5: identifier n
+2:5: punctuator +
+2:7: identifier p
+2:8: punctuator ;

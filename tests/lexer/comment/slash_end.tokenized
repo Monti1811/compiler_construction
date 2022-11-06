@@ -1,0 +1,6 @@
+1:1: identifier f
+1:3: punctuator =
+1:5: identifier g
+1:10: punctuator /
+1:11: identifier h
+1:12: punctuator ;
