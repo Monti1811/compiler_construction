@@ -23,14 +23,20 @@ while len(sys.argv) > argIdx and sys.argv[argIdx][:2] == "--":
         verbose = True
     elif arg == "full-diff":
         fullDiff = True
+    elif arg == "help":
+        print(f"Usage: {sys.argv[0]} [--verbose|--full-diff] [filters...]")
+        print("    --verbose    Always show explanation for failed tests")
+        print("    --full-diff  Show a more detailed diff for failed tests")
+        print("    filters      Only run tests whose name matches one of these filters")
+        exit(0)
     argIdx += 1
 
-def shouldRunTest(file: str):
-    result: list[str] = sys.argv[1:]
-    result = map(lambda filter: filter in file, result)
-    return any(result)
+filters = sys.argv[argIdx:]
 
-if len(sys.argv) > 1:
+def shouldRunTest(file: str):
+    return any(map(lambda filter: filter in file, filters))
+
+if len(filters) > 0:
     tests = list(filter(shouldRunTest, tests))
 
 if len(tests) == 1:
@@ -97,21 +103,36 @@ def runTokenizeTest(file: str) -> "None | str":
 
     return "\n".join(result)
 
+successCount, failedCount, skippedCount = 0, 0, 0
+
 def runTest(file: str):
-    print(f"[{file[6:]}] ... ", end = "")
+    global successCount, failedCount, skippedCount
+
+    print(f"\033[94m{file[6:]}\033[90m ... \033[0m", end = "")
 
     tokenizeResult: "None | str" = runTokenizeTest(file)
 
     if tokenizeResult == None:
         print("\033[93mSKIPPED\033[0m")
+        skippedCount += 1
     elif tokenizeResult != "":
         print("\033[91mFAILED (tokenize)\033[0m")
         if verbose or fullDiff:
             print(tokenizeResult)
+        failedCount += 1
     else:
         print("\033[92mOK\033[0m")
+        successCount += 1
 
 make()
 
 for test in tests:
-    runTest(test)
+    result = runTest(test)
+
+print(f"""\033[97m{len(tests)} tests executed: \
+\033[92m{successCount} ok\033[97m, \
+\033[91m{failedCount} failed\033[97m, \
+\033[93m{skippedCount} skipped\033[97m.\033[0m""")
+
+if failedCount > 0:
+    exit(1)
