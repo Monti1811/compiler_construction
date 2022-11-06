@@ -11,16 +11,18 @@ class LocatableStream {
         : m_stream(std::ifstream(filename))
         , m_filename(filename) {}
 
-    char get();
+    unsigned char get();
     std::string get_str(size_t length);
     std::string get_line();
 
-    char peek(size_t offset = 0);
+    unsigned char peek(size_t offset = 0);
     std::string peek_str(size_t length);
 
     Locatable loc();
- 
+
    private:
+    unsigned char get_or_eof();
+
     std::ifstream m_stream;
 
     std::string const& m_filename;

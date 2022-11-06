@@ -19,7 +19,7 @@ class Lexer {
    private:
     Token readIdentOrKeyword();
 
-    char readEscapeChar();
+    unsigned char readEscapeChar();
     Token readCharConstant();
     Token readNumberConstant();
 
