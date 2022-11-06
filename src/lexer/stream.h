@@ -19,7 +19,7 @@ class LocatableStream {
     std::string peek_str(size_t length);
 
     Locatable loc();
- 
+
    private:
     unsigned char get_or_eof();
 

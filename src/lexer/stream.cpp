@@ -33,17 +33,17 @@ unsigned char LocatableStream::get() {
 std::string LocatableStream::get_str(size_t length) {
     std::string str(length, '\0');
     for (size_t i = 0; i < length; i++) {
-        str += get();
+        str[i] = get();
     }
     return str;
 }
 
 std::string LocatableStream::get_line() {
     std::string str;
-    char c = get_or_eof();
+    char c = get();
     while (c != '\n' && c != '\0') {
         str += c;
-        c = get_or_eof();
+        c = get();
     }
     return str;
 }
