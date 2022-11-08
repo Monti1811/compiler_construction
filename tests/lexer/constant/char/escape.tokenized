@@ -1,0 +1,5 @@
+1:1: constant '\r'
+1:5: constant '\r'
+1:9: constant '\n'
+1:13: constant '\''
+1:17: constant '\t'

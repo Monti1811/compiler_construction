@@ -1,0 +1,5 @@
+1:1: constant 42
+1:5: keyword if
+2:2: string-literal "bla\n"
+2:9: identifier x
+2:10: punctuator +

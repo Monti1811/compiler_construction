@@ -1,0 +1,7 @@
+1:1: keyword int
+1:5: identifier x
+1:7: punctuator =
+1:9: constant 5
+1:10: punctuator ;
+2:1: string-literal "1"
+3:1: string-literal "2"
