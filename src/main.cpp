@@ -24,7 +24,11 @@ int main(int argc, char const* argv[]) {
                 cout << token << std::endl;
                 token = lexer.next();
             }
-        }
+        } else if (strcmp(argv[i], "--parse") == 0) {
+            // TODO
+        } else if (strcmp(argv[i], "--print-ast") == 0) {
+            // TODO
+        }    
     }
     
 
