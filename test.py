@@ -158,7 +158,7 @@ def runTest(file: str):
     elif formatResult != None and formatResult != "":
         print("\033[91mFAILED (format)\033[0m")
         if verbose or fullDiff:
-            print(parseResult)
+            print(formatResult)
         failedCount += 1
     else:
         print("\033[92mOK\033[0m")
