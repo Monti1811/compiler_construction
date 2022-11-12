@@ -111,10 +111,13 @@ def runTokenizeTest(file: str) -> "None | str":
 
 def runParseTest(file: str) -> "None | str":
     expectedFile: str = f"{file}.parsed"
+    formattedFile: str = f"{file}.formatted"
 
     expected = ["", "", 0]
     if os.path.exists(expectedFile):
         expected = formatExpected(file, expectedFile)
+    elif not os.path.exists(formattedFile):
+        return None
     
     actual = runCompiler("--parse", file)
 
