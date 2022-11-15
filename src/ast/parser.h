@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../lexer/token.h"
+#include "../util/diagnostic.h"
 
 #include "declarator.h"
 

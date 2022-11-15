@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../util/diagnostic.h"
+#include "../util/symbol_internalizer.h"
 
 struct Declarator {
     bool isEmptyDeclarator();
