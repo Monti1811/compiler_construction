@@ -4,6 +4,15 @@
 #include "../lexer/token.h"
 #include "specifier.h"
 
+
+
+Parser::Parser(Lexer& lexer) : _lexer(lexer) {
+    _currentToken = _lexer.next();
+    if (_currentToken.Kind != TokenKind::TK_EOI) {
+        _nextToken = _lexer.next();
+    }
+};
+
 SpecDecl* Parser::parseSpecDecl(DeclKind dKind) {
     Specifier* spec = nullptr;
     Locatable loc(getLoc());
@@ -105,4 +114,46 @@ Declarator* Parser::parseDeclarator(void) {
         expect(TK_RPAREN, ")");
     }
     return res;
+}
+
+void Parser::popToken() {
+    if (_currentToken.Kind == TokenKind::TK_EOI) {
+        errorloc(getLoc(), "Parsing State cannot be advance - unexpected end of input");
+    }
+    _currentToken = _nextToken;
+    if (_currentToken.Kind != TokenKind::TK_EOI) {
+        _nextToken = _lexer.next();
+    }
+}
+
+const Token& Parser::peekToken() {
+    return _currentToken;
+}
+
+const Locatable& Parser::getLoc() {
+    return Locatable(_currentToken);
+}
+
+void Parser::expect(TokenKind tk, const char* txt) {
+    if (_currentToken.Kind == tk) {
+        popToken();
+    } else {
+        errorloc(getLoc(), "TokenKind " + std::string(txt) + " was expected, but something else occured");
+    }
+}
+
+bool Parser::accept(TokenKind tk) {
+    if (_currentToken.Kind == tk) {
+        popToken();
+        return true;
+    }
+    return false;
+}
+
+bool Parser::check(TokenKind tk) {
+    return _currentToken.Kind == tk;
+}
+
+bool Parser::checkLookAhead(TokenKind tk) {
+    return _nextToken.Kind == tk;
 }

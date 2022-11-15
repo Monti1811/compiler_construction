@@ -1,4 +1,6 @@
 #pragma once
+#include "lexer.h"
+#include "token.h"
 
 // Declarators and abstract declarators share a lot of syntactical and
 // semantical properties. Therefore, we use the same AST data structures to
@@ -11,7 +13,11 @@ enum class DeclKind { ANY, ABSTRACT, CONCRETE };
 /// into an abstract syntax tree.
 class Parser {
    public:
+    Parser(Lexer& lexer);
    private:
+    Lexer& _lexer;
+    Token _currentToken;
+    Token _nextToken;
     /// Advance the parsing state to the next token.
     void popToken(void);
 
