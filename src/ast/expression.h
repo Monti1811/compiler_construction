@@ -50,35 +50,51 @@ struct StringLiteralExpression: public PrimaryExpression {
     const char* value;
 };
 
-struct PostfixExpression {};
+struct PostfixExpression: public PrimaryExpression {};
 
 struct BasePostfixExpression: public PostfixExpression {
     // TODO: this is not necessary
-    PrimaryExpression inner;
+    public:
+    BasePostfixExpression(PrimaryExpression inner) : _inner(inner) {};
+    private:
+    PrimaryExpression _inner;
 };
 
 struct IndexExpression: public PostfixExpression {
     // expression[index]
-    PostfixExpression expression;
-    Expression index;
+    public:
+    IndexExpression(PostfixExpression expression, Expression index) : _expression(expression), _index(index) {};
+    private:
+    PostfixExpression _expression;
+    Expression _index;
 };
 
 struct CallExpression: public PostfixExpression {
     // expression(args)
-    PostfixExpression expression;
-    std::vector<AssignmentExpression> arguments;
+    public:
+    CallExpression(PostfixExpression expression, std::vector<Expression> arguments) : _expression(expression), _arguments(arguments) {};
+    private:
+    PostfixExpression _expression;
+    std::vector<Expression> _arguments;
 };
 
 struct DotExpression: public PostfixExpression {
     // expression.ident
-    PostfixExpression expression;
-    IdentExpression ident;
+    public:
+    DotExpression(PostfixExpression expression, IdentExpression ident) : _expression(expression), _ident(ident) {};
+    private:
+    PostfixExpression _expression;
+    IdentExpression _ident;
 };
 
 struct ArrowExpression: public PostfixExpression {
     // expression->ident
-    PostfixExpression expression;
-    IdentExpression ident;
+    // expression.ident
+    public:
+    ArrowExpression(PostfixExpression expression, IdentExpression ident) : _expression(expression), _ident(ident) {};
+    private:
+    PostfixExpression _expression;
+    IdentExpression _ident;
 };
 
 struct UnaryExpression {};

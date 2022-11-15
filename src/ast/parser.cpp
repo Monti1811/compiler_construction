@@ -3,6 +3,7 @@
 #include "../util/diagnostic.h"
 #include "../lexer/token.h"
 #include "specifier.h"
+#include <optional>
 
 SpecDecl* Parser::parseSpecDecl(DeclKind dKind) {
     Specifier* spec = nullptr;
@@ -122,7 +123,7 @@ operator --- precedence level
 Expression Parser::parseExpression() {
 }
 
-Expression parsePrimaryExpression() {
+PrimaryExpression parsePrimaryExpression() {
     Token token = peekToken();
     Symbol sym = token.Text;
     switch(token.Kind) {
@@ -166,12 +167,60 @@ Expression parsePrimaryExpression() {
     }
 }
 
-Expression parsePostfixExpression() {
+Expression parsePostfixExpression(std::optional<PostfixExpression> postfixExpression = std::nullopt) {
+    // if there is no postfixExpression preceding the current token
+    // parse current token, as this has to be a primaryExpression either way
+    if (!postfixExpression) {
+        postfixExpression = BasePostfixExpression(parsePrimaryExpression());
+    }
+    Token token = peekToken();
+    switch (token.Kind) {
+        // [expr]
+        case TokenKind::TK_LBRACKET: 
+        {
+            popToken(); // accept [
+            Expression index = parseExpression(); // accept index
+            expectToken(TK_RBRACKET); // expect ]
+            IndexExpression newPostfixExpression(postfixExpression.value(), index);
+            return parsePostfixExpression(newPostfixExpression);
+        }
+        // function call (a_1, a_2, ...)
+        case TokenKind::TK_LPAREN:
+        {
+            popToken(); // accept (
+            std::vector<Expression> args = std::vector<Expression>();
+            while (peekToken().Kind != TokenKind::TK_RPAREN) { // argumente lesen bis )
+                Expression arg = parseExpression(); // parse a_i
+                accept(TK_COMMA); // accept ,
+                args.push_back(arg);
+            }
+            popToken(); // accept )
+            CallExpression newPostfixExpression(postfixExpression.value(), args);
+            return parsePostfixExpression(newPostfixExpression);
+        }
+        // .id
+        case TokenKind::TK_DOT:
+        {
+            popToken(); // accept .
+            expect(TK_IDENTIFIER); // expect id
+            IdentExpression ident(token.Text);
+            DotExpression newPostfixExpression(postfixExpression.value(), ident);
+            return parsePostfixExpression(newPostfixExpression);
+        }
+        // -> id
+        case TokenKind::TK_ARROW:
+        {
+            popToken(); // accept .
+            expect(TK_IDENTIFIER); // expect id
+            IdentExpression ident(token.Text);
+            ArrowExpression newPostfixExpression(postfixExpression.value(), ident);
+            return parsePostfixExpression(newPostfixExpression);
+        }
+        // no postfix found
+        default:
+        return postfixExpression.value();
+    }
 }
 
-bool isPrimaryExpression(TokenKind tk) {
-    return tk == TokenKind::TK_IDENTIFIER || tk == TokenKind::TK_ZERO_CONSTANT || tk == TokenKind::TK_DECIMAL_CONSTANT || tk == TokenKind::TK_CHARACTER_CONSTANT
-            || tk == TokenKind::TK_STRING_LITERAL || tk == TokenKind::TK_LPAREN;
-}
 
 
