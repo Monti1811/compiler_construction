@@ -106,3 +106,73 @@ Declarator* Parser::parseDeclarator(void) {
     }
     return res;
 }
+
+/*
+precedence table
+operator --- precedence level
+||              0
+&&              1
+==              2
+<               3
++               4
+-               4
+*               5
+*/
+
+Expression Parser::parseExpression() {
+}
+
+Expression parsePrimaryExpression() {
+    Token token = peekToken();
+    Symbol sym = token.Text;
+    switch(token.Kind) {
+        case TokenKind::TK_IDENTIFIER: 
+        {
+            IdentExpression expr(sym);
+            popToken();
+            return expr;
+        }
+        case TokenKind::TK_ZERO_CONSTANT: 
+        {
+            Expression expr = ZeroConstantExpression();
+            popToken();
+            return expr;
+        }
+        case TokenKind::TK_DECIMAL_CONSTANT: 
+        {
+            IntConstantExpression expr(sym);
+            popToken();
+            return expr;
+        }
+        case TokenKind::TK_CHARACTER_CONSTANT:
+        {
+            CharConstantExpression expr(sym);
+            popToken();
+            return expr;
+        }
+        case TokenKind::TK_STRING_LITERAL: 
+        {
+            StringLiteralExpression expr(sym);
+            popToken();
+            return expr;
+        }
+        case TokenKind::TK_LPAREN: 
+        {
+            popToken();
+            Expression expr = parseExpression();
+            expect(TokenKind::TK_RPAREN, ")");
+            return expr;
+        }
+    }
+}
+
+Expression parsePostfixExpression() {
+    
+}
+
+bool isPrimaryExpression(TokenKind tk) {
+    return tk == TokenKind::TK_IDENTIFIER || tk == TokenKind::TK_ZERO_CONSTANT || tk == TokenKind::TK_DECIMAL_CONSTANT || tk == TokenKind::TK_CHARACTER_CONSTANT
+            || tk == TokenKind::TK_STRING_LITERAL || tk == TokenKind::TK_LPAREN;
+}
+
+
