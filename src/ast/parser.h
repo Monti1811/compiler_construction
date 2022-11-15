@@ -1,4 +1,5 @@
 #pragma once
+#include "expression.h"
 
 // Declarators and abstract declarators share a lot of syntactical and
 // semantical properties. Therefore, we use the same AST data structures to
@@ -39,6 +40,8 @@ class Parser {
     /// return true iff this is the case. Keep the parsing state unchanged in
     /// both cases.
     bool checkLookAhead(TokenKind tk);
+
+    Expression parseExpression();
 
     /// Internal methods for use in parseSpecDecl()
     Declarator* parseDeclarator(void);

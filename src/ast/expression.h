@@ -1,29 +1,53 @@
 #include <vector>
+#include <string.h>
 
 #include "../util/diagnostic.h"
+#include "../util/symbol_internalizer.h"
 
 struct Expression: public Locatable {
+    public:
+    Expression() {};
     // TODO: Implement Locatable
 };
 
-struct PrimaryExpression {};
+struct PrimaryExpression: public Expression {};
 
 struct IdentExpression: public PrimaryExpression {
-    const char** ident;
+    public:
+    IdentExpression(Symbol id) : ident(*id) {};
+    private:
+    std::string ident;
 };
 
-struct ConstantExpression: public PrimaryExpression {};
+struct ConstantExpression: public PrimaryExpression {
+};
+
+struct ZeroConstantExpression: public ConstantExpression {
+    public:
+    ZeroConstantExpression() {};
+    private:
+    int value = 0;
+};
 
 struct IntConstantExpression: public ConstantExpression {
+    public:
+    IntConstantExpression(Symbol sym) : value( std::stoi(*sym)) {};
+    private:
     int value;
 };
 
 struct CharConstantExpression: public ConstantExpression {
+    public:
+    CharConstantExpression(Symbol sym) : value( std::stoi(*sym)) {};
+    private:
     char value;
 };
 
 struct StringLiteralExpression: public PrimaryExpression {
-    const char** value;
+    public:
+    StringLiteralExpression(Symbol sym) : value( (*sym).c_str() ) {};
+    private:
+    const char* value;
 };
 
 struct PostfixExpression {};
