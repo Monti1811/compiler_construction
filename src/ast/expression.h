@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vector>
 
 #include "../util/diagnostic.h"

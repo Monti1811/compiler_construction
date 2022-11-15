@@ -1,8 +1,6 @@
 #include "parser.h"
-#include "declarator.h"
+
 #include "../util/diagnostic.h"
-#include "../lexer/token.h"
-#include "specifier.h"
 
 SpecDecl* Parser::parseSpecDecl(DeclKind dKind) {
     Specifier* spec = nullptr;
