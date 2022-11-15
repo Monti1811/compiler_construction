@@ -167,7 +167,6 @@ Expression parsePrimaryExpression() {
 }
 
 Expression parsePostfixExpression() {
-    
 }
 
 bool isPrimaryExpression(TokenKind tk) {
