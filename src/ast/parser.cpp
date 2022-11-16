@@ -284,5 +284,103 @@ UnaryExpression parseUnaryExpression() {
     }
 }
 
+const int getPrecedenceLevel(TokenKind tk) {
+    switch (tk) {
+        case TK_PIPE_PIPE:
+        {
+            return 0;
+        }
+        case TK_AND_AND:
+        {
+            return 1;
+        }
+        case TK_EQUAL_EQUAL:
+        {
+            return 2;
+        }
+        case TK_LESS:
+        {
+            return 3;
+        }
+        case TK_PLUS:
+        {
+            return 4;
+        }
+        case TK_MINUS:
+        {
+            return 4;
+        }
+        case TK_ASTERISK:
+        {
+            return 5;
+        }
+        default: {
+            return -1;
+        }
+    }
+}
 
+BinaryExpression parseBinaryExpression(int minPrec = 0, std::optional<BinaryExpression> left = std::nullopt) {
+    
+    // compute unary expr
+    if (!left) {
+        left = BaseBinaryExpression(parseUnaryExpression());
+    }
+    
+    while (true) {
+        Token token = peekToken();
+        int precLevel = getPrecedenceLevel(token.Kind);
+
+        if (precLevel < minPrec) {
+            return left.value();
+        }
+
+        // since every binary Operator (that we handle) is left-associative
+        precLevel++;
+
+        popToken(); // accept binaryOp
+        BinaryExpression right = parseBinaryExpression(precLevel);
+        switch (token.Kind) {
+            // binaryOp = *
+            case TK_ASTERISK: {
+                MultiplyExpression multExpr(left.value(), right);
+                return parseBinaryExpression(0, multExpr);
+            }
+            // binaryOp = -
+            case TK_MINUS: {
+                SubstractExpression subExpr(left.value(), right);
+                return parseBinaryExpression(0, subExpr);
+            }
+            // binaryOp = +
+            case TK_PLUS: {
+                AddExpression addExpr(left.value(), right);
+                return parseBinaryExpression(0, addExpr);
+            }
+            // binaryOp = <
+            case TK_LESS: {
+                LessThanExpression lessThanExpr(left.value(), right);
+                return parseBinaryExpression(0, lessThanExpr);
+            }
+            // binaryOp ==
+            case TK_EQUAL_EQUAL: {
+                EqualExpression equalExpr(left.value(), right);
+                return parseBinaryExpression(0, equalExpr);
+            }
+            // binaryOp &&
+            case TK_AND_AND: {
+                BinaryLogicalAndExpression logAndExpr(left.value(), right);
+                return parseBinaryExpression(0, logAndExpr);
+            }
+            // binaryOp ||
+            case TK_PIPE_PIPE: {
+                BinaryLogicalOrExpression logOrExpr(left.value(), right);
+                return parseBinaryExpression(0, logOrExpr);
+            }
+            default: 
+            // no binary Op found
+                return left.value();
+        }
+    }
+
+}
 

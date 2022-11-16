@@ -90,7 +90,6 @@ struct DotExpression: public PostfixExpression {
 
 struct ArrowExpression: public PostfixExpression {
     // expression->ident
-    // expression.ident
     public:
     ArrowExpression(PostfixExpression expression, IdentExpression ident) : _expression(expression), _ident(ident) {};
     private:
@@ -156,52 +155,67 @@ struct LogicalNegationExpression: public UnaryExpression {
     UnaryExpression _inner;
 };
 
-struct MultiplicativeExpression {};
+struct BinaryExpression: public Expression {};
 
-struct BaseMultiplicativeExpression: public MultiplicativeExpression {
+struct BaseBinaryExpression: public BinaryExpression {
     // TODO: This is not necessary
-    UnaryExpression inner;
+    public:
+    BaseBinaryExpression(UnaryExpression inner) : _inner(inner) {};
+    private:
+    UnaryExpression _inner;
 };
 
-struct MultiplyExpression: public MultiplicativeExpression {
+struct MultiplyExpression: public BinaryExpression {
     // left * right
-    MultiplicativeExpression left;
-    UnaryExpression right;
+    public:
+    MultiplyExpression(BinaryExpression left, BinaryExpression right) : _left(left), _right(right) {};
+    private:
+    BinaryExpression _left;
+    BinaryExpression _right;
 };
 
-struct AdditiveExpression {};
+struct AdditiveExpression: public BinaryExpression {};
 
 struct BaseAdditiveExpression: public AdditiveExpression {
     // TODO: This is not necessary
-    MultiplicativeExpression inner;
+    BinaryExpression inner;
 };
 
 struct AddExpression: public AdditiveExpression {
     // left + right
-    AdditiveExpression left;
-    MultiplicativeExpression right;
+    public:
+    AddExpression(BinaryExpression left, BinaryExpression right) : _left(left), _right(right) {};
+    private:
+    BinaryExpression _left;
+    BinaryExpression _right;
 };
 
 struct SubstractExpression: public AdditiveExpression {
     // left - right
-    AdditiveExpression left;
-    MultiplicativeExpression right;
+    public:
+    SubstractExpression(BinaryExpression left, BinaryExpression right) : _left(left), _right(right) {};
+    private:
+    BinaryExpression _left;
+    BinaryExpression _right;
 };
 
-struct RelationalExpression {};
+struct RelationalExpression: public BinaryExpression {};
 
 struct BaseRelationalExpression: public RelationalExpression {
     // TODO
-    AdditiveExpression inner;
+    BinaryExpression inner;
 };
 
 struct LessThanExpression: public RelationalExpression {
     // left < right
-    RelationalExpression left;
-    AdditiveExpression right;
+    public:
+    LessThanExpression(BinaryExpression left, BinaryExpression right) : _left(left), _right(right) {};
+    private:
+    BinaryExpression _left;
+    BinaryExpression _right;
 };
 
-struct EqualityExpression {};
+struct EqualityExpression: public BinaryExpression {};
 
 struct BaseEqualityExpression: public EqualityExpression {
     // TODO
@@ -210,17 +224,23 @@ struct BaseEqualityExpression: public EqualityExpression {
 
 struct EqualExpression: public EqualityExpression {
     // left == right
-    EqualityExpression left;
-    RelationalExpression right;
+    public:
+    EqualExpression(BinaryExpression left, BinaryExpression right) : _left(left), _right(right) {};
+    private:
+    BinaryExpression _left;
+    BinaryExpression _right;
 };
 
 struct UnequalExpression: public EqualityExpression {
     // left != right
-    EqualityExpression left;
-    RelationalExpression right;
+    public:
+    UnequalExpression(BinaryExpression left, BinaryExpression right) : _left(left), _right(right) {};
+    private:
+    BinaryExpression _left;
+    BinaryExpression _right;
 };
 
-struct LogicalAndExpression {};
+struct LogicalAndExpression: public BinaryExpression {};
 
 struct BaseLogicalAndExpression: public LogicalAndExpression {
     // TODO
@@ -229,21 +249,26 @@ struct BaseLogicalAndExpression: public LogicalAndExpression {
 
 struct BinaryLogicalAndExpression: public LogicalAndExpression {
     // left && right
-    LogicalAndExpression left;
-    EqualityExpression right;
+    public:
+    BinaryLogicalAndExpression(BinaryExpression left, BinaryExpression right) : _left(left), _right(right) {};
+    private:
+    BinaryExpression _left;
+    BinaryExpression _right;
 };
 
-struct LogicalOrExpression {};
+struct LogicalOrExpression: public BinaryExpression {};
 
 struct BaseLogicalOrExpression: public LogicalOrExpression {
     // TODO
-    LogicalAndExpression inner;
 };
 
 struct BinaryLogicalOrExpression: public LogicalOrExpression {
     // left && right
-    LogicalOrExpression left;
-    LogicalAndExpression right;
+    public:
+    BinaryLogicalOrExpression(BinaryExpression left, BinaryExpression right) : _left(left), _right(right) {};
+    private:
+    BinaryExpression _left;
+    BinaryExpression _right;
 };
 
 struct ConditionalExpression {};
