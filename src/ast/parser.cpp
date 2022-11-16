@@ -323,6 +323,7 @@ const int getPrecedenceLevel(TokenKind tk) {
 BinaryExpression parseBinaryExpression(int minPrec = 0, std::optional<BinaryExpression> left = std::nullopt) {
     
     // compute unary expr
+    // inbetween operators there has to be a unary expr
     if (!left) {
         left = BaseBinaryExpression(parseUnaryExpression());
     }
@@ -331,7 +332,7 @@ BinaryExpression parseBinaryExpression(int minPrec = 0, std::optional<BinaryExpr
         Token token = peekToken();
         int precLevel = getPrecedenceLevel(token.Kind);
 
-        if (precLevel < minPrec) {
+        if (minPrec > precLevel) {
             return left.value();
         }
 
