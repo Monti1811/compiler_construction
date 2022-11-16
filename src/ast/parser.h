@@ -2,6 +2,11 @@
 #include "lexer.h"
 #include "token.h"
 
+#include "../lexer/token.h"
+#include "../util/diagnostic.h"
+
+#include "declarator.h"
+
 // Declarators and abstract declarators share a lot of syntactical and
 // semantical properties. Therefore, we use the same AST data structures to
 // represent both. If at some place, a specific kind of declarators is required

@@ -1,6 +1,9 @@
+#pragma once
+
 #include <vector>
 
 #include "../util/diagnostic.h"
+#include "../util/symbol_internalizer.h"
 
 struct Expression: public Locatable {
     // TODO: Implement Locatable
@@ -9,7 +12,7 @@ struct Expression: public Locatable {
 struct PrimaryExpression {};
 
 struct IdentExpression: public PrimaryExpression {
-    const char** ident;
+    Symbol ident;
 };
 
 struct ConstantExpression: public PrimaryExpression {};
@@ -23,7 +26,7 @@ struct CharConstantExpression: public ConstantExpression {
 };
 
 struct StringLiteralExpression: public PrimaryExpression {
-    const char** value;
+    Symbol value;
 };
 
 struct PostfixExpression {};

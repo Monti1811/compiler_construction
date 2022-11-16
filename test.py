@@ -10,6 +10,7 @@ from typing import Tuple
 COMPILER_PATH = "./build/debug/c4"
 verbose = False
 fullDiff = False
+ci = False
 
 tests: "list[str]" = list()
 
@@ -23,6 +24,8 @@ while len(sys.argv) > argIdx and sys.argv[argIdx][:2] == "--":
         verbose = True
     elif arg == "full-diff":
         fullDiff = True
+    elif arg == "ci":
+        ci = True
     elif arg == "help":
         print(f"Usage: {sys.argv[0]} [--verbose|--full-diff] [filters...]")
         print("    --verbose    Always show explanation for failed tests")
@@ -111,10 +114,13 @@ def runTokenizeTest(file: str) -> "None | str":
 
 def runParseTest(file: str) -> "None | str":
     expectedFile: str = f"{file}.parsed"
+    formattedFile: str = f"{file}.formatted"
 
     expected = ["", "", 0]
     if os.path.exists(expectedFile):
         expected = formatExpected(file, expectedFile)
+    elif not os.path.exists(formattedFile):
+        return None
     
     actual = runCompiler("--parse", file)
 
@@ -164,7 +170,8 @@ def runTest(file: str):
         print("\033[92mOK\033[0m")
         successCount += 1
 
-make()
+if not ci:
+    make()
 
 for test in tests:
     result = runTest(test)

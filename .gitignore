@@ -69,3 +69,6 @@ llvm/
 *.out
 *.app
 
+# VS Code settings
+.vscode
+*.code-workspace

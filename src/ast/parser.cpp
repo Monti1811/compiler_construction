@@ -1,8 +1,32 @@
 #include "parser.h"
-#include "declarator.h"
-#include "../util/diagnostic.h"
-#include "../lexer/token.h"
-#include "specifier.h"
+
+void Parser::popToken() {
+    // TODO
+}
+
+const Token& Parser::peekToken() {
+    // TODO
+}
+
+const Locatable& Parser::getLoc() {
+    // TODO
+}
+
+void Parser::expect(TokenKind tk, const char* txt) {
+    // TODO
+}
+
+bool Parser::accept(TokenKind tk) {
+    // TODO
+}
+
+bool Parser::check(TokenKind tk) {
+    // TODO
+}
+
+bool Parser::checkLookAhead(TokenKind tk) {
+    // TODO
+}
 
 
 

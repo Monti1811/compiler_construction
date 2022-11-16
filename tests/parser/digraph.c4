@@ -1,0 +1,4 @@
+int a<:1:>;
+int test()<%
+    return 0;
+%> 
