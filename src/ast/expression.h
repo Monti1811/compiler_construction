@@ -3,6 +3,7 @@
 
 #include "../util/diagnostic.h"
 #include "../util/symbol_internalizer.h"
+#include "../lexer/token.h"
 
 struct Expression: public Locatable {
     public:
@@ -97,36 +98,62 @@ struct ArrowExpression: public PostfixExpression {
     IdentExpression _ident;
 };
 
-struct UnaryExpression {};
+struct UnaryExpression: public PostfixExpression {};
 
 struct BaseUnaryExpression: public UnaryExpression {
     // TODO: this is not necessary
-    PostfixExpression inner;
+    public:
+    BaseUnaryExpression(PostfixExpression inner) : _inner(inner) {};
+    private:
+    PostfixExpression _inner;
 };
 
 struct SizeofExpression: public UnaryExpression {
     // sizeof inner
-    UnaryExpression inner;
+    public:
+    SizeofExpression(UnaryExpression inner) : _inner(inner) {};
+    private:
+    UnaryExpression _inner;
+};
+
+struct SizeofTypeNameExpression: public UnaryExpression {
+    // sizeof inner
+    public:
+    SizeofTypeNameExpression(TokenKind typeName) : _typeName(typeName) {};
+    private:
+    TokenKind _typeName;
 };
 
 struct ReferenceExpression: public UnaryExpression {
     // &inner
-    UnaryExpression inner;
+    public:
+    ReferenceExpression(UnaryExpression inner) : _inner(inner) {};
+    private:
+    UnaryExpression _inner;
 };
 
 struct PointerExpression: public UnaryExpression {
     // *inner
-    UnaryExpression inner;
+    public:
+    PointerExpression(UnaryExpression inner) : _inner(inner) {};
+    private:
+    UnaryExpression _inner;
 };
 
 struct NegationExpression: public UnaryExpression {
     // -inner
-    UnaryExpression inner;
+    public:
+    NegationExpression(UnaryExpression inner) : _inner(inner) {};
+    private:
+    UnaryExpression _inner;
 };
 
 struct LogicalNegationExpression: public UnaryExpression {
     // !inner
-    UnaryExpression inner;
+    public:
+    LogicalNegationExpression(UnaryExpression inner) : _inner(inner) {};
+    private:
+    UnaryExpression _inner;
 };
 
 struct MultiplicativeExpression {};

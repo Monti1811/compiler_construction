@@ -167,7 +167,7 @@ PrimaryExpression parsePrimaryExpression() {
     }
 }
 
-Expression parsePostfixExpression(std::optional<PostfixExpression> postfixExpression = std::nullopt) {
+PostfixExpression parsePostfixExpression(std::optional<PostfixExpression> postfixExpression = std::nullopt) {
     // if there is no postfixExpression preceding the current token
     // parse current token, as this has to be a primaryExpression either way
     if (!postfixExpression) {
@@ -217,8 +217,70 @@ Expression parsePostfixExpression(std::optional<PostfixExpression> postfixExpres
             return parsePostfixExpression(newPostfixExpression);
         }
         // no postfix found
+        // postFixExpressionFinished
         default:
         return postfixExpression.value();
+    }
+}
+
+UnaryExpression parseUnaryExpression() {
+    Token token = peekToken();
+    switch (token.Kind) {
+        // &unaryexpr
+        case TokenKind::TK_AND:
+        {
+            popToken();
+            ReferenceExpression refExpr(parseUnaryExpression());
+            return refExpr;
+        }
+        // *unaryexpr
+        case TokenKind::TK_ASTERISK:
+        {
+            popToken();
+            PointerExpression pointerExpr(parseUnaryExpression());
+            return pointerExpr;
+        }
+        // -unaryexpr
+        case TokenKind::TK_MINUS:
+        {
+            popToken();
+            NegationExpression negExpr(parseUnaryExpression());
+            return negExpr;
+        }
+        // !unaryexpr
+        case TokenKind::TK_BANG:
+        {
+            popToken();
+            LogicalNegationExpression logNegExpr(parseUnaryExpression());
+            return logNegExpr;
+        }
+        // sizeof unaryexpr or sizeof (type-name)
+        case TokenKind::TK_SIZEOF:
+        {
+            popToken(); // accept sizeof
+            // check wether ( and type-name follows
+            if (check(TokenKind::TK_LPAREN) && 
+                (checkLookAhead(TK_CHAR) || checkLookAhead(TK_INT) || checkLookAhead(TK_SHORT) || checkLookAhead(TK_DOUBLE) || checkLookAhead(TK_FLOAT)
+                || checkLookAhead(TK_LONG) || checkLookAhead(TK_UNSIGNED) || checkLookAhead(TK_SIGNED))) 
+            // sizeof (type-name)
+            {
+                popToken(); // accept (
+                SizeofTypeNameExpression sizeOfExpr(peekToken().Kind);
+                popToken(); // accept type-name
+                expect(TokenKind::TK_RPAREN); // expect )
+                return sizeOfExpr;
+            }
+            // sizeof unaryxpr
+            else {
+                SizeofExpression sizeOfExpr(parseUnaryExpression());
+                return sizeOfExpr;
+            }
+        }
+        // no unary-operator or sizeof found
+        default: {
+            BaseUnaryExpression baseUnaryExpr(parsePostfixExpression());
+            return baseUnaryExpr;
+        }
     }
 }
 
