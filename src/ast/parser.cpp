@@ -1,41 +1,8 @@
 #include "parser.h"
 
-void Parser::popToken() {
-    // TODO
-}
-
-const Token& Parser::peekToken() {
-    // TODO
-}
-
-const Locatable& Parser::getLoc() {
-    // TODO
-}
-
-void Parser::expect(TokenKind tk, const char* txt) {
-    // TODO
-}
-
-bool Parser::accept(TokenKind tk) {
-    // TODO
-}
-
-bool Parser::check(TokenKind tk) {
-    // TODO
-}
-
-bool Parser::checkLookAhead(TokenKind tk) {
-    // TODO
-}
 
 
-
-Parser::Parser(Lexer& lexer) : _lexer(lexer) {
-    _currentToken = _lexer.next();
-    if (_currentToken.Kind != TokenKind::TK_EOI) {
-        _nextToken = _lexer.next();
-    }
-};
+Parser::Parser(Lexer& lexer, Token currentToken, Token nextToken) : _lexer(lexer), _currentToken(currentToken), _nextToken(nextToken) {};
 
 SpecDecl* Parser::parseSpecDecl(DeclKind dKind) {
     Specifier* spec = nullptr;
@@ -155,7 +122,8 @@ const Token& Parser::peekToken() {
 }
 
 const Locatable& Parser::getLoc() {
-    return Locatable(_currentToken);
+    // TODO: test if this works
+    return _currentToken;
 }
 
 void Parser::expect(TokenKind tk, const char* txt) {
