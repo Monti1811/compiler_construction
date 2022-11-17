@@ -1,4 +1,6 @@
 #pragma once
+#include "../lexer/lexer.h"
+#include "../lexer/token.h"
 
 #include "../lexer/token.h"
 #include "../util/diagnostic.h"
@@ -16,7 +18,11 @@ enum class DeclKind { ANY, ABSTRACT, CONCRETE };
 /// into an abstract syntax tree.
 class Parser {
    public:
+    Parser(Lexer& lexer, Token _currentToken, Token _nextToken);
    private:
+    Lexer& _lexer;
+    Token _currentToken;
+    Token _nextToken;
     /// Advance the parsing state to the next token.
     void popToken(void);
 
