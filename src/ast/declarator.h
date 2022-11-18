@@ -10,86 +10,76 @@ struct Declarator {
     bool isEmptyDeclarator();
 };
 
-struct Specifier {
+struct TypeSpecifier {
     public:
-    Specifier(const Locatable loc) : _loc(loc) {};
+    TypeSpecifier(const Locatable loc) : _loc(loc) {};
     private:
     const Locatable _loc;
 };
 
-struct SpecDecl {
-    SpecDecl(Specifier* spec, Declarator* decl) : specifier(spec), declarator(decl) {};
+// int x;
+// ^   ^
+// |   declarator
+// type-specifier
+struct Declaration {
+    Declaration(TypeSpecifier* spec, Declarator* decl) : specifier(spec), declarator(decl) {};
 
-    Specifier* specifier;
+    ~Declaration() {
+        // TODO do this everywhere
+        delete specifier;
+        delete declarator;
+    }
+
+    TypeSpecifier* specifier;
     Declarator* declarator;
 };
 
-struct ParameterList {};
-
-struct BaseParameter : public ParameterList {
-    Declarator inner;
+struct ParameterDeclaration {
+    TypeSpecifier specifier;
+    std::optional<Declarator> declarator;
 };
 
-struct MultipleParameter : public ParameterList {
-    BaseParameter inner;
-    ParameterList nextParameter;
-};
+struct PrimitiveDeclarator: public Declarator {
+    PrimitiveDeclarator(Locatable loc, Symbol sym): ident(sym) {};
 
-struct PrimitiveDeclarator : public Declarator {
-    PrimitiveDeclarator(Locatable loc, Symbol _ident): ident(_ident) {};
-
-    // Identifier
     Symbol ident;
-};
-
-struct AbstractDeclarator : public Declarator {};
-
-struct PointerDeclarator : public AbstractDeclarator {
-    PointerDeclarator(Locatable loc, Declarator* _inner): inner(_inner) {};
-
-    // Pointer
-    Declarator* inner;
-};
-
-struct DirectAbstractDeclarator : public AbstractDeclarator {};
-
-struct DirectAbstractDeclaratorStar : public DirectAbstractDeclarator {
-    DirectAbstractDeclarator inner;
-    ParameterList parameters;
-};
-
-struct DirectAbstractDeclaratorParameter : public DirectAbstractDeclarator {
-    DirectAbstractDeclarator inner;
 };
 
 struct FunctionDeclarator : public Declarator {
     FunctionDeclarator(Locatable loc, Declarator* _decl): decl(_decl) {};
 
     Declarator* decl;
-    ParameterList parameters;
+    std::vector<ParameterDeclaration> parameters;
 
-    void addParameter(SpecDecl* param);
+    void addParameter(Declaration* param);
 };
 
-struct VoidSpecifier: public Specifier {
+struct PointerDeclarator : public Declarator {
+    PointerDeclarator(Locatable loc, Declarator* _inner): inner(_inner) {};
+
+    // Pointer
+    Declarator* inner;
+};
+
+struct VoidSpecifier: public TypeSpecifier {
     public: 
-    VoidSpecifier(const Locatable loc) : Specifier(loc) {};
+    VoidSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
 };
 
-struct CharSpecifier: public Specifier {
+struct CharSpecifier: public TypeSpecifier {
     public: 
-    CharSpecifier(const Locatable loc) : Specifier(loc) {};
+    CharSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
 };
 
-struct IntSpecifier: public Specifier {
+struct IntSpecifier: public TypeSpecifier {
     public: 
-    IntSpecifier(const Locatable loc) : Specifier(loc) {};
+    IntSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
 };
 
-struct StructSpecifier: public Specifier {
+struct StructSpecifier: public TypeSpecifier {
     public:
-    StructSpecifier(const Locatable loc, Symbol tag) : Specifier(loc), _tag(tag) {};
-    void addComponent(SpecDecl*& spec_decl);
+    StructSpecifier(const Locatable loc, Symbol tag) : TypeSpecifier(loc), _tag(tag) {};
+    void addComponent(Declaration*& spec_decl);
 
     private:
     Symbol _tag;

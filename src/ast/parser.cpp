@@ -4,8 +4,8 @@
 
 Parser::Parser(Lexer& lexer, Token currentToken, Token nextToken) : _lexer(lexer), _currentToken(currentToken), _nextToken(nextToken) {};
 
-SpecDecl* Parser::parseSpecDecl(DeclKind dKind) {
-    Specifier* spec = nullptr;
+Declaration* Parser::parseSpecDecl(DeclKind dKind) {
+    TypeSpecifier* spec = nullptr;
     Locatable loc(getLoc());
     if (accept(TK_VOID)) {
         spec = new VoidSpecifier(loc);
@@ -49,7 +49,7 @@ SpecDecl* Parser::parseSpecDecl(DeclKind dKind) {
         //      that it fits with what is required by dKind
     }
 
-    return new SpecDecl(spec, decl);
+    return new Declaration(spec, decl);
 }
 
 Declarator* Parser::parseNonFunDeclarator(void) {
