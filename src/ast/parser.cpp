@@ -5,6 +5,8 @@
 #include "specifier.h"
 #include <optional>
 
+
+
 SpecDecl* Parser::parseSpecDecl(DeclKind dKind) {
     Specifier* spec = nullptr;
     Locatable loc(getLoc());
@@ -108,19 +110,8 @@ Declarator* Parser::parseDeclarator(void) {
     return res;
 }
 
-/*
-precedence table
-operator --- precedence level
-||              0
-&&              1
-==              2
-<               3
-+               4
--               4
-*               5
-*/
-
 Expression Parser::parseExpression() {
+    return parseAssignmentExpression();
 }
 
 PrimaryExpression parsePrimaryExpression() {
@@ -285,6 +276,17 @@ UnaryExpression parseUnaryExpression() {
 }
 
 const int getPrecedenceLevel(TokenKind tk) {
+    /*
+        precedence table
+        operator --- precedence level
+        ||              0
+        &&              1
+        ==              2
+        <               3
+        +               4
+        -               4
+        *               5
+    */
     switch (tk) {
         case TK_PIPE_PIPE:
         {
@@ -383,5 +385,24 @@ BinaryExpression parseBinaryExpression(int minPrec = 0, std::optional<BinaryExpr
         }
     }
 
+}
+
+ConditionalExpression parseConditionalExpression() {
+    // parse cond
+    BinaryExpression cond = parseBinaryExpression();
+    // 
+    if (accept(TokenKind::TK_QUESTION_MARK)) {
+        // accept ?
+        Expression operandOne = parseExpression();
+        expect(TokenKind::TK_COLON); // expect :
+        ConditionalExpression operandTwo = parseConditionalExpression();
+        TernaryExpression condExpr(cond, operandOne, operandTwo);
+        return condExpr;
+    }
+    return BaseConditionalExpression(cond);
+}
+
+AssignmentExpression parseAssignmentExpression() {
+    
 }
 

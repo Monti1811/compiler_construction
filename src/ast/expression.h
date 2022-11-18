@@ -275,14 +275,20 @@ struct ConditionalExpression {};
 
 struct BaseConditionalExpression: public ConditionalExpression {
     // TODO
-    LogicalOrExpression inner;
+    public:
+    BaseConditionalExpression(BinaryExpression inner) : _inner(inner) {};
+    private:
+    BinaryExpression _inner;
 };
 
 struct TernaryExpression: public ConditionalExpression {
     // condition ? left : right
-    LogicalOrExpression condition;
-    Expression left;
-    ConditionalExpression right;
+    public:
+    TernaryExpression(BinaryExpression condition, Expression left, ConditionalExpression right) : _condition(condition), _left(left), _right(right) {};
+    private:
+    BinaryExpression _condition;
+    Expression _left;
+    ConditionalExpression _right;
 };
 
 struct AssignmentExpression: public Expression {};
