@@ -410,10 +410,10 @@ BinaryExpression Parser::parseBinaryExpression(int minPrec = 0, std::optional<Bi
 
 }
 
-ConditionalExpression Parser::parseConditionalExpression() {
+ConditionalExpression Parser::parseConditionalExpression(std::optional<UnaryExpression> left = std::nullopt) {
     // parse cond
-    BinaryExpression cond = parseBinaryExpression();
-    // 
+    BinaryExpression cond = (left.has_value()) ? parseBinaryExpression(0, BaseBinaryExpression(left.value())) : parseBinaryExpression();
+    // check for ?
     if (accept(TokenKind::TK_QUESTION_MARK)) {
         // accept ?
         Expression operandOne = parseExpression();
@@ -426,7 +426,18 @@ ConditionalExpression Parser::parseConditionalExpression() {
 }
 
 AssignmentExpression Parser::parseAssignmentExpression() {
-    BaseAssignmentExpression expr(parseConditionalExpression());
+    UnaryExpression unaryExpr = parseUnaryExpression();
+    // check for =
+    if (accept(TokenKind::TK_EQUAL)) {
+        // accept = and start parsing AssignmentExpression
+        AssignmentExpression right = parseAssignmentExpression();
+        return EqualAssignExpression(unaryExpr, right);
+    }
+    // we know it's not an assignment and therefore we keep parsing a cond expression
+    // but with the knowledge that we have already parsed a unary expression
+    // this works since every binaryexpression starts with a unary expression 
+    // and every conditionalexpression starts with a binary expression
+    BaseAssignmentExpression expr(parseConditionalExpression(unaryExpr));
     return expr;
 }
 

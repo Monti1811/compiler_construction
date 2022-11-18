@@ -321,7 +321,10 @@ struct BaseAssignmentExpression: public AssignmentExpression {
 
 struct EqualAssignExpression: public AssignmentExpression {
     // left = right
-    UnaryExpression left;
-    AssignmentExpression right;
+    public:
+    EqualAssignExpression(UnaryExpression left, AssignmentExpression right) : _left(left), _right(right) {};
+    private:
+    UnaryExpression _left;
+    AssignmentExpression _right;
 };
 

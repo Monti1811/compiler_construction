@@ -58,7 +58,7 @@ class Parser {
     PostfixExpression parsePostfixExpression(std::optional<PostfixExpression> postfixExpression);
     UnaryExpression parseUnaryExpression();
     BinaryExpression parseBinaryExpression(int minPrec, std::optional<BinaryExpression> left);
-    ConditionalExpression parseConditionalExpression();
+    ConditionalExpression parseConditionalExpression(std::optional<UnaryExpression> left);
     AssignmentExpression parseAssignmentExpression();
 
     /// Internal methods for use in parseSpecDecl()
