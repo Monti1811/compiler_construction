@@ -1,3 +1,5 @@
+#pragma once
+
 #include <vector>
 #include <string.h>
 
@@ -5,13 +7,16 @@
 #include "../util/symbol_internalizer.h"
 #include "../lexer/token.h"
 
-struct Expression: public Locatable {
+
+
+struct Expression {
     public:
     Expression() {};
     // TODO: Implement Locatable
 };
 
-struct PrimaryExpression: public Expression {};
+struct PrimaryExpression: public Expression {
+};
 
 struct IdentExpression: public PrimaryExpression {
     public:
@@ -21,6 +26,7 @@ struct IdentExpression: public PrimaryExpression {
 };
 
 struct ConstantExpression: public PrimaryExpression {
+    public:
 };
 
 struct ZeroConstantExpression: public ConstantExpression {
@@ -51,7 +57,16 @@ struct StringLiteralExpression: public PrimaryExpression {
     const char* value;
 };
 
-struct PostfixExpression: public PrimaryExpression {};
+struct ParenthesizedExpression: public PrimaryExpression {
+    public:
+    ParenthesizedExpression(Expression expression) : _expression(expression) {};
+    private:
+    Expression _expression;
+};
+
+struct PostfixExpression: public Expression {
+    
+};
 
 struct BasePostfixExpression: public PostfixExpression {
     // TODO: this is not necessary
@@ -97,7 +112,7 @@ struct ArrowExpression: public PostfixExpression {
     IdentExpression _ident;
 };
 
-struct UnaryExpression: public PostfixExpression {};
+struct UnaryExpression: public Expression {};
 
 struct BaseUnaryExpression: public UnaryExpression {
     // TODO: this is not necessary
@@ -155,7 +170,8 @@ struct LogicalNegationExpression: public UnaryExpression {
     UnaryExpression _inner;
 };
 
-struct BinaryExpression: public Expression {};
+struct BinaryExpression: public Expression {
+};
 
 struct BaseBinaryExpression: public BinaryExpression {
     // TODO: This is not necessary
@@ -271,7 +287,8 @@ struct BinaryLogicalOrExpression: public LogicalOrExpression {
     BinaryExpression _right;
 };
 
-struct ConditionalExpression {};
+struct ConditionalExpression: public Expression {
+};
 
 struct BaseConditionalExpression: public ConditionalExpression {
     // TODO
@@ -291,11 +308,15 @@ struct TernaryExpression: public ConditionalExpression {
     ConditionalExpression _right;
 };
 
-struct AssignmentExpression: public Expression {};
+struct AssignmentExpression: public Expression {
+};
 
 struct BaseAssignmentExpression: public AssignmentExpression {
     // TODO
-    ConditionalExpression inner;
+    public:
+    BaseAssignmentExpression(ConditionalExpression inner) : _inner(inner) {};
+    private:
+    ConditionalExpression _inner;
 };
 
 struct EqualAssignExpression: public AssignmentExpression {

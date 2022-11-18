@@ -2,10 +2,12 @@
 #include "declarator.h"
 #include "../util/diagnostic.h"
 #include "../lexer/token.h"
-#include "specifier.h"
-#include <optional>
 
+Parser::Parser(Lexer& lexer, Token currentToken, Token nextToken) : _lexer(lexer), _currentToken(currentToken), _nextToken(nextToken) {};
 
+Expression Parser::parseNext() {
+    return parseExpression();
+};
 
 SpecDecl* Parser::parseSpecDecl(DeclKind dKind) {
     Specifier* spec = nullptr;
@@ -114,7 +116,7 @@ Expression Parser::parseExpression() {
     return parseAssignmentExpression();
 }
 
-PrimaryExpression parsePrimaryExpression() {
+PrimaryExpression Parser::parsePrimaryExpression() {
     Token token = peekToken();
     Symbol sym = token.Text;
     switch(token.Kind) {
@@ -126,7 +128,7 @@ PrimaryExpression parsePrimaryExpression() {
         }
         case TokenKind::TK_ZERO_CONSTANT: 
         {
-            Expression expr = ZeroConstantExpression();
+            ZeroConstantExpression expr = ZeroConstantExpression();
             popToken();
             return expr;
         }
@@ -153,12 +155,16 @@ PrimaryExpression parsePrimaryExpression() {
             popToken();
             Expression expr = parseExpression();
             expect(TokenKind::TK_RPAREN, ")");
-            return expr;
+            ParenthesizedExpression parenExpr = ParenthesizedExpression(expr);
+            return parenExpr;
+        }
+        default: {
+            errorloc(getLoc(), "wanted to parse PrimaryExpression but found no fitting token");
         }
     }
 }
 
-PostfixExpression parsePostfixExpression(std::optional<PostfixExpression> postfixExpression = std::nullopt) {
+PostfixExpression Parser::parsePostfixExpression(std::optional<PostfixExpression> postfixExpression = std::nullopt) {
     // if there is no postfixExpression preceding the current token
     // parse current token, as this has to be a primaryExpression either way
     if (!postfixExpression) {
@@ -171,7 +177,7 @@ PostfixExpression parsePostfixExpression(std::optional<PostfixExpression> postfi
         {
             popToken(); // accept [
             Expression index = parseExpression(); // accept index
-            expectToken(TK_RBRACKET); // expect ]
+            expect(TK_RBRACKET, "("); // expect ]
             IndexExpression newPostfixExpression(postfixExpression.value(), index);
             return parsePostfixExpression(newPostfixExpression);
         }
@@ -193,7 +199,7 @@ PostfixExpression parsePostfixExpression(std::optional<PostfixExpression> postfi
         case TokenKind::TK_DOT:
         {
             popToken(); // accept .
-            expect(TK_IDENTIFIER); // expect id
+            expect(TK_IDENTIFIER, "Identifier"); // expect id
             IdentExpression ident(token.Text);
             DotExpression newPostfixExpression(postfixExpression.value(), ident);
             return parsePostfixExpression(newPostfixExpression);
@@ -202,7 +208,7 @@ PostfixExpression parsePostfixExpression(std::optional<PostfixExpression> postfi
         case TokenKind::TK_ARROW:
         {
             popToken(); // accept .
-            expect(TK_IDENTIFIER); // expect id
+            expect(TK_IDENTIFIER, "Identifier"); // expect id
             IdentExpression ident(token.Text);
             ArrowExpression newPostfixExpression(postfixExpression.value(), ident);
             return parsePostfixExpression(newPostfixExpression);
@@ -214,7 +220,7 @@ PostfixExpression parsePostfixExpression(std::optional<PostfixExpression> postfi
     }
 }
 
-UnaryExpression parseUnaryExpression() {
+UnaryExpression Parser::parseUnaryExpression() {
     Token token = peekToken();
     switch (token.Kind) {
         // &unaryexpr
@@ -258,7 +264,7 @@ UnaryExpression parseUnaryExpression() {
                 popToken(); // accept (
                 SizeofTypeNameExpression sizeOfExpr(peekToken().Kind);
                 popToken(); // accept type-name
-                expect(TokenKind::TK_RPAREN); // expect )
+                expect(TokenKind::TK_RPAREN, ")"); // expect )
                 return sizeOfExpr;
             }
             // sizeof unaryxpr
@@ -281,6 +287,7 @@ const int getPrecedenceLevel(TokenKind tk) {
         operator --- precedence level
         ||              0
         &&              1
+        !=              2
         ==              2
         <               3
         +               4
@@ -288,30 +295,42 @@ const int getPrecedenceLevel(TokenKind tk) {
         *               5
     */
     switch (tk) {
+        // ||
         case TK_PIPE_PIPE:
         {
             return 0;
         }
+        // &&
         case TK_AND_AND:
         {
             return 1;
         }
+        // !=
+        case TK_NOT_EQUAL:
+        {
+            return 2;
+        }
+        // ==
         case TK_EQUAL_EQUAL:
         {
             return 2;
         }
+        // <
         case TK_LESS:
         {
             return 3;
         }
+        // +
         case TK_PLUS:
         {
             return 4;
         }
+        // -
         case TK_MINUS:
         {
             return 4;
         }
+        // *
         case TK_ASTERISK:
         {
             return 5;
@@ -322,8 +341,7 @@ const int getPrecedenceLevel(TokenKind tk) {
     }
 }
 
-BinaryExpression parseBinaryExpression(int minPrec = 0, std::optional<BinaryExpression> left = std::nullopt) {
-    
+BinaryExpression Parser::parseBinaryExpression(int minPrec = 0, std::optional<BinaryExpression> left = std::nullopt) {
     // compute unary expr
     // inbetween operators there has to be a unary expr
     if (!left) {
@@ -364,6 +382,11 @@ BinaryExpression parseBinaryExpression(int minPrec = 0, std::optional<BinaryExpr
                 LessThanExpression lessThanExpr(left.value(), right);
                 return parseBinaryExpression(0, lessThanExpr);
             }
+            // binaryOp !=
+            case TK_NOT_EQUAL: {
+                UnequalExpression unequalExpr(left.value(), right);
+                return parseBinaryExpression(0, unequalExpr);
+            }
             // binaryOp ==
             case TK_EQUAL_EQUAL: {
                 EqualExpression equalExpr(left.value(), right);
@@ -387,14 +410,14 @@ BinaryExpression parseBinaryExpression(int minPrec = 0, std::optional<BinaryExpr
 
 }
 
-ConditionalExpression parseConditionalExpression() {
+ConditionalExpression Parser::parseConditionalExpression() {
     // parse cond
     BinaryExpression cond = parseBinaryExpression();
     // 
     if (accept(TokenKind::TK_QUESTION_MARK)) {
         // accept ?
         Expression operandOne = parseExpression();
-        expect(TokenKind::TK_COLON); // expect :
+        expect(TokenKind::TK_COLON, ":"); // expect :
         ConditionalExpression operandTwo = parseConditionalExpression();
         TernaryExpression condExpr(cond, operandOne, operandTwo);
         return condExpr;
@@ -402,7 +425,50 @@ ConditionalExpression parseConditionalExpression() {
     return BaseConditionalExpression(cond);
 }
 
-AssignmentExpression parseAssignmentExpression() {
-    
+AssignmentExpression Parser::parseAssignmentExpression() {
+    BaseAssignmentExpression expr(parseConditionalExpression());
+    return expr;
 }
 
+void Parser::popToken() {
+    if (_currentToken.Kind == TokenKind::TK_EOI) {
+        errorloc(getLoc(), "Parsing State cannot be advance - unexpected end of input");
+    }
+    _currentToken = _nextToken;
+    if (_currentToken.Kind != TokenKind::TK_EOI) {
+        _nextToken = _lexer.next();
+    }
+}
+
+const Token& Parser::peekToken() {
+    return _currentToken;
+}
+
+const Locatable& Parser::getLoc() {
+    // TODO: test if this works
+    return _currentToken;
+}
+
+void Parser::expect(TokenKind tk, const char* txt) {
+    if (_currentToken.Kind == tk) {
+        popToken();
+    } else {
+        errorloc(getLoc(), "TokenKind " + std::string(txt) + " was expected, but something else occured");
+    }
+}
+
+bool Parser::accept(TokenKind tk) {
+    if (_currentToken.Kind == tk) {
+        popToken();
+        return true;
+    }
+    return false;
+}
+
+bool Parser::check(TokenKind tk) {
+    return _currentToken.Kind == tk;
+}
+
+bool Parser::checkLookAhead(TokenKind tk) {
+    return _nextToken.Kind == tk;
+}

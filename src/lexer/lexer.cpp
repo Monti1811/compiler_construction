@@ -123,20 +123,19 @@ Token Lexer::readCharConstant() {
     // Read initial quotation mark
     m_stream.get();
 
-    // TODO: Is it correct to save the character constants as a string? Especially as the 
-    // special symbols are split so they won't work the same way as they would otherwise
-    // i.e: "\" + "n" != "\n"
+    Locatable err_loc = m_stream.loc();
+
     std::string inner;
 
     switch (unsigned char c = m_stream.get()) {
         case '\0':
-            fail("Unexpected end of file", loc);
+            fail("Unexpected end of file", err_loc);
             break;
         case '\'':
-            fail("Character literals must not be empty", loc);
+            fail("Character literals must not be empty", err_loc);
             break;
         case '\n':
-            fail("Character literals must not contain a newline", loc);
+            fail("Character literals must not contain a newline", err_loc);
             break;
         case '\\': {
             inner += c;
@@ -147,9 +146,11 @@ Token Lexer::readCharConstant() {
             inner += c;
     }
 
+    err_loc = m_stream.loc();
+
     // Read final quotation mark
     if (m_stream.get() != '\'') {
-        fail("Character literals must only contain a single character", loc);
+        fail("Character literals must only contain a single character", err_loc);
     }
 
     return makeToken(loc, TokenKind::TK_CHARACTER_CONSTANT, '\'' + inner + '\'');
@@ -189,24 +190,24 @@ Token Lexer::readStringLiteral() {
 
     std::string inner;
 
-    unsigned char c = m_stream.get();
+    unsigned char c = m_stream.peek();
     while (c != '"') {
         if (c == '\0') {
-            fail("Unexpected end of file", loc);
+            fail("Unexpected end of file");
+        } else if (c == '\n') {
+            fail("String literals must not contain newline characters");
         }
 
+        m_stream.get();
         inner += c;
         if (c == '\\') {
             inner += readEscapeChar();
         }
 
-        c = m_stream.get();
+        c = m_stream.peek();
     }
 
-    // TODO: Do we have to disallow newlines inside of strings?
-    // e.g.:
-    // char* test = "hallonext_char_val
-    // welt";
+    m_stream.get();
 
     return makeToken(loc, TokenKind::TK_STRING_LITERAL, '"' + inner + '"');
 }
@@ -399,8 +400,13 @@ void Lexer::readMultiComment() {
     m_stream.get_str(2);
 
     while (true) {
-        unsigned char c = m_stream.get();
+        unsigned char c = m_stream.peek();
 
+        if (c == '\0') {
+            fail("Multiline comment was not closed");
+        }
+        
+        m_stream.get();
         if (c == '*') {
             while (true) {
                 c = m_stream.get();
@@ -410,10 +416,6 @@ void Lexer::readMultiComment() {
                     break;
                 }
             }
-        }
-
-        if (c == '\0') {
-            fail("Multiline comment was not closed", loc);
         }
     }
 }

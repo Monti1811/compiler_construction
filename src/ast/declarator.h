@@ -1,32 +1,54 @@
+#pragma once
+
 #include <string>
 #include <vector>
 
-#include "specifier.h"
 #include "../util/diagnostic.h"
-
-struct SpecDecl {
-    SpecDecl(Specifier spec, Declarator decl) : specifier(spec), declarator(decl) {};
-
-    Specifier specifier;
-    Declarator declarator;
-};
+#include "../util/symbol_internalizer.h"
 
 struct Declarator {
-
-
     bool isEmptyDeclarator();
 };
 
+struct Specifier {
+    public:
+    Specifier(const Locatable loc) : _loc(loc) {};
+    private:
+    const Locatable _loc;
+};
+
+struct SpecDecl {
+    SpecDecl(Specifier* spec, Declarator* decl) : specifier(spec), declarator(decl) {};
+
+    Specifier* specifier;
+    Declarator* declarator;
+};
+
+struct ParameterList {};
+
+struct BaseParameter : public ParameterList {
+    Declarator inner;
+};
+
+struct MultipleParameter : public ParameterList {
+    BaseParameter inner;
+    ParameterList nextParameter;
+};
+
 struct PrimitiveDeclarator : public Declarator {
+    PrimitiveDeclarator(Locatable loc, Symbol _ident): ident(_ident) {};
+
     // Identifier
-    std::string name;
+    Symbol ident;
 };
 
 struct AbstractDeclarator : public Declarator {};
 
 struct PointerDeclarator : public AbstractDeclarator {
+    PointerDeclarator(Locatable loc, Declarator* _inner): inner(_inner) {};
+
     // Pointer
-    Declarator inner;
+    Declarator* inner;
 };
 
 struct DirectAbstractDeclarator : public AbstractDeclarator {};
@@ -41,24 +63,34 @@ struct DirectAbstractDeclaratorParameter : public DirectAbstractDeclarator {
 };
 
 struct FunctionDeclarator : public Declarator {
-    Declarator decl;
+    FunctionDeclarator(Locatable loc, Declarator* _decl): decl(_decl) {};
+
+    Declarator* decl;
     ParameterList parameters;
+
+    void addParameter(SpecDecl* param);
 };
 
-struct ParameterList {};
-
-struct BaseParameter : public ParameterList {
-    Declarator inner;
+struct VoidSpecifier: public Specifier {
+    public: 
+    VoidSpecifier(const Locatable loc) : Specifier(loc) {};
 };
 
-struct MultipleParameter : public ParameterList {
-    BaseParameter inner;
-    ParameterList nextParameter;
+struct CharSpecifier: public Specifier {
+    public: 
+    CharSpecifier(const Locatable loc) : Specifier(loc) {};
 };
 
+struct IntSpecifier: public Specifier {
+    public: 
+    IntSpecifier(const Locatable loc) : Specifier(loc) {};
+};
 
+struct StructSpecifier: public Specifier {
+    public:
+    StructSpecifier(const Locatable loc, Symbol tag) : Specifier(loc), _tag(tag) {};
+    void addComponent(SpecDecl*& spec_decl);
 
-
-
-
-
+    private:
+    Symbol _tag;
+};

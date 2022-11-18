@@ -1,5 +1,11 @@
 #pragma once
 #include "expression.h"
+#include "../lexer/lexer.h"
+#include "../lexer/token.h"
+#include "../util/diagnostic.h"
+#include <optional>
+
+#include "declarator.h"
 
 // Declarators and abstract declarators share a lot of syntactical and
 // semantical properties. Therefore, we use the same AST data structures to
@@ -12,7 +18,12 @@ enum class DeclKind { ANY, ABSTRACT, CONCRETE };
 /// into an abstract syntax tree.
 class Parser {
    public:
+    Parser(Lexer& lexer, Token _currentToken, Token _nextToken);
+    Expression parseNext();
    private:
+    Lexer& _lexer;
+    Token _currentToken;
+    Token _nextToken;
     /// Advance the parsing state to the next token.
     void popToken(void);
 
@@ -42,6 +53,13 @@ class Parser {
     bool checkLookAhead(TokenKind tk);
 
     Expression parseExpression();
+    // help Functions to parse an Expression
+    PrimaryExpression parsePrimaryExpression();
+    PostfixExpression parsePostfixExpression(std::optional<PostfixExpression> postfixExpression);
+    UnaryExpression parseUnaryExpression();
+    BinaryExpression parseBinaryExpression(int minPrec, std::optional<BinaryExpression> left);
+    ConditionalExpression parseConditionalExpression();
+    AssignmentExpression parseAssignmentExpression();
 
     /// Internal methods for use in parseSpecDecl()
     Declarator* parseDeclarator(void);

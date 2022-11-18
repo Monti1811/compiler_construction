@@ -16,6 +16,7 @@ struct Token : public Locatable {
     TokenKind Kind;
     Symbol Text;
 
+    Token();
     Token(Locatable& loc, TokenKind kind, Symbol text);
 
     friend std::ostream& operator<<(std::ostream& stream, const Token& tok);

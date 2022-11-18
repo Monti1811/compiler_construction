@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "lexer/lexer.h"
+#include "ast/parser.h"
 #include <string.h>
 
 using namespace std;
@@ -25,6 +26,11 @@ int main(int argc, char const* argv[]) {
                 token = lexer.next();
             }
         } else if (strcmp(argv[i], "--parse") == 0) {
+            Token currentToken = lexer.next();
+            Token nextToken = lexer.next();
+            Parser parser(lexer, currentToken, nextToken);
+            Expression expr = parser.parseNext();
+            
             // TODO
         } else if (strcmp(argv[i], "--print-ast") == 0) {
             // TODO
