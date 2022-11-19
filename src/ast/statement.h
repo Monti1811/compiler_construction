@@ -6,45 +6,24 @@
 #include "expression.h"
 #include "declarator.h"
 
-struct Statement {};
+struct BlockItem {};
 
+struct Statement: public BlockItem {};
 
 struct LabeledStatement: public Statement {
     std::string name;
 };
 
-struct CompoundStatement: public Statement {
-    // { block-item-list_opt }
-    BlockItemList items;
-};
-
-struct BlockItemList {};
-
-struct SingleBlockItemList: public BlockItemList {
-    // block-item
-    BlockItem item;
-};
-
-struct MultiBlockItemList: public BlockItemList {
-    // block-item-list block-item
-    BlockItem item;
-    BlockItemList next;
-};
-
-struct BlockItem {};
-
-struct DeclarationBlockItem: public BlockItem {
-    // declaration
-    Declarator dec;
-};
-
-struct StatementBlockItem: public BlockItem {
-    // statement
-    Statement stat;
-};
-
-struct NullStatement: public Statement {
-    // ;
+/// Block statement, e.g.:
+/// ```
+/// {
+///    stmt1;
+///    stmt2;
+/// }
+/// ```
+/// Also represents a null statement (`;`) if `items` is empty.
+struct BlockStatement: public Statement {
+    std::vector<BlockItem> items;
 };
 
 struct ExpressionStatement: public Statement {
@@ -52,19 +31,11 @@ struct ExpressionStatement: public Statement {
     Expression expression;
 };
 
-struct SelectionStatement: public Statement {};
-
-struct IfStatement: public SelectionStatement {
-    // if (condition) statement
-    Expression condition;
-    Statement statement;
-};
-
-struct IfElseStatement: public SelectionStatement {
-    // if (condition) then_statement else else_statement
+struct IfStatement: public Statement {
+    // if (condition) statement [else else_statement]
     Expression condition;
     Statement then_statement;
-    Statement else_statement;
+    std::optional<Statement> else_statement;
 };
 
 struct WhileStatement: public Statement {

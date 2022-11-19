@@ -9,203 +9,140 @@ struct Expression: public Locatable {
     // TODO: Implement Locatable
 };
 
-struct PrimaryExpression {};
-
-struct IdentExpression: public PrimaryExpression {
+struct IdentExpression: public Expression {
     Symbol ident;
 };
 
-struct ConstantExpression: public PrimaryExpression {};
-
-struct IntConstantExpression: public ConstantExpression {
+struct IntConstantExpression: public Expression {
     int value;
 };
 
-struct CharConstantExpression: public ConstantExpression {
+struct CharConstantExpression: public Expression {
     char value;
 };
 
-struct StringLiteralExpression: public PrimaryExpression {
+struct StringLiteralExpression: public Expression {
     Symbol value;
 };
 
-struct PostfixExpression {};
-
-struct BasePostfixExpression: public PostfixExpression {
-    // TODO: this is not necessary
-    PrimaryExpression inner;
-};
-
-struct IndexExpression: public PostfixExpression {
+struct IndexExpression: public Expression {
     // expression[index]
-    PostfixExpression expression;
+    Expression expression;
     Expression index;
 };
 
-struct CallExpression: public PostfixExpression {
+struct CallExpression: public Expression {
     // expression(args)
-    PostfixExpression expression;
-    std::vector<AssignmentExpression> arguments;
+    Expression expression;
+    std::vector<Expression> arguments;
 };
 
-struct DotExpression: public PostfixExpression {
+struct DotExpression: public Expression {
     // expression.ident
-    PostfixExpression expression;
+    Expression expression;
     IdentExpression ident;
 };
 
-struct ArrowExpression: public PostfixExpression {
+struct ArrowExpression: public Expression {
     // expression->ident
-    PostfixExpression expression;
+    Expression expression;
     IdentExpression ident;
 };
 
 struct UnaryExpression {};
 
-struct BaseUnaryExpression: public UnaryExpression {
-    // TODO: this is not necessary
-    PostfixExpression inner;
-};
-
 struct SizeofExpression: public UnaryExpression {
     // sizeof inner
-    UnaryExpression inner;
+    Expression inner;
+};
+
+struct SizeofTypeExpression: public UnaryExpression {
+    // sizeof (inner)
+    TypeSpecifier type;
 };
 
 struct ReferenceExpression: public UnaryExpression {
     // &inner
-    UnaryExpression inner;
+    Expression inner;
 };
 
 struct PointerExpression: public UnaryExpression {
     // *inner
-    UnaryExpression inner;
+    Expression inner;
 };
 
 struct NegationExpression: public UnaryExpression {
     // -inner
-    UnaryExpression inner;
+    Expression inner;
 };
 
 struct LogicalNegationExpression: public UnaryExpression {
     // !inner
-    UnaryExpression inner;
+    Expression inner;
 };
 
-struct MultiplicativeExpression {};
+struct BinaryExpression {};
 
-struct BaseMultiplicativeExpression: public MultiplicativeExpression {
-    // TODO: This is not necessary
-    UnaryExpression inner;
-};
-
-struct MultiplyExpression: public MultiplicativeExpression {
+struct MultiplyExpression: public BinaryExpression {
     // left * right
-    MultiplicativeExpression left;
+    Expression left;
     UnaryExpression right;
 };
 
-struct AdditiveExpression {};
+struct BinaryExpression {};
 
-struct BaseAdditiveExpression: public AdditiveExpression {
-    // TODO: This is not necessary
-    MultiplicativeExpression inner;
-};
-
-struct AddExpression: public AdditiveExpression {
+struct AddExpression: public BinaryExpression {
     // left + right
-    AdditiveExpression left;
-    MultiplicativeExpression right;
-};
-
-struct SubstractExpression: public AdditiveExpression {
-    // left - right
-    AdditiveExpression left;
-    MultiplicativeExpression right;
-};
-
-struct RelationalExpression {};
-
-struct BaseRelationalExpression: public RelationalExpression {
-    // TODO
-    AdditiveExpression inner;
-};
-
-struct LessThanExpression: public RelationalExpression {
-    // left < right
-    RelationalExpression left;
-    AdditiveExpression right;
-};
-
-struct EqualityExpression {};
-
-struct BaseEqualityExpression: public EqualityExpression {
-    // TODO
-    RelationalExpression inner;
-};
-
-struct EqualExpression: public EqualityExpression {
-    // left == right
-    EqualityExpression left;
-    RelationalExpression right;
-};
-
-struct UnequalExpression: public EqualityExpression {
-    // left != right
-    EqualityExpression left;
-    RelationalExpression right;
-};
-
-struct LogicalAndExpression {};
-
-struct BaseLogicalAndExpression: public LogicalAndExpression {
-    // TODO
-    EqualityExpression inner;
-};
-
-struct BinaryLogicalAndExpression: public LogicalAndExpression {
-    // left && right
-    LogicalAndExpression left;
-    EqualityExpression right;
-};
-
-struct LogicalOrExpression {};
-
-struct BaseLogicalOrExpression: public LogicalOrExpression {
-    // TODO
-    LogicalAndExpression inner;
-};
-
-struct BinaryLogicalOrExpression: public LogicalOrExpression {
-    // left && right
-    LogicalOrExpression left;
-    LogicalAndExpression right;
-};
-
-struct ConditionalExpression {};
-
-struct BaseConditionalExpression: public ConditionalExpression {
-    // TODO
-    LogicalOrExpression inner;
-};
-
-struct TernaryExpression: public ConditionalExpression {
-    // condition ? left : right
-    LogicalOrExpression condition;
     Expression left;
-    ConditionalExpression right;
+    Expression right;
 };
 
-struct AssignmentExpression: public Expression {};
-
-struct BaseAssignmentExpression: public AssignmentExpression {
-    // TODO
-    ConditionalExpression inner;
+struct SubstractExpression: public BinaryExpression {
+    // left - right
+    Expression left;
+    Expression right;
 };
 
-struct EqualAssignExpression: public AssignmentExpression {
+struct LessThanExpression: public BinaryExpression {
+    // left < right
+    Expression left;
+    Expression right;
+};
+
+struct EqualExpression: public BinaryExpression {
+    // left == right
+    Expression left;
+    Expression right;
+};
+
+struct UnequalExpression: public BinaryExpression {
+    // left != right
+    Expression left;
+    Expression right;
+};
+
+struct AndExpression: public BinaryExpression {
+    // left && right
+    Expression left;
+    Expression right;
+};
+
+struct OrExpression: public BinaryExpression {
+    // left && right
+    Expression left;
+    Expression right;
+};
+
+struct TernaryExpression: public Expression {
+    // condition ? left : right
+    Expression condition;
+    Expression left;
+    Expression right;
+};
+
+struct AssignExpression: public BinaryExpression {
     // left = right
-    UnaryExpression left;
-    AssignmentExpression right;
+    Expression left;
+    Expression right;
 };
 
