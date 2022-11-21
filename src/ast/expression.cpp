@@ -6,7 +6,7 @@ std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Expression>
 }
 
 void IdentExpression::print(std::ostream& stream) {
-    stream << *this->_ident;
+    stream << (*this->_ident);
 }
 
 void IntConstantExpression::print(std::ostream& stream) {
@@ -22,13 +22,15 @@ void StringLiteralExpression::print(std::ostream& stream) {
 }
 
 void IndexExpression::print(std::ostream& stream) {
+    stream << '(';
     this->_expression->print(stream);
     stream << '[';
     this->_index->print(stream),
-    stream << ']';
+    stream << "])";
 }
 
 void CallExpression::print(std::ostream& stream) {
+    stream << '(';
     this->_expression->print(stream);
     stream << '(';
     const int length = this->_arguments.size();
@@ -38,29 +40,37 @@ void CallExpression::print(std::ostream& stream) {
             stream << ',';
         }
     }
-    stream << ')';
+    stream << "))";
 }
 
 void DotExpression::print(std::ostream& stream) {
+    stream << '(';
     this->_expression->print(stream);
     stream << '.';
     this->_ident->print(stream);
+    stream << ')';
 }
 
 void ArrowExpression::print(std::ostream& stream) {
+    stream << '(';
     this->_expression->print(stream);
     stream << "->";
     this->_ident->print(stream);
+    stream << ')';
 }
 
 void SizeofExpression::print(std::ostream& stream) {
+    stream << '(';
     stream << "sizeof ";
     this->_inner->print(stream);
+    stream << ')';
 }
 
 void SizeofTypeExpression::print(std::ostream& stream) {
+    stream << '(';
     stream << "sizeof ";
     this->_type->print(stream);
+    stream << ')';
 }
 
 void ReferenceExpression::print(std::ostream& stream) {

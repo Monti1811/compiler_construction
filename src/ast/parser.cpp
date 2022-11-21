@@ -201,6 +201,7 @@ std::unique_ptr<Expression> Parser::parsePostfixExpression(std::optional<std::un
         case TokenKind::TK_DOT:
         {
             popToken(); // accept .
+            Token token = peekToken();
             expect(TK_IDENTIFIER, "Identifier"); // expect id
             auto ident = std::make_unique<IdentExpression>(getLoc(), token.Text);
             auto newPostfixExpr = std::make_unique<DotExpression>(getLoc(), std::move(postfixExpression.value()), std::move(ident));
@@ -210,6 +211,7 @@ std::unique_ptr<Expression> Parser::parsePostfixExpression(std::optional<std::un
         case TokenKind::TK_ARROW:
         {
             popToken(); // accept .
+            Token token = peekToken();
             expect(TK_IDENTIFIER, "Identifier"); // expect id
             auto ident = std::make_unique<IdentExpression>(getLoc(), token.Text);
             auto newPostfixExpr = std::make_unique<ArrowExpression>(getLoc(), std::move(postfixExpression.value()), std::move(ident));

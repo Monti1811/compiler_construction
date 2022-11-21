@@ -30,6 +30,8 @@ int main(int argc, char const* argv[]) {
             Token nextToken = lexer.next();
             Parser parser(lexer, currentToken, nextToken);
             auto expr = parser.parseNext();
+
+            std::cout << expr << std::endl;
             // TODO
         } else if (strcmp(argv[i], "--print-ast") == 0) {
             // TODO
