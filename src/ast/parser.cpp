@@ -261,22 +261,24 @@ std::unique_ptr<Expression> Parser::parseUnaryExpression() {
             if (check(TokenKind::TK_LPAREN))
             // sizeof (type-name)
             {
-                if (checkLookAhead(TokenKind::TK_INT)) {
-                    popToken(); // accept (
-                    IntSpecifier intSpec(peekToken());
-                    auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), intSpec);
+                popToken(); // accept (
+
+                if (check(TokenKind::TK_INT)) {
+                    auto intSpec = std::make_unique<IntSpecifier>(peekToken());
+                    popToken();
+                    auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), std::move(intSpec));
                     expect(TokenKind::TK_RPAREN, ")"); // expect )
                     return expr;
-                } else if (checkLookAhead(TokenKind::TK_VOID)) {
-                    popToken(); // accept (
-                    VoidSpecifier voidSpec(peekToken());
-                    auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), voidSpec);
+                } else if (check(TokenKind::TK_VOID)) {
+                    auto voidSpec = std::make_unique<VoidSpecifier>(peekToken());
+                    popToken();
+                    auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), std::move(voidSpec));
                     expect(TokenKind::TK_RPAREN, ")");
                     return expr;
-                } else if (checkLookAhead(TokenKind::TK_CHAR)) {
-                    popToken(); // accept (
-                    CharSpecifier charSpec(peekToken());
-                    auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), charSpec);
+                } else if (check(TokenKind::TK_CHAR)) {
+                    auto charSpec = std::make_unique<CharSpecifier>(peekToken());
+                    popToken();
+                    auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), std::move(charSpec));
                     expect(TokenKind::TK_RPAREN, ")");
                     return expr;
                 }

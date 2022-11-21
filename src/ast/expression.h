@@ -16,6 +16,10 @@ struct Expression {
         : loc(loc) {};
 
     Locatable loc;
+
+    virtual void print(std::ostream& stream) = 0;
+
+    friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Expression>& expr);
 };
 
 struct IdentExpression: public Expression {
@@ -23,6 +27,8 @@ struct IdentExpression: public Expression {
     IdentExpression(Locatable loc, Symbol ident)
         : Expression(loc)
         , _ident(ident) {};
+
+    void print(std::ostream& stream);
 
     private:
     Symbol _ident;
@@ -34,6 +40,8 @@ struct IntConstantExpression: public Expression {
         : Expression(loc)
         , _value(std::stoull(*value)) {};
 
+    void print(std::ostream& stream);
+
     unsigned long long _value;
 };
 
@@ -43,6 +51,8 @@ struct CharConstantExpression: public Expression {
         : Expression(loc)
         , _value( (*value)[0] ) {};
 
+    void print(std::ostream& stream);
+
     unsigned char _value;
 };
 
@@ -51,6 +61,8 @@ struct StringLiteralExpression: public Expression {
     StringLiteralExpression(Locatable loc, Symbol value)
         : Expression(loc)
         , _value(*value) {};
+
+    void print(std::ostream& stream);
 
     private:
     std::string _value;
@@ -62,6 +74,8 @@ struct IndexExpression: public Expression {
         : Expression(loc)
         , _expression(std::move(expression))
         , _index(std::move(index)) {};
+
+    void print(std::ostream& stream);
 
     // expression[index]
     private:
@@ -76,6 +90,8 @@ struct CallExpression: public Expression {
         , _expression(std::move(expression))
         , _arguments(std::move(arguments)) {};
 
+    void print(std::ostream& stream);
+
     // expression(args)
     std::unique_ptr<Expression> _expression;
     std::vector<std::unique_ptr<Expression>> _arguments;
@@ -87,6 +103,8 @@ struct DotExpression: public Expression {
         : Expression(loc)
         , _expression(std::move(expression))
         , _ident(std::move(ident)) {};
+
+    void print(std::ostream& stream);
 
     // expression.ident
     private:
@@ -101,6 +119,8 @@ struct ArrowExpression: public Expression {
         , _expression(std::move(expression))
         , _ident(std::move(ident)) {};
 
+    void print(std::ostream& stream);
+
     // expression->ident
     private:
     std::unique_ptr<Expression> _expression;
@@ -111,6 +131,8 @@ struct UnaryExpression: public Expression {
     public:
     UnaryExpression(Locatable loc)
         : Expression(loc) {};
+    
+    virtual void print(std::ostream& stream) = 0;
 };
 
 struct SizeofExpression: public UnaryExpression {
@@ -119,6 +141,8 @@ struct SizeofExpression: public UnaryExpression {
         : UnaryExpression(loc)
         , _inner(std::move(inner)) {};
 
+    void print(std::ostream& stream);
+
     // sizeof inner
     private:
     std::unique_ptr<Expression> _inner;
@@ -126,13 +150,15 @@ struct SizeofExpression: public UnaryExpression {
 
 struct SizeofTypeExpression: public UnaryExpression {
     public:
-    SizeofTypeExpression(Locatable loc, TypeSpecifier type)
+    SizeofTypeExpression(Locatable loc, std::unique_ptr<TypeSpecifier> type)
         : UnaryExpression(loc)
-        , _type(type) {};
+        , _type(std::move(type)) {};
+
+    void print(std::ostream& stream);
 
     // sizeof (inner)
     private:
-    TypeSpecifier _type;
+    std::unique_ptr<TypeSpecifier> _type;
 };
 
 struct ReferenceExpression: public UnaryExpression {
@@ -140,6 +166,8 @@ struct ReferenceExpression: public UnaryExpression {
     ReferenceExpression(Locatable loc, std::unique_ptr<Expression> inner)
         : UnaryExpression(loc)
         , _inner(std::move(inner)) {};
+
+    void print(std::ostream& stream);
 
     // &inner
     private:
@@ -152,6 +180,8 @@ struct PointerExpression: public UnaryExpression {
         : UnaryExpression(loc)
         , _inner(std::move(inner)) {};
 
+    void print(std::ostream& stream);
+
     // *inner
     private:
     std::unique_ptr<Expression> _inner;
@@ -162,6 +192,8 @@ struct NegationExpression: public UnaryExpression {
     NegationExpression(Locatable loc, std::unique_ptr<Expression> inner)
         : UnaryExpression(loc)
         , _inner(std::move(inner)) {};
+
+    void print(std::ostream& stream);
 
     // -inner
     private:
@@ -174,6 +206,8 @@ struct LogicalNegationExpression: public UnaryExpression {
         : UnaryExpression(loc)
         , _inner(std::move(inner)) {};
 
+    void print(std::ostream& stream);
+
     // !inner
     private:
     std::unique_ptr<Expression> _inner;
@@ -183,6 +217,8 @@ struct BinaryExpression: public Expression {
     public:
     BinaryExpression(Locatable loc)
         : Expression(loc) {};
+
+    virtual void print(std::ostream& stream) = 0;
 };
 
 struct MultiplyExpression: public BinaryExpression {
@@ -191,6 +227,8 @@ struct MultiplyExpression: public BinaryExpression {
         : BinaryExpression(loc)
         , _left(std::move(left))
         , _right(std::move(right)) {};
+
+    void print(std::ostream& stream);
 
     // left * right
     private:
@@ -205,6 +243,8 @@ struct AddExpression: public BinaryExpression {
         , _left(std::move(left))
         , _right(std::move(right)) {};
 
+    void print(std::ostream& stream);
+
     // left + right
     private:
     std::unique_ptr<Expression> _left;
@@ -217,6 +257,8 @@ struct SubstractExpression: public BinaryExpression {
         : BinaryExpression(loc)
         , _left(std::move(left))
         , _right(std::move(right)) {};
+
+    void print(std::ostream& stream);
 
     // left - right
     private:
@@ -231,6 +273,8 @@ struct LessThanExpression: public BinaryExpression {
         , _left(std::move(left))
         , _right(std::move(right)) {};
 
+    void print(std::ostream& stream);
+
     // left < right
     private:
     std::unique_ptr<Expression> _left;
@@ -243,6 +287,8 @@ struct EqualExpression: public BinaryExpression {
         : BinaryExpression(loc)
         , _left(std::move(left))
         , _right(std::move(right)) {};
+
+    void print(std::ostream& stream);
 
     // left == right
     private:
@@ -257,6 +303,8 @@ struct UnequalExpression: public BinaryExpression {
         , _left(std::move(left))
         , _right(std::move(right)) {};
 
+    void print(std::ostream& stream);
+
     // left != right
     private:
     std::unique_ptr<Expression> _left;
@@ -270,6 +318,8 @@ struct AndExpression: public BinaryExpression {
         , _left(std::move(left))
         , _right(std::move(right)) {};
 
+    void print(std::ostream& stream);
+
     // left && right
     private:
     std::unique_ptr<Expression> _left;
@@ -282,6 +332,8 @@ struct OrExpression: public BinaryExpression {
         : BinaryExpression(loc)
         , _left(std::move(left))
         , _right(std::move(right)) {};
+
+    void print(std::ostream& stream);
 
     // left && right
     private:
@@ -297,6 +349,8 @@ struct TernaryExpression: public Expression {
         , _left(std::move(left))
         , _right(std::move(right)) {};
 
+    void print(std::ostream& stream);
+
     // condition ? left : right
     private:
     std::unique_ptr<Expression> _condition;
@@ -310,6 +364,8 @@ struct AssignExpression: public BinaryExpression {
         : BinaryExpression(loc)
         , _left(std::move(left))
         , _right(std::move(right)) {};
+
+    void print(std::ostream& stream);
 
     // left = right
     private:

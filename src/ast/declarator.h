@@ -15,6 +15,10 @@ struct Declarator {
 struct TypeSpecifier {
     public:
     TypeSpecifier(const Locatable loc) : _loc(loc) {};
+
+    virtual void print(std::ostream& stream) = 0;
+    friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<TypeSpecifier>& expr);
+
     private:
     const Locatable _loc;
 };
@@ -33,7 +37,7 @@ struct Declaration {
 };
 
 struct ParameterDeclaration {
-    TypeSpecifier specifier;
+    std::unique_ptr<TypeSpecifier> specifier;
     std::optional<Declarator> declarator;
 };
 
@@ -62,21 +66,25 @@ struct PointerDeclarator : public Declarator {
 struct VoidSpecifier: public TypeSpecifier {
     public: 
     VoidSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
+    void print(std::ostream& stream);
 };
 
 struct CharSpecifier: public TypeSpecifier {
     public: 
     CharSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
+    void print(std::ostream& stream);
 };
 
 struct IntSpecifier: public TypeSpecifier {
     public: 
     IntSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
+    void print(std::ostream& stream);
 };
 
 struct StructSpecifier: public TypeSpecifier {
     public:
     StructSpecifier(const Locatable loc, Symbol tag) : TypeSpecifier(loc), _tag(tag) {};
+    void print(std::ostream& stream);
     void addComponent(Declaration spec_decl);
 
     private:
