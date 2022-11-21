@@ -1,9 +1,9 @@
 #pragma once
+#include "expression.h"
 #include "../lexer/lexer.h"
 #include "../lexer/token.h"
-
-#include "../lexer/token.h"
 #include "../util/diagnostic.h"
+#include <optional>
 
 #include "declarator.h"
 
@@ -19,6 +19,7 @@ enum class DeclKind { ANY, ABSTRACT, CONCRETE };
 class Parser {
    public:
     Parser(Lexer& lexer, Token _currentToken, Token _nextToken);
+    Expression parseNext();
    private:
     Lexer& _lexer;
     Token _currentToken;
@@ -50,6 +51,15 @@ class Parser {
     /// return true iff this is the case. Keep the parsing state unchanged in
     /// both cases.
     bool checkLookAhead(TokenKind tk);
+
+    Expression parseExpression();
+    // help Functions to parse an Expression
+    Expression parsePrimaryExpression();
+    Expression parsePostfixExpression(std::optional<Expression> postfixExpression);
+    Expression parseUnaryExpression();
+    Expression parseBinaryExpression(int minPrec, std::optional<Expression> left);
+    Expression parseConditionalExpression(std::optional<Expression> left);
+    Expression parseAssignmentExpression();
 
     /// Internal methods for use in parseSpecDecl()
     Declarator* parseDeclarator(void);
