@@ -9,7 +9,11 @@ class LocatableStream {
    public:
     LocatableStream(std::string const& filename)
         : m_stream(std::ifstream(filename))
-        , m_filename(filename) {}
+        , m_filename(filename) {
+            if (!m_stream.good()) {
+                error("File '", filename, "' does not exist");
+            }
+        }
 
     unsigned char get();
     std::string get_str(size_t length);
