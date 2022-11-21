@@ -30,7 +30,6 @@ int main(int argc, char const* argv[]) {
             Token nextToken = lexer.next();
             Parser parser(lexer, currentToken, nextToken);
             Expression expr = parser.parseNext();
-            
             // TODO
         } else if (strcmp(argv[i], "--print-ast") == 0) {
             // TODO

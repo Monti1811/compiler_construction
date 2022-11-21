@@ -54,12 +54,12 @@ class Parser {
 
     Expression parseExpression();
     // help Functions to parse an Expression
-    PrimaryExpression parsePrimaryExpression();
-    PostfixExpression parsePostfixExpression(std::optional<PostfixExpression> postfixExpression);
-    UnaryExpression parseUnaryExpression();
-    BinaryExpression parseBinaryExpression(int minPrec, std::optional<BinaryExpression> left);
-    ConditionalExpression parseConditionalExpression(std::optional<UnaryExpression> left);
-    AssignmentExpression parseAssignmentExpression();
+    Expression parsePrimaryExpression();
+    Expression parsePostfixExpression(std::optional<Expression> postfixExpression);
+    Expression parseUnaryExpression();
+    Expression parseBinaryExpression(int minPrec, std::optional<Expression> left);
+    Expression parseConditionalExpression(std::optional<Expression> left);
+    Expression parseAssignmentExpression();
 
     /// Internal methods for use in parseSpecDecl()
     Declarator* parseDeclarator(void);
@@ -75,5 +75,5 @@ class Parser {
     /// If `dKind` is `DeclKind::CONCRETE`: verify that the declarator is a
     /// valid non-abstract declarator.
     /// If `dKind` is `DeclKind::ANY`: do not verify abstractness.
-    SpecDecl* parseSpecDecl(DeclKind dKind);
+    Declaration* parseSpecDecl(DeclKind dKind);
 };

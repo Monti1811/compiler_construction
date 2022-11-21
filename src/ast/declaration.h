@@ -7,12 +7,12 @@
 struct ExternalDeclaration {};
 
 struct FunctionDefinition: public ExternalDeclaration {
-    std::vector<Specifier> specifiers;
-    Declarator declarator;
-    CompoundStatement compound_statement;
+    Declaration declaration;
+    BlockStatement block;
 };
 
-struct Declaration: public ExternalDeclaration {
-    std::vector<Specifier> specifiers;
+// TODO: Duplicated in `declarator.h`
+struct Declaration: public ExternalDeclaration, public BlockItem {
+    std::vector<TypeSpecifier> specifiers;
     Declarator declarator;
 };

@@ -7,10 +7,10 @@ Parser::Parser(Lexer& lexer, Token currentToken, Token nextToken) : _lexer(lexer
 
 Expression Parser::parseNext() {
     return parseExpression();
-};
+}
 
-SpecDecl* Parser::parseSpecDecl(DeclKind dKind) {
-    Specifier* spec = nullptr;
+Declaration* Parser::parseSpecDecl(DeclKind dKind) {
+    TypeSpecifier* spec = nullptr;
     Locatable loc(getLoc());
     if (accept(TK_VOID)) {
         spec = new VoidSpecifier(loc);
@@ -54,7 +54,7 @@ SpecDecl* Parser::parseSpecDecl(DeclKind dKind) {
         //      that it fits with what is required by dKind
     }
 
-    return new SpecDecl(spec, decl);
+    return new Declaration(spec, decl);
 }
 
 Declarator* Parser::parseNonFunDeclarator(void) {
@@ -116,7 +116,7 @@ Expression Parser::parseExpression() {
     return parseAssignmentExpression();
 }
 
-PrimaryExpression Parser::parsePrimaryExpression() {
+Expression Parser::parsePrimaryExpression() {
     Token token = peekToken();
     Symbol sym = token.Text;
     switch(token.Kind) {
@@ -128,7 +128,7 @@ PrimaryExpression Parser::parsePrimaryExpression() {
         }
         case TokenKind::TK_ZERO_CONSTANT: 
         {
-            ZeroConstantExpression expr = ZeroConstantExpression();
+            IntConstantExpression expr = IntConstantExpression(sym);
             popToken();
             return expr;
         }
@@ -155,8 +155,7 @@ PrimaryExpression Parser::parsePrimaryExpression() {
             popToken();
             Expression expr = parseExpression();
             expect(TokenKind::TK_RPAREN, ")");
-            ParenthesizedExpression parenExpr = ParenthesizedExpression(expr);
-            return parenExpr;
+            return expr;
         }
         default: {
             errorloc(getLoc(), "wanted to parse PrimaryExpression but found no fitting token");
@@ -164,11 +163,11 @@ PrimaryExpression Parser::parsePrimaryExpression() {
     }
 }
 
-PostfixExpression Parser::parsePostfixExpression(std::optional<PostfixExpression> postfixExpression = std::nullopt) {
+Expression Parser::parsePostfixExpression(std::optional<Expression> postfixExpression = std::nullopt) {
     // if there is no postfixExpression preceding the current token
     // parse current token, as this has to be a primaryExpression either way
     if (!postfixExpression) {
-        postfixExpression = BasePostfixExpression(parsePrimaryExpression());
+        postfixExpression = parsePrimaryExpression();
     }
     Token token = peekToken();
     switch (token.Kind) {
@@ -177,7 +176,7 @@ PostfixExpression Parser::parsePostfixExpression(std::optional<PostfixExpression
         {
             popToken(); // accept [
             Expression index = parseExpression(); // accept index
-            expect(TK_RBRACKET, "("); // expect ]
+            expect(TK_RBRACKET, "]"); // expect ]
             IndexExpression newPostfixExpression(postfixExpression.value(), index);
             return parsePostfixExpression(newPostfixExpression);
         }
@@ -220,7 +219,7 @@ PostfixExpression Parser::parsePostfixExpression(std::optional<PostfixExpression
     }
 }
 
-UnaryExpression Parser::parseUnaryExpression() {
+Expression Parser::parseUnaryExpression() {
     Token token = peekToken();
     switch (token.Kind) {
         // &unaryexpr
@@ -256,27 +255,35 @@ UnaryExpression Parser::parseUnaryExpression() {
         {
             popToken(); // accept sizeof
             // check wether ( and type-name follows
-            if (check(TokenKind::TK_LPAREN) && 
-                (checkLookAhead(TK_CHAR) || checkLookAhead(TK_INT) || checkLookAhead(TK_SHORT) || checkLookAhead(TK_DOUBLE) || checkLookAhead(TK_FLOAT)
-                || checkLookAhead(TK_LONG) || checkLookAhead(TK_UNSIGNED) || checkLookAhead(TK_SIGNED))) 
+            if (check(TokenKind::TK_LPAREN))
             // sizeof (type-name)
             {
-                popToken(); // accept (
-                SizeofTypeNameExpression sizeOfExpr(peekToken().Kind);
-                popToken(); // accept type-name
-                expect(TokenKind::TK_RPAREN, ")"); // expect )
-                return sizeOfExpr;
+                if (checkLookAhead(TokenKind::TK_INT)) {
+                    popToken(); // accept (
+                    IntSpecifier intSpec(peekToken());
+                    SizeofTypeExpression expr(intSpec);
+                    expect(TokenKind::TK_RPAREN, ")"); // expect )
+                    return expr;
+                } else if (checkLookAhead(TokenKind::TK_VOID)) {
+                    popToken(); // accept (
+                    VoidSpecifier voidSpec(peekToken());
+                    SizeofTypeExpression expr(voidSpec);
+                    expect(TokenKind::TK_RPAREN, ")");
+                    return expr;
+                } else if (checkLookAhead(TokenKind::TK_CHAR)) {
+                    popToken(); // accept (
+                    CharSpecifier charSpec(peekToken());
+                    SizeofTypeExpression expr(charSpec);
+                    expect(TokenKind::TK_RPAREN, ")");
+                    return expr;
+                }
             }
-            // sizeof unaryxpr
-            else {
-                SizeofExpression sizeOfExpr(parseUnaryExpression());
-                return sizeOfExpr;
-            }
+            SizeofExpression expr(parseUnaryExpression());
+            return expr;
         }
         // no unary-operator or sizeof found
         default: {
-            BaseUnaryExpression baseUnaryExpr(parsePostfixExpression());
-            return baseUnaryExpr;
+            return parsePostfixExpression();
         }
     }
 }
@@ -341,11 +348,11 @@ const int getPrecedenceLevel(TokenKind tk) {
     }
 }
 
-BinaryExpression Parser::parseBinaryExpression(int minPrec = 0, std::optional<BinaryExpression> left = std::nullopt) {
+Expression Parser::parseBinaryExpression(int minPrec = 0, std::optional<Expression> left = std::nullopt) {
     // compute unary expr
     // inbetween operators there has to be a unary expr
     if (!left) {
-        left = BaseBinaryExpression(parseUnaryExpression());
+        left = parseUnaryExpression();
     }
     
     while (true) {
@@ -360,7 +367,7 @@ BinaryExpression Parser::parseBinaryExpression(int minPrec = 0, std::optional<Bi
         precLevel++;
 
         popToken(); // accept binaryOp
-        BinaryExpression right = parseBinaryExpression(precLevel);
+        Expression right = parseBinaryExpression(precLevel);
         switch (token.Kind) {
             // binaryOp = *
             case TK_ASTERISK: {
@@ -394,12 +401,12 @@ BinaryExpression Parser::parseBinaryExpression(int minPrec = 0, std::optional<Bi
             }
             // binaryOp &&
             case TK_AND_AND: {
-                BinaryLogicalAndExpression logAndExpr(left.value(), right);
+                AndExpression logAndExpr(left.value(), right);
                 return parseBinaryExpression(0, logAndExpr);
             }
             // binaryOp ||
             case TK_PIPE_PIPE: {
-                BinaryLogicalOrExpression logOrExpr(left.value(), right);
+                OrExpression logOrExpr(left.value(), right);
                 return parseBinaryExpression(0, logOrExpr);
             }
             default: 
@@ -410,35 +417,34 @@ BinaryExpression Parser::parseBinaryExpression(int minPrec = 0, std::optional<Bi
 
 }
 
-ConditionalExpression Parser::parseConditionalExpression(std::optional<UnaryExpression> left = std::nullopt) {
+Expression Parser::parseConditionalExpression(std::optional<Expression> left = std::nullopt) {
     // parse cond
-    BinaryExpression cond = (left.has_value()) ? parseBinaryExpression(0, BaseBinaryExpression(left.value())) : parseBinaryExpression();
+    Expression cond = (left.has_value()) ? parseBinaryExpression(0, left.value()) : parseBinaryExpression();
     // check for ?
     if (accept(TokenKind::TK_QUESTION_MARK)) {
         // accept ?
         Expression operandOne = parseExpression();
         expect(TokenKind::TK_COLON, ":"); // expect :
-        ConditionalExpression operandTwo = parseConditionalExpression();
+        Expression operandTwo = parseConditionalExpression();
         TernaryExpression condExpr(cond, operandOne, operandTwo);
         return condExpr;
     }
-    return BaseConditionalExpression(cond);
+    return cond;
 }
 
-AssignmentExpression Parser::parseAssignmentExpression() {
-    UnaryExpression unaryExpr = parseUnaryExpression();
+Expression Parser::parseAssignmentExpression() {
+    Expression unaryExpr = parseUnaryExpression();
     // check for =
     if (accept(TokenKind::TK_EQUAL)) {
         // accept = and start parsing AssignmentExpression
-        AssignmentExpression right = parseAssignmentExpression();
-        return EqualAssignExpression(unaryExpr, right);
+        Expression right = parseAssignmentExpression();
+        return AssignExpression(unaryExpr, right);
     }
     // we know it's not an assignment and therefore we keep parsing a cond expression
     // but with the knowledge that we have already parsed a unary expression
     // this works since every binaryexpression starts with a unary expression 
     // and every conditionalexpression starts with a binary expression
-    BaseAssignmentExpression expr(parseConditionalExpression(unaryExpr));
-    return expr;
+    return parseConditionalExpression(unaryExpr);
 }
 
 void Parser::popToken() {

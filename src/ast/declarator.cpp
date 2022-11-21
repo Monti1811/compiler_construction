@@ -4,10 +4,10 @@ bool Declarator::isEmptyDeclarator() {
     // TODO
 }
 
-void FunctionDeclarator::addParameter(SpecDecl* param) {
+void FunctionDeclarator::addParameter(Declaration* param) {
     // TODO
 }
 
-void StructSpecifier::addComponent(SpecDecl*& spec_decl) {
+void StructSpecifier::addComponent(Declaration*& spec_decl) {
     // TODO
 }
