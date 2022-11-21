@@ -29,7 +29,7 @@ int main(int argc, char const* argv[]) {
             Token currentToken = lexer.next();
             Token nextToken = lexer.next();
             Parser parser(lexer, currentToken, nextToken);
-            Expression expr = parser.parseNext();
+            auto expr = parser.parseNext();
             // TODO
         } else if (strcmp(argv[i], "--print-ast") == 0) {
             // TODO

@@ -6,7 +6,7 @@
 
 Parser::Parser(Lexer& lexer, Token currentToken, Token nextToken) : _lexer(lexer), _currentToken(currentToken), _nextToken(nextToken) {};
 
-Expression Parser::parseNext() {
+std::unique_ptr<Expression> Parser::parseNext() {
     return parseExpression();
 }
 
@@ -115,50 +115,50 @@ Declarator* Parser::parseDeclarator(void) {
     return res;
 }
 
-Expression Parser::parseExpression() {
-    return parseAssignmentExpression();
+std::unique_ptr<Expression> Parser::parseExpression() {
+    return std::move(parseAssignmentExpression());
 }
 
-Expression Parser::parsePrimaryExpression() {
+std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
     Token token = peekToken();
     Symbol sym = token.Text;
     switch(token.Kind) {
         case TokenKind::TK_IDENTIFIER: 
         {
-            IdentExpression expr(getLoc(), sym);
+            auto expr = std::make_unique<IdentExpression>(getLoc(), sym);
             popToken();
-            return expr;
+            return std::move(expr);
         }
         case TokenKind::TK_ZERO_CONSTANT: 
         {
-            IntConstantExpression expr = IntConstantExpression(getLoc(), sym);
+            auto expr = std::make_unique<IntConstantExpression>(getLoc(), sym);
             popToken();
-            return expr;
+            return std::move(expr);
         }
         case TokenKind::TK_DECIMAL_CONSTANT: 
         {
-            IntConstantExpression expr(getLoc(), sym);
+            auto expr = std::make_unique<IntConstantExpression>(getLoc(), sym);
             popToken();
-            return expr;
+            return std::move(expr);
         }
         case TokenKind::TK_CHARACTER_CONSTANT:
         {
-            CharConstantExpression expr(getLoc(), sym);
+            auto expr = std::make_unique<CharConstantExpression>(getLoc(), sym);
             popToken();
-            return expr;
+            return std::move(expr);
         }
         case TokenKind::TK_STRING_LITERAL: 
         {
-            StringLiteralExpression expr(getLoc(), sym);
+            auto expr = std::make_unique<StringLiteralExpression>(getLoc(), sym);
             popToken();
-            return expr;
+            return std::move(expr);
         }
         case TokenKind::TK_LPAREN: 
         {
             popToken();
-            Expression expr = parseExpression();
+            auto expr = parseExpression();
             expect(TokenKind::TK_RPAREN, ")");
-            return expr;
+            return std::move(expr);
         }
         default: {
             errorloc(getLoc(), "wanted to parse PrimaryExpression but found no fitting token");
@@ -166,7 +166,7 @@ Expression Parser::parsePrimaryExpression() {
     }
 }
 
-Expression Parser::parsePostfixExpression(std::optional<Expression> postfixExpression = std::nullopt) {
+std::unique_ptr<Expression> Parser::parsePostfixExpression(std::optional<std::unique_ptr<Expression>> postfixExpression = std::nullopt) {
     // if there is no postfixExpression preceding the current token
     // parse current token, as this has to be a primaryExpression either way
     if (!postfixExpression) {
@@ -178,10 +178,10 @@ Expression Parser::parsePostfixExpression(std::optional<Expression> postfixExpre
         case TokenKind::TK_LBRACKET: 
         {
             popToken(); // accept [
-            Expression index = parseExpression(); // accept index
+            auto index = parseExpression(); // accept index
             expect(TK_RBRACKET, "]"); // expect ]
-            IndexExpression newPostfixExpression(getLoc(), std::make_unique<Expression>(postfixExpression.value()), std::make_unique<Expression>(index));
-            return parsePostfixExpression(newPostfixExpression);
+            auto newPostfixExpr = std::make_unique<IndexExpression>(getLoc(), std::move(postfixExpression.value()), std::move(index));
+            return parsePostfixExpression(std::move(newPostfixExpr));
         }
         // function call (a_1, a_2, ...)
         case TokenKind::TK_LPAREN:
@@ -189,68 +189,68 @@ Expression Parser::parsePostfixExpression(std::optional<Expression> postfixExpre
             popToken(); // accept (
             auto args = std::vector<std::unique_ptr<Expression>>();
             while (peekToken().Kind != TokenKind::TK_RPAREN) { // argumente lesen bis )
-                Expression arg = parseExpression(); // parse a_i
+                auto arg = parseExpression(); // parse a_i
                 accept(TK_COMMA); // accept ,
-                args.push_back(std::make_unique<Expression>(arg));
+                args.push_back(std::move(arg));
             }
             popToken(); // accept )
-            CallExpression newPostfixExpression(getLoc(), std::make_unique<Expression>(postfixExpression.value()), args);
-            return parsePostfixExpression(newPostfixExpression);
+            auto newPostfixExpr = std::make_unique<CallExpression>(getLoc(), std::move(postfixExpression.value()), std::move(args));
+            return parsePostfixExpression(std::move(newPostfixExpr));
         }
         // .id
         case TokenKind::TK_DOT:
         {
             popToken(); // accept .
             expect(TK_IDENTIFIER, "Identifier"); // expect id
-            IdentExpression ident(getLoc(), token.Text);
-            DotExpression newPostfixExpression(getLoc(), std::make_unique<Expression>(postfixExpression.value()), std::make_unique<IdentExpression>(ident));
-            return parsePostfixExpression(newPostfixExpression);
+            auto ident = std::make_unique<IdentExpression>(getLoc(), token.Text);
+            auto newPostfixExpr = std::make_unique<DotExpression>(getLoc(), std::move(postfixExpression.value()), std::move(ident));
+            return parsePostfixExpression(std::move(newPostfixExpr));
         }
         // -> id
         case TokenKind::TK_ARROW:
         {
             popToken(); // accept .
             expect(TK_IDENTIFIER, "Identifier"); // expect id
-            IdentExpression ident(getLoc(), token.Text);
-            ArrowExpression newPostfixExpression(getLoc(), std::make_unique<Expression>(postfixExpression.value()), std::make_unique<IdentExpression>(ident));
-            return parsePostfixExpression(newPostfixExpression);
+            auto ident = std::make_unique<IdentExpression>(getLoc(), token.Text);
+            auto newPostfixExpr = std::make_unique<ArrowExpression>(getLoc(), std::move(postfixExpression.value()), std::move(ident));
+            return parsePostfixExpression(std::move(newPostfixExpr));
         }
         // no postfix found
         // postFixExpressionFinished
         default:
-        return postfixExpression.value();
+        return std::move(postfixExpression.value());
     }
 }
 
-Expression Parser::parseUnaryExpression() {
+std::unique_ptr<Expression> Parser::parseUnaryExpression() {
     Token token = peekToken();
     switch (token.Kind) {
         // &unaryexpr
         case TokenKind::TK_AND:
         {
             popToken();
-            ReferenceExpression refExpr(getLoc(), std::make_unique<Expression>(parseUnaryExpression()));
+            auto refExpr = std::make_unique<ReferenceExpression>(getLoc(), parseUnaryExpression());
             return refExpr;
         }
         // *unaryexpr
         case TokenKind::TK_ASTERISK:
         {
             popToken();
-            PointerExpression pointerExpr(getLoc(), std::make_unique<Expression>(parseUnaryExpression()));
+            auto pointerExpr = std::make_unique<PointerExpression>(getLoc(), parseUnaryExpression());
             return pointerExpr;
         }
         // -unaryexpr
         case TokenKind::TK_MINUS:
         {
             popToken();
-            NegationExpression negExpr(getLoc(), std::make_unique<Expression>(parseUnaryExpression()));
+            auto negExpr = std::make_unique<NegationExpression>(getLoc(), parseUnaryExpression());
             return negExpr;
         }
         // !unaryexpr
         case TokenKind::TK_BANG:
         {
             popToken();
-            LogicalNegationExpression logNegExpr(getLoc(), std::make_unique<Expression>(parseUnaryExpression()));
+            auto logNegExpr = std::make_unique<LogicalNegationExpression>(getLoc(), parseUnaryExpression());
             return logNegExpr;
         }
         // sizeof unaryexpr or sizeof (type-name)
@@ -264,24 +264,24 @@ Expression Parser::parseUnaryExpression() {
                 if (checkLookAhead(TokenKind::TK_INT)) {
                     popToken(); // accept (
                     IntSpecifier intSpec(peekToken());
-                    SizeofTypeExpression expr(getLoc(), intSpec);
+                    auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), intSpec);
                     expect(TokenKind::TK_RPAREN, ")"); // expect )
                     return expr;
                 } else if (checkLookAhead(TokenKind::TK_VOID)) {
                     popToken(); // accept (
                     VoidSpecifier voidSpec(peekToken());
-                    SizeofTypeExpression expr(getLoc(), voidSpec);
+                    auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), voidSpec);
                     expect(TokenKind::TK_RPAREN, ")");
                     return expr;
                 } else if (checkLookAhead(TokenKind::TK_CHAR)) {
                     popToken(); // accept (
                     CharSpecifier charSpec(peekToken());
-                    SizeofTypeExpression expr(getLoc(), charSpec);
+                    auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), charSpec);
                     expect(TokenKind::TK_RPAREN, ")");
                     return expr;
                 }
             }
-            SizeofExpression expr(getLoc(), std::make_unique<Expression>(parseUnaryExpression()));
+            auto expr = std::make_unique<SizeofExpression>(getLoc(), parseUnaryExpression());
             return expr;
         }
         // no unary-operator or sizeof found
@@ -351,7 +351,7 @@ const int getPrecedenceLevel(TokenKind tk) {
     }
 }
 
-Expression Parser::parseBinaryExpression(int minPrec = 0, std::optional<Expression> left = std::nullopt) {
+std::unique_ptr<Expression> Parser::parseBinaryExpression(int minPrec = 0, std::optional<std::unique_ptr<Expression>> left = std::nullopt) {
     // compute unary expr
     // inbetween operators there has to be a unary expr
     if (!left) {
@@ -363,91 +363,91 @@ Expression Parser::parseBinaryExpression(int minPrec = 0, std::optional<Expressi
         int precLevel = getPrecedenceLevel(token.Kind);
 
         if (minPrec > precLevel) {
-            return left.value();
+            return std::move(left.value());
         }
 
         // since every binary Operator (that we handle) is left-associative
         precLevel++;
 
         popToken(); // accept binaryOp
-        Expression right = parseBinaryExpression(precLevel);
+        auto right = parseBinaryExpression(precLevel);
         switch (token.Kind) {
             // binaryOp = *
             case TK_ASTERISK: {
-                MultiplyExpression multExpr(getLoc(), std::make_unique<Expression>(left.value()), std::make_unique<Expression>(right));
-                return parseBinaryExpression(0, multExpr);
+                auto multExpr = std::make_unique<MultiplyExpression>(getLoc(), std::move(left.value()), std::move(right));
+                return parseBinaryExpression(0, std::move(multExpr));
             }
             // binaryOp = -
             case TK_MINUS: {
-                SubstractExpression subExpr(getLoc(), std::make_unique<Expression>(left.value()), std::make_unique<Expression>(right));
-                return parseBinaryExpression(0, subExpr);
+                auto subExpr = std::make_unique<SubstractExpression>(getLoc(), std::move(left.value()), std::move(right));
+                return parseBinaryExpression(0, std::move(subExpr));
             }
             // binaryOp = +
             case TK_PLUS: {
-                AddExpression addExpr(getLoc(), std::make_unique<Expression>(left.value()), std::make_unique<Expression>(right));
-                return parseBinaryExpression(0, addExpr);
+                auto addExpr = std::make_unique<AddExpression>(getLoc(), std::move(left.value()), std::move(right));
+                return parseBinaryExpression(0, std::move(addExpr));
             }
             // binaryOp = <
             case TK_LESS: {
-                LessThanExpression lessThanExpr(getLoc(), std::make_unique<Expression>(left.value()), std::make_unique<Expression>(right));
-                return parseBinaryExpression(0, lessThanExpr);
+                auto lessThanExpr = std::make_unique<LessThanExpression>(getLoc(), std::move(left.value()), std::move(right));
+                return parseBinaryExpression(0, std::move(lessThanExpr));
             }
             // binaryOp !=
             case TK_NOT_EQUAL: {
-                UnequalExpression unequalExpr(getLoc(), std::make_unique<Expression>(left.value()), std::make_unique<Expression>(right));
-                return parseBinaryExpression(0, unequalExpr);
+                auto unequalExpr = std::make_unique<UnequalExpression>(getLoc(), std::move(left.value()), std::move(right));
+                return parseBinaryExpression(0, std::move(unequalExpr));
             }
             // binaryOp ==
             case TK_EQUAL_EQUAL: {
-                EqualExpression equalExpr(getLoc(), std::make_unique<Expression>(left.value()), std::make_unique<Expression>(right));
-                return parseBinaryExpression(0, equalExpr);
+                auto equalExpr = std::make_unique<EqualExpression>(getLoc(), std::move(left.value()), std::move(right));
+                return parseBinaryExpression(0, std::move(equalExpr));
             }
             // binaryOp &&
             case TK_AND_AND: {
-                AndExpression logAndExpr(getLoc(), std::make_unique<Expression>(left.value()), std::make_unique<Expression>(right));
-                return parseBinaryExpression(0, logAndExpr);
+                auto logAndExpr = std::make_unique<AndExpression>(getLoc(), std::move(left.value()), std::move(right));
+                return parseBinaryExpression(0, std::move(logAndExpr));
             }
             // binaryOp ||
             case TK_PIPE_PIPE: {
-                OrExpression logOrExpr(getLoc(), std::make_unique<Expression>(left.value()), std::make_unique<Expression>(right));
-                return parseBinaryExpression(0, logOrExpr);
+                auto logOrExpr = std::make_unique<OrExpression>(getLoc(), std::move(left.value()), std::move(right));
+                return parseBinaryExpression(0, std::move(logOrExpr));
             }
             default: 
             // no binary Op found
-                return left.value();
+                return std::move(left.value());
         }
     }
 
 }
 
-Expression Parser::parseConditionalExpression(std::optional<Expression> left = std::nullopt) {
+std::unique_ptr<Expression> Parser::parseConditionalExpression(std::optional<std::unique_ptr<Expression>> left = std::nullopt) {
     // parse cond
-    Expression cond = (left.has_value()) ? parseBinaryExpression(0, left.value()) : parseBinaryExpression();
+    auto cond = (left.has_value()) ? parseBinaryExpression(0, std::move(left.value())) : parseBinaryExpression();
     // check for ?
     if (accept(TokenKind::TK_QUESTION_MARK)) {
         // accept ?
-        Expression operandOne = parseExpression();
+        auto operandOne = parseExpression();
         expect(TokenKind::TK_COLON, ":"); // expect :
-        Expression operandTwo = parseConditionalExpression();
-        TernaryExpression condExpr(getLoc(), std::make_unique<Expression>(cond), std::make_unique<Expression>(operandOne), std::make_unique<Expression>(operandTwo));
+        auto operandTwo = parseConditionalExpression();
+        auto condExpr = std::make_unique<TernaryExpression>(getLoc(), std::move(cond), std::move(operandOne), std::move(operandTwo));
         return condExpr;
     }
     return cond;
 }
 
-Expression Parser::parseAssignmentExpression() {
-    Expression unaryExpr = parseUnaryExpression();
+std::unique_ptr<Expression> Parser::parseAssignmentExpression() {
+    std::unique_ptr<Expression> unaryExpr = parseUnaryExpression();
     // check for =
     if (accept(TokenKind::TK_EQUAL)) {
         // accept = and start parsing AssignmentExpression
-        Expression right = parseAssignmentExpression();
-        return AssignExpression(getLoc(), std::make_unique<Expression>(unaryExpr), std::make_unique<Expression>(right));
+        std::unique_ptr<Expression> right = parseAssignmentExpression();
+        return std::make_unique<AssignExpression>(getLoc(), std::move(unaryExpr), std::move(right));
     }
     // we know it's not an assignment and therefore we keep parsing a cond expression
     // but with the knowledge that we have already parsed a unary expression
     // this works since every binaryexpression starts with a unary expression 
     // and every conditionalexpression starts with a binary expression
-    return parseConditionalExpression(unaryExpr);
+    return parseConditionalExpression(std::move(unaryExpr));
 }
 
 void Parser::popToken() {

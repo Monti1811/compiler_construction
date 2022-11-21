@@ -22,7 +22,7 @@ enum class DeclKind { ANY, ABSTRACT, CONCRETE };
 class Parser {
    public:
     Parser(Lexer& lexer, Token _currentToken, Token _nextToken);
-    Expression parseNext();
+    std::unique_ptr<Expression> parseNext();
    private:
     Lexer& _lexer;
     Token _currentToken;
@@ -55,14 +55,14 @@ class Parser {
     /// both cases.
     bool checkLookAhead(TokenKind tk);
 
-    Expression parseExpression();
+    std::unique_ptr<Expression> parseExpression();
     // help Functions to parse an Expression
-    Expression parsePrimaryExpression();
-    Expression parsePostfixExpression(std::optional<Expression> postfixExpression);
-    Expression parseUnaryExpression();
-    Expression parseBinaryExpression(int minPrec, std::optional<Expression> left);
-    Expression parseConditionalExpression(std::optional<Expression> left);
-    Expression parseAssignmentExpression();
+    std::unique_ptr<Expression> parsePrimaryExpression();
+    std::unique_ptr<Expression> parsePostfixExpression(std::optional<std::unique_ptr<Expression>> postfixExpression);
+    std::unique_ptr<Expression> parseUnaryExpression();
+    std::unique_ptr<Expression> parseBinaryExpression(int minPrec, std::optional<std::unique_ptr<Expression>> left);
+    std::unique_ptr<Expression> parseConditionalExpression(std::optional<std::unique_ptr<Expression>> left);
+    std::unique_ptr<Expression> parseAssignmentExpression();
 
     /// Internal methods for use in parseSpecDecl()
     Declarator* parseDeclarator(void);
