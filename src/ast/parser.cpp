@@ -379,42 +379,42 @@ std::unique_ptr<Expression> Parser::parseBinaryExpression(int minPrec = 0, std::
             // binaryOp = *
             case TK_ASTERISK: {
                 auto multExpr = std::make_unique<MultiplyExpression>(getLoc(), std::move(left.value()), std::move(right));
-                return parseBinaryExpression(0, std::move(multExpr));
+                return parseBinaryExpression(minPrec, std::move(multExpr));
             }
             // binaryOp = -
             case TK_MINUS: {
                 auto subExpr = std::make_unique<SubstractExpression>(getLoc(), std::move(left.value()), std::move(right));
-                return parseBinaryExpression(0, std::move(subExpr));
+                return parseBinaryExpression(minPrec, std::move(subExpr));
             }
             // binaryOp = +
             case TK_PLUS: {
                 auto addExpr = std::make_unique<AddExpression>(getLoc(), std::move(left.value()), std::move(right));
-                return parseBinaryExpression(0, std::move(addExpr));
+                return parseBinaryExpression(minPrec, std::move(addExpr));
             }
             // binaryOp = <
             case TK_LESS: {
                 auto lessThanExpr = std::make_unique<LessThanExpression>(getLoc(), std::move(left.value()), std::move(right));
-                return parseBinaryExpression(0, std::move(lessThanExpr));
+                return parseBinaryExpression(minPrec, std::move(lessThanExpr));
             }
             // binaryOp !=
             case TK_NOT_EQUAL: {
                 auto unequalExpr = std::make_unique<UnequalExpression>(getLoc(), std::move(left.value()), std::move(right));
-                return parseBinaryExpression(0, std::move(unequalExpr));
+                return parseBinaryExpression(minPrec, std::move(unequalExpr));
             }
             // binaryOp ==
             case TK_EQUAL_EQUAL: {
                 auto equalExpr = std::make_unique<EqualExpression>(getLoc(), std::move(left.value()), std::move(right));
-                return parseBinaryExpression(0, std::move(equalExpr));
+                return parseBinaryExpression(minPrec, std::move(equalExpr));
             }
             // binaryOp &&
             case TK_AND_AND: {
                 auto logAndExpr = std::make_unique<AndExpression>(getLoc(), std::move(left.value()), std::move(right));
-                return parseBinaryExpression(0, std::move(logAndExpr));
+                return parseBinaryExpression(minPrec, std::move(logAndExpr));
             }
             // binaryOp ||
             case TK_PIPE_PIPE: {
                 auto logOrExpr = std::make_unique<OrExpression>(getLoc(), std::move(left.value()), std::move(right));
-                return parseBinaryExpression(0, std::move(logOrExpr));
+                return parseBinaryExpression(minPrec, std::move(logOrExpr));
             }
             default: 
             // no binary Op found
