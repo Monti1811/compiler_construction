@@ -1,11 +1,14 @@
 #pragma once
-#include "expression.h"
+
+#include <memory>
+#include <optional>
+
 #include "../lexer/lexer.h"
 #include "../lexer/token.h"
 #include "../util/diagnostic.h"
-#include <optional>
 
 #include "declarator.h"
+#include "expression.h"
 
 // Declarators and abstract declarators share a lot of syntactical and
 // semantical properties. Therefore, we use the same AST data structures to
@@ -75,5 +78,5 @@ class Parser {
     /// If `dKind` is `DeclKind::CONCRETE`: verify that the declarator is a
     /// valid non-abstract declarator.
     /// If `dKind` is `DeclKind::ANY`: do not verify abstractness.
-    Declaration* parseSpecDecl(DeclKind dKind);
+    Declaration parseSpecDecl(DeclKind dKind);
 };

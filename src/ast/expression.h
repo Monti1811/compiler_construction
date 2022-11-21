@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 #include <string.h>
 
@@ -8,215 +9,311 @@
 #include "../lexer/token.h"
 #include "declarator.h"
 
+#include "declarator.h"
+
 struct Expression {
-    public:
-    // TODO: Implement Locatable
+    Expression(Locatable loc)
+        : loc(loc) {};
+
+    Locatable loc;
 };
 
 struct IdentExpression: public Expression {
     public:
-    IdentExpression(Symbol ident) : _ident(*ident) {};
+    IdentExpression(Locatable loc, Symbol ident)
+        : Expression(loc)
+        , _ident(ident) {};
+
     private:
-    std::string _ident;
+    Symbol _ident;
 };
 
 struct IntConstantExpression: public Expression {
     public:
-    IntConstantExpression(Symbol value) : _value( std::stoi(*value) ) {};
-    private:
-    int _value;
+    IntConstantExpression(Locatable loc, Symbol value)
+        : Expression(loc)
+        , _value(std::stoull(*value)) {};
+
+    unsigned long long _value;
 };
 
 struct CharConstantExpression: public Expression {
     public:
-    CharConstantExpression(Symbol value) : _value( (*value)[0] ) {};
-    private:
-    char _value;
+    CharConstantExpression(Locatable loc, Symbol value)
+        : Expression(loc)
+        , _value( (*value)[0] ) {};
+
+    unsigned char _value;
 };
 
 struct StringLiteralExpression: public Expression {
     public:
-    StringLiteralExpression(Symbol value) : _value(*value) {};
+    StringLiteralExpression(Locatable loc, Symbol value)
+        : Expression(loc)
+        , _value(*value) {};
+
     private:
     std::string _value;
 };
 
 struct IndexExpression: public Expression {
-    // expression[index]
     public:
-    IndexExpression(Expression expression, Expression index) : _expression(expression), _index(index) {};
+    IndexExpression(Locatable loc, std::unique_ptr<Expression> expression, std::unique_ptr<Expression> index)
+        : Expression(loc)
+        , _expression(std::move(expression))
+        , _index(std::move(index)) {};
+
+    // expression[index]
     private:
-    Expression _expression;
-    Expression _index;
+    std::unique_ptr<Expression> _expression;
+    std::unique_ptr<Expression> _index;
 };
 
 struct CallExpression: public Expression {
-    // expression(args)
     public:
-    CallExpression(Expression expression, std::vector<Expression> arguments) : _expression(expression), _arguments(arguments) {};
-    private:
-    Expression _expression;
-    std::vector<Expression> _arguments;
+    CallExpression(Locatable loc, std::unique_ptr<Expression> expression, std::vector<std::unique_ptr<Expression>> arguments)
+        : Expression(loc)
+        , _expression(std::move(expression))
+        , _arguments(std::move(arguments)) {};
+
+    // expression(args)
+    std::unique_ptr<Expression> _expression;
+    std::vector<std::unique_ptr<Expression>> _arguments;
 };
 
 struct DotExpression: public Expression {
-    // expression.ident
     public:
-    DotExpression(Expression expression, IdentExpression ident) : _expression(expression), _ident(ident) {};
+    DotExpression(Locatable loc, std::unique_ptr<Expression> expression, std::unique_ptr<IdentExpression> ident)
+        : Expression(loc)
+        , _expression(std::move(expression))
+        , _ident(std::move(ident)) {};
+
+    // expression.ident
     private:
-    Expression _expression;
-    IdentExpression _ident;
+    std::unique_ptr<Expression> _expression;
+    std::unique_ptr<IdentExpression> _ident;
 };
 
 struct ArrowExpression: public Expression {
-    // expression->ident
     public:
-    ArrowExpression(Expression expression, IdentExpression ident) : _expression(expression), _ident(ident) {};
+    ArrowExpression(Locatable loc, std::unique_ptr<Expression> expression, std::unique_ptr<IdentExpression> ident)
+        : Expression(loc)
+        , _expression(std::move(expression))
+        , _ident(std::move(ident)) {};
+
+    // expression->ident
     private:
-    Expression _expression;
-    IdentExpression _ident;
+    std::unique_ptr<Expression> _expression;
+    std::unique_ptr<IdentExpression> _ident;
 };
 
-struct UnaryExpression: public Expression {};
+struct UnaryExpression: public Expression {
+    public:
+    UnaryExpression(Locatable loc)
+        : Expression(loc) {};
+};
 
 struct SizeofExpression: public UnaryExpression {
-    // sizeof inner
     public:
-    SizeofExpression(Expression inner) : _inner(inner) {};
+    SizeofExpression(Locatable loc, std::unique_ptr<Expression> inner)
+        : UnaryExpression(loc)
+        , _inner(std::move(inner)) {};
+
+    // sizeof inner
     private:
-    Expression _inner;
+    std::unique_ptr<Expression> _inner;
 };
 
 struct SizeofTypeExpression: public UnaryExpression {
-    // sizeof (inner)
     public:
-    SizeofTypeExpression(TypeSpecifier type) : _type(type) {};
+    SizeofTypeExpression(Locatable loc, TypeSpecifier type)
+        : UnaryExpression(loc)
+        , _type(type) {};
+
+    // sizeof (inner)
     private:
     TypeSpecifier _type;
 };
 
 struct ReferenceExpression: public UnaryExpression {
-    // &inner
     public:
-    ReferenceExpression(Expression inner) : _inner(inner) {};
+    ReferenceExpression(Locatable loc, std::unique_ptr<Expression> inner)
+        : UnaryExpression(loc)
+        , _inner(std::move(inner)) {};
+
+    // &inner
     private:
-    Expression _inner;
+    std::unique_ptr<Expression> _inner;
 };
 
 struct PointerExpression: public UnaryExpression {
-    // *inner
     public:
-    PointerExpression(Expression inner) : _inner(inner) {};
+    PointerExpression(Locatable loc, std::unique_ptr<Expression> inner)
+        : UnaryExpression(loc)
+        , _inner(std::move(inner)) {};
+
+    // *inner
     private:
-    Expression _inner;
+    std::unique_ptr<Expression> _inner;
 };
 
 struct NegationExpression: public UnaryExpression {
-    // -inner
     public:
-    NegationExpression(Expression inner) : _inner(inner) {};
+    NegationExpression(Locatable loc, std::unique_ptr<Expression> inner)
+        : UnaryExpression(loc)
+        , _inner(std::move(inner)) {};
+
+    // -inner
     private:
-    Expression _inner;
+    std::unique_ptr<Expression> _inner;
 };
 
 struct LogicalNegationExpression: public UnaryExpression {
-    // !inner
     public:
-    LogicalNegationExpression(Expression inner) : _inner(inner) {};
+    LogicalNegationExpression(Locatable loc, std::unique_ptr<Expression> inner)
+        : UnaryExpression(loc)
+        , _inner(std::move(inner)) {};
+
+    // !inner
     private:
-    Expression _inner;
+    std::unique_ptr<Expression> _inner;
 };
 
-struct BinaryExpression: public Expression {};
+struct BinaryExpression: public Expression {
+    public:
+    BinaryExpression(Locatable loc)
+        : Expression(loc) {};
+};
 
 struct MultiplyExpression: public BinaryExpression {
-    // left * right
     public:
-    MultiplyExpression(Expression left, Expression right) : _left(left), _right(right) {};
+    MultiplyExpression(Locatable loc, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
+        : BinaryExpression(loc)
+        , _left(std::move(left))
+        , _right(std::move(right)) {};
+
+    // left * right
     private:
-    Expression _left;
-    Expression _right;
+    std::unique_ptr<Expression> _left;
+    std::unique_ptr<Expression> _right;
 };
 
 struct AddExpression: public BinaryExpression {
-    // left + right
     public:
-    AddExpression(Expression left, Expression right) : _left(left), _right(right) {};
+    AddExpression(Locatable loc, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
+        : BinaryExpression(loc)
+        , _left(std::move(left))
+        , _right(std::move(right)) {};
+
+    // left + right
     private:
-    Expression _left;
-    Expression _right;
+    std::unique_ptr<Expression> _left;
+    std::unique_ptr<Expression> _right;
 };
 
 struct SubstractExpression: public BinaryExpression {
-    // left - right
     public:
-    SubstractExpression(Expression left, Expression right) : _left(left), _right(right) {};
+    SubstractExpression(Locatable loc, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
+        : BinaryExpression(loc)
+        , _left(std::move(left))
+        , _right(std::move(right)) {};
+
+    // left - right
     private:
-    Expression _left;
-    Expression _right;
+    std::unique_ptr<Expression> _left;
+    std::unique_ptr<Expression> _right;
 };
 
 struct LessThanExpression: public BinaryExpression {
-    // left < right
     public:
-    LessThanExpression(Expression left, Expression right) : _left(left), _right(right) {};
+    LessThanExpression(Locatable loc, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
+        : BinaryExpression(loc)
+        , _left(std::move(left))
+        , _right(std::move(right)) {};
+
+    // left < right
     private:
-    Expression _left;
-    Expression _right;
+    std::unique_ptr<Expression> _left;
+    std::unique_ptr<Expression> _right;
 };
 
 struct EqualExpression: public BinaryExpression {
-    // left == right
     public:
-    EqualExpression(Expression left, Expression right) : _left(left), _right(right) {};
+    EqualExpression(Locatable loc, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
+        : BinaryExpression(loc)
+        , _left(std::move(left))
+        , _right(std::move(right)) {};
+
+    // left == right
     private:
-    Expression _left;
-    Expression _right;
+    std::unique_ptr<Expression> _left;
+    std::unique_ptr<Expression> _right;
 };
 
 struct UnequalExpression: public BinaryExpression {
-    // left != right
     public:
-    UnequalExpression(Expression left, Expression right) : _left(left), _right(right) {};
+    UnequalExpression(Locatable loc, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
+        : BinaryExpression(loc)
+        , _left(std::move(left))
+        , _right(std::move(right)) {};
+
+    // left != right
     private:
-    Expression _left;
-    Expression _right;
+    std::unique_ptr<Expression> _left;
+    std::unique_ptr<Expression> _right;
 };
 
 struct AndExpression: public BinaryExpression {
-    // left && right
     public:
-    AndExpression(Expression left, Expression right) : _left(left), _right(right) {};
+    AndExpression(Locatable loc, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
+        : BinaryExpression(loc)
+        , _left(std::move(left))
+        , _right(std::move(right)) {};
+
+    // left && right
     private:
-    Expression _left;
-    Expression _right;
+    std::unique_ptr<Expression> _left;
+    std::unique_ptr<Expression> _right;
 };
 
 struct OrExpression: public BinaryExpression {
-    // left && right
     public:
-    OrExpression(Expression left, Expression right) : _left(left), _right(right) {};
+    OrExpression(Locatable loc, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
+        : BinaryExpression(loc)
+        , _left(std::move(left))
+        , _right(std::move(right)) {};
+
+    // left && right
     private:
-    Expression _left;
-    Expression _right;
+    std::unique_ptr<Expression> _left;
+    std::unique_ptr<Expression> _right;
 };
 
 struct TernaryExpression: public Expression {
-    // condition ? left : right
     public:
-    TernaryExpression(Expression condition, Expression left, Expression right) : _condition(condition), _left(left), _right(right) {};
+    TernaryExpression(Locatable loc, std::unique_ptr<Expression> condition, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
+        : Expression(loc)
+        , _condition(std::move(condition))
+        , _left(std::move(left))
+        , _right(std::move(right)) {};
+
+    // condition ? left : right
     private:
-    Expression _condition;
-    Expression _left;
-    Expression _right;
+    std::unique_ptr<Expression> _condition;
+    std::unique_ptr<Expression> _left;
+    std::unique_ptr<Expression> _right;
 };
 
 struct AssignExpression: public BinaryExpression {
-    // left = right
     public:
-    AssignExpression(Expression left, Expression right) : _left(left), _right(right) {};
+    AssignExpression(Locatable loc, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
+        : BinaryExpression(loc)
+        , _left(std::move(left))
+        , _right(std::move(right)) {};
+
+    // left = right
     private:
-    Expression _left;
-    Expression _right;
+    std::unique_ptr<Expression> _left;
+    std::unique_ptr<Expression> _right;
 };
 

@@ -11,8 +11,7 @@ struct FunctionDefinition: public ExternalDeclaration {
     BlockStatement block;
 };
 
-// TODO: Duplicated in `declarator.h`
-struct Declaration: public ExternalDeclaration, public BlockItem {
-    std::vector<TypeSpecifier> specifiers;
-    Declarator declarator;
+// TODO: This is kinda ugly
+struct WrappedDeclaration: public ExternalDeclaration, public BlockItem {
+    Declaration declaration;
 };

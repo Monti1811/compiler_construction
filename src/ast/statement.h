@@ -1,17 +1,26 @@
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <string>
+
+#include "../util/symbol_internalizer.h"
 
 #include "expression.h"
 #include "declarator.h"
 
 struct BlockItem {};
 
-struct Statement: public BlockItem {};
+struct Statement: public BlockItem {
+    Statement(Locatable loc)
+        : loc(loc) {};
+
+    Locatable loc;
+};
 
 struct LabeledStatement: public Statement {
-    std::string name;
+    Symbol name;
+    std::unique_ptr<Statement> inner;
 };
 
 /// Block statement, e.g.:

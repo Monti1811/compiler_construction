@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -23,16 +24,12 @@ struct TypeSpecifier {
 // |   declarator
 // type-specifier
 struct Declaration {
-    Declaration(TypeSpecifier* spec, Declarator* decl) : specifier(spec), declarator(decl) {};
+    Declaration(std::unique_ptr<TypeSpecifier> spec, std::unique_ptr<Declarator> decl)
+        : specifier(std::move(spec))
+        , declarator(std::move(decl)) {};
 
-    ~Declaration() {
-        // TODO do this everywhere
-        delete specifier;
-        delete declarator;
-    }
-
-    TypeSpecifier* specifier;
-    Declarator* declarator;
+    std::unique_ptr<TypeSpecifier> specifier;
+    std::unique_ptr<Declarator> declarator;
 };
 
 struct ParameterDeclaration {
@@ -52,7 +49,7 @@ struct FunctionDeclarator : public Declarator {
     Declarator* decl;
     std::vector<ParameterDeclaration> parameters;
 
-    void addParameter(Declaration* param);
+    void addParameter(Declaration param);
 };
 
 struct PointerDeclarator : public Declarator {
@@ -80,7 +77,7 @@ struct IntSpecifier: public TypeSpecifier {
 struct StructSpecifier: public TypeSpecifier {
     public:
     StructSpecifier(const Locatable loc, Symbol tag) : TypeSpecifier(loc), _tag(tag) {};
-    void addComponent(Declaration*& spec_decl);
+    void addComponent(Declaration spec_decl);
 
     private:
     Symbol _tag;
