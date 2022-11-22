@@ -21,7 +21,7 @@ void LabeledStatement::print(std::ostream& stream) {
     } else {
         IdentManager& ident = IdentManager::getInstance();
         ident.increaseCurrIdentation(1);
-        stream << this->_name << ":\n" << ident << this->_inner.value();
+        stream << this->_name << ":\n" << ident << this->_inner;
         ident.decreaseCurrIdentation(1);
     }
     

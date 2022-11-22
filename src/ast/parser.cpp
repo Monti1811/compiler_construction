@@ -6,7 +6,7 @@
 
 Parser::Parser(Lexer& lexer, Token currentToken, Token nextToken) : _lexer(lexer), _currentToken(currentToken), _nextToken(nextToken) {};
 
-std::unique_ptr<Expression> Parser::parseNext() {
+ExpressionPtr Parser::parseNext() {
     return parseExpression();
 }
 
@@ -115,11 +115,11 @@ DeclaratorPtr Parser::parseDeclarator(void) {
     return res;
 }
 
-std::unique_ptr<Expression> Parser::parseExpression() {
+ExpressionPtr Parser::parseExpression() {
     return parseAssignmentExpression();
 }
 
-std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
+ExpressionPtr Parser::parsePrimaryExpression() {
     Token token = peekToken();
     Symbol sym = token.Text;
     switch(token.Kind) {
@@ -166,7 +166,7 @@ std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
     }
 }
 
-std::unique_ptr<Expression> Parser::parsePostfixExpression(std::optional<std::unique_ptr<Expression>> postfixExpression = std::nullopt) {
+ExpressionPtr Parser::parsePostfixExpression(std::optional<std::unique_ptr<Expression>> postfixExpression = std::nullopt) {
     // if there is no postfixExpression preceding the current token
     // parse current token, as this has to be a primaryExpression either way
     if (!postfixExpression) {
@@ -187,7 +187,7 @@ std::unique_ptr<Expression> Parser::parsePostfixExpression(std::optional<std::un
         case TokenKind::TK_LPAREN:
         {
             popToken(); // accept (
-            auto args = std::vector<std::unique_ptr<Expression>>();
+            auto args = std::vector<ExpressionPtr>();
             while (peekToken().Kind != TokenKind::TK_RPAREN) { // argumente lesen bis )
                 auto arg = parseExpression(); // parse a_i
                 accept(TK_COMMA); // accept ,
@@ -224,7 +224,7 @@ std::unique_ptr<Expression> Parser::parsePostfixExpression(std::optional<std::un
     }
 }
 
-std::unique_ptr<Expression> Parser::parseUnaryExpression() {
+ExpressionPtr Parser::parseUnaryExpression() {
     Token token = peekToken();
     switch (token.Kind) {
         // &unaryexpr
@@ -355,7 +355,7 @@ const int getPrecedenceLevel(TokenKind tk) {
     }
 }
 
-std::unique_ptr<Expression> Parser::parseBinaryExpression(int minPrec = 0, std::optional<std::unique_ptr<Expression>> left = std::nullopt) {
+ExpressionPtr Parser::parseBinaryExpression(int minPrec = 0, std::optional<std::unique_ptr<Expression>> left = std::nullopt) {
     // compute unary expr
     // inbetween operators there has to be a unary expr
     if (!left) {
@@ -424,7 +424,7 @@ std::unique_ptr<Expression> Parser::parseBinaryExpression(int minPrec = 0, std::
 
 }
 
-std::unique_ptr<Expression> Parser::parseConditionalExpression(std::optional<std::unique_ptr<Expression>> left = std::nullopt) {
+ExpressionPtr Parser::parseConditionalExpression(std::optional<std::unique_ptr<Expression>> left = std::nullopt) {
     // parse cond
     auto cond = (left.has_value()) ? parseBinaryExpression(0, std::move(left.value())) : parseBinaryExpression();
     // check for ?
@@ -439,12 +439,12 @@ std::unique_ptr<Expression> Parser::parseConditionalExpression(std::optional<std
     return cond;
 }
 
-std::unique_ptr<Expression> Parser::parseAssignmentExpression() {
-    std::unique_ptr<Expression> unaryExpr = parseUnaryExpression();
+ExpressionPtr Parser::parseAssignmentExpression() {
+    ExpressionPtr unaryExpr = parseUnaryExpression();
     // check for =
     if (accept(TokenKind::TK_EQUAL)) {
         // accept = and start parsing AssignmentExpression
-        std::unique_ptr<Expression> right = parseAssignmentExpression();
+        ExpressionPtr right = parseAssignmentExpression();
         return std::make_unique<AssignExpression>(getLoc(), std::move(unaryExpr), std::move(right));
     }
     // we know it's not an assignment and therefore we keep parsing a cond expression

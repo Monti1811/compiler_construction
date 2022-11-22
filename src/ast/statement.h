@@ -22,19 +22,17 @@ struct Statement {
     virtual void print(std::ostream& stream) = 0;
 };
 
+typedef std::unique_ptr<Statement> StatementPtr;
+
 // label:
 // label: statement
 struct LabeledStatement: public Statement {
-    LabeledStatement(Locatable loc, Symbol name)
+    LabeledStatement(Locatable loc, Symbol name, StatementPtr inner)
         : Statement(loc)
         ,_name(name)
-        , _inner(std::nullopt) {};
-    LabeledStatement(Locatable loc, Symbol name, std::unique_ptr<Statement> inner)
-        : Statement(loc)
-        ,_name(name)
-        , _inner(std::make_optional(std::move(inner))) {};
+        , _inner(std::move(inner)) {};
     Symbol _name;
-    std::optional<std::unique_ptr<Statement>> _inner;
+    StatementPtr _inner;
     void print(std::ostream& stream);
 };
 
@@ -66,43 +64,43 @@ struct DeclarationStatement: public Statement {
 
 // Just an expression disguised as a Statement
 struct ExpressionStatement: public Statement {
-    ExpressionStatement(Locatable loc, std::unique_ptr<Expression> expr)
+    ExpressionStatement(Locatable loc, ExpressionPtr expr)
         : Statement(loc)
-        ,_expr(std::move(expr)) {};
-    std::unique_ptr<Expression> _expr;
+        , _expr(std::move(expr)) {};
+    ExpressionPtr _expr;
     void print(std::ostream& stream);
 };
 
 // if (cond) then stat
 // if (cond) then stat else stat
 struct IfStatement: public Statement {
-    IfStatement(Locatable loc, std::unique_ptr<Expression> condition, 
-        std::unique_ptr<Statement> then_statement)
+    public:
+    IfStatement(Locatable loc, ExpressionPtr condition, StatementPtr then_statement, std::optional<StatementPtr> else_statement)
         : Statement(loc)
-        ,_condition(std::move(condition))
-        ,_then_statement(std::move(then_statement))
-        , _else_statement(std::nullopt) {};
-    IfStatement(Locatable loc, std::unique_ptr<Expression> condition, 
-        std::unique_ptr<Statement> then_statement, std::unique_ptr<Statement> else_statement)
-        : Statement(loc)
-        ,_condition(std::move(condition))
-        ,_then_statement(std::move(then_statement))
-        , _else_statement(std::make_optional(std::move(else_statement))) {};
-    std::unique_ptr<Expression> _condition;
-    std::unique_ptr<Statement> _then_statement;
-    std::optional<std::unique_ptr<Statement>> _else_statement;
+        , _condition(std::move(condition))
+        , _then_statement(std::move(then_statement))
+        , _else_statement(std::move(else_statement)) {};
+    IfStatement(Locatable loc, ExpressionPtr condition, StatementPtr then_statement, StatementPtr else_statement)
+        : IfStatement(loc, std::move(condition), std::move(then_statement), std::nullopt) {};
+
+    private:
+    ExpressionPtr _condition;
+    StatementPtr _then_statement;
+    std::optional<StatementPtr> _else_statement;
     void print(std::ostream& stream);
 };
 
 // while (condition) statement
 struct WhileStatement: public Statement {
-    WhileStatement(Locatable loc, std::unique_ptr<Expression> condition, 
-        std::unique_ptr<Statement> statement)
+    public:
+    WhileStatement(Locatable loc, ExpressionPtr condition, StatementPtr statement)
         : Statement(loc)
-        ,_condition(std::move(condition))
-        ,_statement(std::move(statement)) {};
-    std::unique_ptr<Expression> _condition;
-    std::unique_ptr<Statement> _statement;
+        , _condition(std::move(condition))
+        , _statement(std::move(statement)) {};
+
+    private:
+    ExpressionPtr _condition;
+    StatementPtr _statement;
     void print(std::ostream& stream);
 };
 
@@ -172,7 +170,7 @@ class IdentManager
         void printCurrIdentation(std::ostream& stream);
         int currIdent = 0;
     private:
-        IdentManager() {}                  
+        IdentManager() {}
         IdentManager(IdentManager const&); 
         IdentManager& operator = (const IdentManager&);
 };

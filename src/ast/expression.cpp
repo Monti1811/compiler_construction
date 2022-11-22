@@ -1,6 +1,6 @@
 #include "expression.h"
  
-std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Expression>& expr) {
+std::ostream& operator<<(std::ostream& stream, const ExpressionPtr& expr) {
     expr->print(stream);
     return stream;
 }
