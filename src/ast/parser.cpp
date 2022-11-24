@@ -496,3 +496,4 @@ bool Parser::check(TokenKind tk) {
 bool Parser::checkLookAhead(TokenKind tk) {
     return _nextToken.Kind == tk;
 }
+

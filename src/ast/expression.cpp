@@ -9,6 +9,11 @@ void IdentExpression::print(std::ostream& stream) {
     stream << (*this->_ident);
 }
 
+std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<IdentExpression>& expr) {
+    expr->print(stream);
+    return stream;
+}
+
 void IntConstantExpression::print(std::ostream& stream) {
     stream << this->_value;
 }
@@ -22,17 +27,12 @@ void StringLiteralExpression::print(std::ostream& stream) {
 }
 
 void IndexExpression::print(std::ostream& stream) {
-    stream << '(';
-    this->_expression->print(stream);
-    stream << '[';
-    this->_index->print(stream),
-    stream << "])";
+    stream << '(' << this->_expression << '[' << this->_index << "])";
 }
 
 void CallExpression::print(std::ostream& stream) {
-    stream << '(';
-    this->_expression->print(stream);
-    stream << '(';
+    stream << '(' << this->_expression << '(';
+
     const int length = this->_arguments.size();
     for (int i = 0; i < length; i++) {
         this->_arguments.at(i)->print(stream);
@@ -40,91 +40,30 @@ void CallExpression::print(std::ostream& stream) {
             stream << ',';
         }
     }
+
     stream << "))";
 }
 
 void DotExpression::print(std::ostream& stream) {
-    stream << '(';
-    this->_expression->print(stream);
-    stream << '.';
-    this->_ident->print(stream);
-    stream << ')';
+    stream << '(' << this->_expression << '.' << this->_ident << ')';
 }
 
 void ArrowExpression::print(std::ostream& stream) {
-    stream << '(';
-    this->_expression->print(stream);
-    stream << "->";
-    this->_ident->print(stream);
-    stream << ')';
+    stream << '(' << this->_expression << "->" << this->_ident << ')';
 }
 
-void SizeofExpression::print(std::ostream& stream) {
-    stream << '(';
-    stream << "sizeof ";
-    this->_inner->print(stream);
-    stream << ')';
+void UnaryExpression::print(std::ostream& stream) {
+    stream << '(' << this->_op_str << this->_inner << ')';
 }
 
 void SizeofTypeExpression::print(std::ostream& stream) {
-    stream << '(';
-    stream << "sizeof ";
-    this->_type->print(stream);
-    stream << ')';
+    stream << "(sizeof(" << this->_type << "))";
 }
 
-void ReferenceExpression::print(std::ostream& stream) {
-    stream << "&(" << this->_inner << ")";
-}
-
-void PointerExpression::print(std::ostream& stream) {
-    stream << "*(" << this->_inner << ")";
-}
-
-void NegationExpression::print(std::ostream& stream) {
-    stream << "-(" << this->_inner << ")";
-}
-
-void LogicalNegationExpression::print(std::ostream& stream) {
-    stream << "!(" << this->_inner << ")";
-}
-
-void MultiplyExpression::print(std::ostream& stream) {
-    stream << "(" << this->_left << " * " << this->_right << ")";
-}
-
-void AddExpression::print(std::ostream& stream) {
-    stream << "(" << this->_left << " + " << this->_right << ")";
-}
-
-void SubstractExpression::print(std::ostream& stream) {
-    stream << "(" << this->_left << " - " << this->_right << ")";
-}
-
-void LessThanExpression::print(std::ostream& stream) {
-    stream << "(" << this->_left << " < " << this->_right << ")";
-}
-
-void EqualExpression::print(std::ostream& stream) {
-    stream << "(" << this->_left << " == " << this->_right << ")";
-}
-
-void UnequalExpression::print(std::ostream& stream) {
-    stream << "(" << this->_left << " != " << this->_right << ")";
-}
-
-void AndExpression::print(std::ostream& stream) {
-    stream << "(" << this->_left << " && " << this->_right << ")";
-}
-
-void OrExpression::print(std::ostream& stream) {
-    stream << "(" << this->_left << " || " << this->_right << ")";
+void BinaryExpression::print(std::ostream& stream) {
+    stream << '(' << this->_left << ' ' << this->_op_str << ' ' << this->_right << ')';
 }
 
 void TernaryExpression::print(std::ostream& stream) {
-    stream << "(" << this->_condition << " ? " << this->_left << " : " << this->_right << ")";
-}
-
-void AssignExpression::print(std::ostream& stream) {
-    stream << "(" << this->_left << " = " << this->_right << ")";
+    stream << '(' << this->_condition << " ? " << this->_left << " : " << this->_right << ')';
 }

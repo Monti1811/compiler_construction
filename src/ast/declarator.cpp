@@ -19,6 +19,7 @@ void IntSpecifier::print(std::ostream& stream) {
 
 void StructSpecifier::print(std::ostream& stream) {
     stream << "struct";
+    // TODO print struct components
 }
 
 bool Declarator::isEmptyDeclarator() {
