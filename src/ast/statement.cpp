@@ -32,12 +32,8 @@ void BlockStatement::print(std::ostream& stream) {
         stream << "{";
         IdentManager& ident = IdentManager::getInstance();
         ident.increaseCurrIdentation(1);
-        for (int i = 0; i < (int)this->_items.size(); i++) {
-            // '\n' << ident << this->_items[i];
-            // TODO: error here with no << operator for type 
-            // << std::unique_ptr<Statement, std::default_delete<Statement>>
-            // liegt wahrscheinlich an der Implementierung von unique_ptr in einem Vektor
-            // Ich weiß aber auch nicht genau wie man das fixen kann
+        for (auto &item : this->_items) {
+            stream << '\n' << ident << item;
         }
         ident.decreaseCurrIdentation(1);
         stream << "\n}";
