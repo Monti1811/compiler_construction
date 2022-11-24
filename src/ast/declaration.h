@@ -12,6 +12,6 @@ struct FunctionDefinition: public ExternalDeclaration {
 };
 
 // TODO: This is kinda ugly
-struct WrappedDeclaration: public ExternalDeclaration, public BlockItem {
+/*struct WrappedDeclaration: public ExternalDeclaration, public BlockItem {
     Declaration declaration;
-};
+};*/
