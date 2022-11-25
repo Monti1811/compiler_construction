@@ -81,7 +81,7 @@ DeclaratorPtr Parser::parseNonFunDeclarator(void) {
             Locatable loc(getLoc());
             popToken();
             auto inner = parseDeclarator();
-            return std::make_unique<PointerDeclarator>(loc, inner);
+            return std::make_unique<PointerDeclarator>(loc, std::move(inner));
         }
 
         case TK_IDENTIFIER: {
@@ -97,7 +97,7 @@ DeclaratorPtr Parser::parseNonFunDeclarator(void) {
 DeclaratorPtr Parser::parseDeclarator(void) {
     DeclaratorPtr res = parseNonFunDeclarator();
     while (check(TK_LPAREN)) {
-        auto funDecl = std::make_unique<FunctionDeclarator>(getLoc(), res);
+        auto funDecl = std::make_unique<FunctionDeclarator>(getLoc(), std::move(res));
         popToken();
 
         if (accept(TK_RPAREN)) {
