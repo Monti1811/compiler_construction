@@ -48,7 +48,7 @@ Declaration Parser::parseSpecDecl(DeclKind dKind) {
 
     DeclaratorPtr decl(parseDeclarator());
 
-    if (!decl->isEmptyDeclarator()) {
+    if (!decl->isAbstract()) {
         // At all places where non-abstractness is required, declarators are
         // also optional in the grammar, therefore it's okay to accept a simple
         // empty primitive declarator here anyway.

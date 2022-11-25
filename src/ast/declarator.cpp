@@ -5,8 +5,21 @@ std::ostream& operator<<(std::ostream& stream, const DeclaratorPtr& declarator) 
     return stream;
 }
 
-bool Declarator::isEmptyDeclarator() {
-    // TODO
+void Declarator::makeAbstract() {
+    this->_abstract = true;
+}
+
+bool Declarator::isAbstract() {
+    return this->_abstract;
+}
+
+std::ostream& operator<<(std::ostream& stream, Declaration& declaration) {
+    declaration.print(stream);
+    return stream;
+}
+
+void Declaration::print(std::ostream& stream) {
+    stream << _specifier << ' ' << _declarator;
 }
 
 void PrimitiveDeclarator::print(std::ostream& stream) {
@@ -26,7 +39,7 @@ void FunctionDeclarator::print(std::ostream& stream) {
 }
 
 void FunctionDeclarator::addParameter(Declaration param) {
-    // TODO
+    this->_parameters.push_back(param);
 }
 
 void PointerDeclarator::print(std::ostream& stream) {
@@ -62,6 +75,6 @@ void StructSpecifier::print(std::ostream& stream) {
     // TODO print struct components
 }
 
-void StructSpecifier::addComponent(Declaration spec_decl) {
-    // TODO
+void StructSpecifier::addComponent(Declaration declaration) {
+    this->_components.push_back(declaration);
 }
