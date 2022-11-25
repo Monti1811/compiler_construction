@@ -8,6 +8,7 @@
 #include "../util/diagnostic.h"
 
 #include "declarator.h"
+#include "statement.h"
 #include "expression.h"
 
 // Declarators and abstract declarators share a lot of syntactical and
@@ -63,6 +64,8 @@ class Parser {
     std::unique_ptr<Expression> parseBinaryExpression(int minPrec, std::optional<std::unique_ptr<Expression>> left);
     std::unique_ptr<Expression> parseConditionalExpression(std::optional<std::unique_ptr<Expression>> left);
     std::unique_ptr<Expression> parseAssignmentExpression();
+
+    std::unique_ptr<Statement> parseStatement();
 
     /// Internal methods for use in parseSpecDecl()
     Declarator* parseDeclarator(void);

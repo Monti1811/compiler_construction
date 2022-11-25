@@ -55,7 +55,6 @@ struct BlockStatement: public Statement {
     void print(std::ostream& stream);
 };
 
-// int x = 2;
 // int y;
 struct DeclarationStatement: public Statement {
     DeclarationStatement(Locatable loc, std::unique_ptr<TypeSpecifier> type, Symbol name)
