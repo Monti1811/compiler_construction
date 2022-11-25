@@ -121,11 +121,11 @@ struct JumpStatement: public Statement {
 
 // goto identifier
 struct GotoStatement: public JumpStatement {
-    GotoStatement(Locatable loc, Symbol name, const char** ident)
+    GotoStatement(Locatable loc, Symbol name, Symbol ident)
         : JumpStatement(loc, name)
         ,_ident(ident) {};
 
-    const char** _ident;
+    Symbol _ident;
 
     void print(std::ostream& stream);
 };

@@ -508,7 +508,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
             popToken();
             Token curr = peekToken();
             expect(TK_IDENTIFIER, "identifier");
-            return std::make_unique<GotoStatement>(token, curr, curr.Text);
+            return std::make_unique<GotoStatement>(token, token.Text, curr.Text);
         }
 
         case TK_CONTINUE: {
