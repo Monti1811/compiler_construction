@@ -1,0 +1,10 @@
+test ? (-(a + 123) * 7) : abcd[5]
+
+a + b * c - 3 * 5
+
+a->b->c
+
+sizeof (int)
+
+x = 1;
+
