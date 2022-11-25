@@ -493,7 +493,8 @@ std::unique_ptr<Statement> Parser::parseStatement() {
         case TK_CHAR:
         case TK_INT:
         case TK_STRUCT: {
-            parseSpecDecl(DeclKind::ANY);
+            auto declaration = parseSpecDecl(DeclKind::ANY);
+            return std::make_unique<DeclarationStatement>(token, std::move(declaration));
         }
 
         case TK_WHILE: {
