@@ -39,7 +39,7 @@ void FunctionDeclarator::print(std::ostream& stream) {
 }
 
 void FunctionDeclarator::addParameter(Declaration param) {
-    this->_parameters.push_back(param);
+    this->_parameters.push_back(std::move(param));
 }
 
 void PointerDeclarator::print(std::ostream& stream) {
@@ -76,5 +76,5 @@ void StructSpecifier::print(std::ostream& stream) {
 }
 
 void StructSpecifier::addComponent(Declaration declaration) {
-    this->_components.push_back(declaration);
+    this->_components.push_back(std::move(declaration));
 }

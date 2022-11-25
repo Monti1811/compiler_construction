@@ -1,12 +1,12 @@
 #include "program.h"
 
 void Program::addDeclaration(Declaration declaration) {
-    this->_declarations.push_back(declaration);
+    this->_declarations.push_back(std::move(declaration));
     this->_is_declaration.push_back(true);
 }
 
 void Program::addFunctionDefinition(FunctionDefinition definition) {
-    this->_functions.push_back(definition);
+    this->_functions.push_back(std::move(definition));
     this->_is_declaration.push_back(false);
 }
 

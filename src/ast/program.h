@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <vector>
 
 #include "declarator.h"
@@ -7,8 +8,14 @@
 #include "statement.h"
 
 struct FunctionDefinition {
-    Declaration declaration;
-    BlockStatement block;
+    public:
+    FunctionDefinition(Declaration declaration, BlockStatement block)
+        : _declaration(std::move(declaration))
+        , _block(std::move(block)) {};
+
+    private:
+    Declaration _declaration;
+    BlockStatement _block;
 };
 
 struct Program {
