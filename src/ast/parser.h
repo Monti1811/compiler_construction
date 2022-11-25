@@ -81,5 +81,5 @@ class Parser {
     /// If `dKind` is `DeclKind::CONCRETE`: verify that the declarator is a
     /// valid non-abstract declarator.
     /// If `dKind` is `DeclKind::ANY`: do not verify abstractness.
-    Declaration parseSpecDecl(DeclKind dKind);
+    std::unique_ptr<Declaration> parseSpecDecl(DeclKind dKind);
 };

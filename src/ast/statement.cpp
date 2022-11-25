@@ -27,6 +27,11 @@ void LabeledStatement::print(std::ostream& stream) {
     
 }
 
+void DeclarationStatement::print(std::ostream& stream) {
+    this->_declaration.get()->print(stream);
+    return;
+}
+
 void ExpressionStatement::print(std::ostream& stream) {
     this->_expr.get()->print(stream);
     return;

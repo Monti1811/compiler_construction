@@ -10,7 +10,7 @@ std::unique_ptr<Expression> Parser::parseNext() {
     return parseExpression();
 }
 
-Declaration Parser::parseSpecDecl(DeclKind dKind) {
+std::unique_ptr<Declaration> Parser::parseSpecDecl(DeclKind dKind) {
     std::unique_ptr<TypeSpecifier> spec(nullptr);
     Locatable loc(getLoc());
 
@@ -57,7 +57,7 @@ Declaration Parser::parseSpecDecl(DeclKind dKind) {
         //      that it fits with what is required by dKind
     }
 
-    return Declaration(std::move(spec), std::move(decl));
+    return std::make_unique<Declaration>(std::move(spec), std::move(decl));
 }
 
 Declarator* Parser::parseNonFunDeclarator(void) {

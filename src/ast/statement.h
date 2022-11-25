@@ -57,12 +57,10 @@ struct BlockStatement: public Statement {
 
 // int y;
 struct DeclarationStatement: public Statement {
-    DeclarationStatement(Locatable loc, std::unique_ptr<TypeSpecifier> type, Symbol name)
+    DeclarationStatement(Locatable loc, std::unique_ptr<Declaration> declaration)
         : Statement(loc)
-        ,_type(std::move(type))
-        ,_name(name) {};
-    std::unique_ptr<TypeSpecifier> _type;
-    Symbol _name;
+        ,_declaration(std::move(declaration)) {};
+    std::unique_ptr<Declaration> _declaration;
     void print(std::ostream& stream);
 };
 
