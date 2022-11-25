@@ -15,6 +15,7 @@ struct Declarator {
 struct TypeSpecifier {
     public:
     TypeSpecifier(const Locatable loc) : _loc(loc) {};
+    virtual ~TypeSpecifier() = default;
 
     virtual void print(std::ostream& stream) = 0;
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<TypeSpecifier>& expr);

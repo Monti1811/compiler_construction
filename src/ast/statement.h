@@ -15,7 +15,7 @@
 struct Statement {
     Statement(Locatable loc)
         : loc(loc) {};
-
+    virtual ~Statement() = default;
     Locatable loc;
 
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Statement>& stat);

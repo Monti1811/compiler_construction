@@ -116,7 +116,7 @@ Declarator* Parser::parseDeclarator(void) {
 }
 
 std::unique_ptr<Expression> Parser::parseExpression() {
-    return std::move(parseAssignmentExpression());
+    return parseAssignmentExpression();
 }
 
 std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
@@ -158,7 +158,7 @@ std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
             popToken();
             auto expr = parseExpression();
             expect(TokenKind::TK_RPAREN, ")");
-            return std::move(expr);
+            return expr;
         }
         default: {
             errorloc(getLoc(), "wanted to parse PrimaryExpression but found no fitting token");
@@ -476,7 +476,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
             popToken();
             std::vector<std::unique_ptr<Statement>> statements;
             while (!check(TK_RBRACE)) {
-                statements.push_back(std::move(parseStatement()));
+                statements.push_back(parseStatement());
             }
             expect(TK_RBRACE, "}");
         }
@@ -531,7 +531,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
         }
         
         default:
-            return std::make_unique<ExpressionStatement>(token, std::move(parseExpression()));
+            return std::make_unique<ExpressionStatement>(token, parseExpression());
         }
 }
 

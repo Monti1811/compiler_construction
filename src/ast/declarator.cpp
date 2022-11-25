@@ -24,6 +24,7 @@ void StructSpecifier::print(std::ostream& stream) {
 
 bool Declarator::isEmptyDeclarator() {
     // TODO
+    return false;
 }
 
 void FunctionDeclarator::addParameter(Declaration param) {
