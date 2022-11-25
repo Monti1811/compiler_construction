@@ -68,8 +68,8 @@ class Parser {
     std::unique_ptr<Statement> parseStatement();
 
     /// Internal methods for use in parseSpecDecl()
-    Declarator* parseDeclarator(void);
-    Declarator* parseNonFunDeclarator(void);
+    DeclaratorPtr parseDeclarator(void);
+    DeclaratorPtr parseNonFunDeclarator(void);
 
     /// Parse a type specifier followed by an abstract or non-abstract
     /// declarator (i.e. a typename or a declaration).
@@ -81,5 +81,5 @@ class Parser {
     /// If `dKind` is `DeclKind::CONCRETE`: verify that the declarator is a
     /// valid non-abstract declarator.
     /// If `dKind` is `DeclKind::ANY`: do not verify abstractness.
-    std::unique_ptr<Declaration> parseSpecDecl(DeclKind dKind);
+    Declaration parseSpecDecl(DeclKind dKind);
 };

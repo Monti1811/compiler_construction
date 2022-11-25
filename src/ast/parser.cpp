@@ -10,7 +10,7 @@ std::unique_ptr<Expression> Parser::parseNext() {
     return parseExpression();
 }
 
-std::unique_ptr<Declaration> Parser::parseSpecDecl(DeclKind dKind) {
+Declaration Parser::parseSpecDecl(DeclKind dKind) {
     std::unique_ptr<TypeSpecifier> spec(nullptr);
     Locatable loc(getLoc());
 
@@ -46,7 +46,7 @@ std::unique_ptr<Declaration> Parser::parseSpecDecl(DeclKind dKind) {
                  "'");
     }
 
-    std::unique_ptr<Declarator> decl(parseDeclarator());
+    DeclaratorPtr decl(parseDeclarator());
 
     if (!decl->isEmptyDeclarator()) {
         // At all places where non-abstractness is required, declarators are
@@ -57,10 +57,10 @@ std::unique_ptr<Declaration> Parser::parseSpecDecl(DeclKind dKind) {
         //      that it fits with what is required by dKind
     }
 
-    return std::make_unique<Declaration>(std::move(spec), std::move(decl));
+    return Declaration(getLoc(), std::move(spec), std::move(decl));
 }
 
-Declarator* Parser::parseNonFunDeclarator(void) {
+DeclaratorPtr Parser::parseNonFunDeclarator(void) {
     switch (peekToken().Kind) {
         case TK_LPAREN: {
             if (checkLookAhead(TK_RPAREN) || checkLookAhead(TK_VOID) ||
@@ -69,10 +69,10 @@ Declarator* Parser::parseNonFunDeclarator(void) {
                 // this has to be an abstract function declarator, not a
                 // parenthesized declarator, so we add an empty primitive
                 // declarator
-                return new PrimitiveDeclarator(getLoc(), nullptr);
+                return std::make_unique<PrimitiveDeclarator>(getLoc(), nullptr);
             }
             popToken();
-            auto* res = parseDeclarator();
+            auto res = parseDeclarator();
             expect(TK_RPAREN, ")");
             return res;
         }
@@ -80,25 +80,24 @@ Declarator* Parser::parseNonFunDeclarator(void) {
         case TK_ASTERISK: {
             Locatable loc(getLoc());
             popToken();
-            auto* inner = parseDeclarator();
-            return new PointerDeclarator(loc, inner);
+            auto inner = parseDeclarator();
+            return std::make_unique<PointerDeclarator>(loc, inner);
         }
 
         case TK_IDENTIFIER: {
-            auto* res = new PrimitiveDeclarator(getLoc(), peekToken().Text);
+            auto res = std::make_unique<PrimitiveDeclarator>(getLoc(), peekToken().Text);
             popToken();
             return res;
         }
         default:
-            return new PrimitiveDeclarator(getLoc(), nullptr);
+            return std::make_unique<PrimitiveDeclarator>(getLoc(), nullptr);
     }
 }
 
-Declarator* Parser::parseDeclarator(void) {
-    Declarator* res = parseNonFunDeclarator();
+DeclaratorPtr Parser::parseDeclarator(void) {
+    DeclaratorPtr res = parseNonFunDeclarator();
     while (check(TK_LPAREN)) {
-        auto* funDecl = new FunctionDeclarator(getLoc(), res);
-        res = funDecl;
+        auto funDecl = std::make_unique<FunctionDeclarator>(getLoc(), res);
         popToken();
 
         if (accept(TK_RPAREN)) {
@@ -111,6 +110,7 @@ Declarator* Parser::parseDeclarator(void) {
         } while (accept(TK_COMMA));
 
         expect(TK_RPAREN, ")");
+        res = std::move(funDecl);
     }
     return res;
 }

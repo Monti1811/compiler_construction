@@ -1,13 +1,46 @@
 #include "declarator.h"
 
-std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<TypeSpecifier>& type) {
+std::ostream& operator<<(std::ostream& stream, const DeclaratorPtr& declarator) {
+    declarator->print(stream);
+    return stream;
+}
+
+bool Declarator::isEmptyDeclarator() {
+    // TODO
+}
+
+void PrimitiveDeclarator::print(std::ostream& stream) {
+    stream << '(' << _ident << ')';
+}
+
+void FunctionDeclarator::print(std::ostream& stream) {
+    stream << '(' << _decl << '(';
+    for (size_t i = 0; i < _parameters.size(); i++) {
+        auto& par = _parameters[i];
+        stream << par._specifier << ' ' << par._declarator;
+        if (i < _parameters.size() - 1) {
+            stream << ',';
+        }
+    }
+    stream << "))";
+}
+
+void FunctionDeclarator::addParameter(Declaration param) {
+    // TODO
+}
+
+void PointerDeclarator::print(std::ostream& stream) {
+    stream << "(*" << _inner << ')';
+}
+
+std::ostream& operator<<(std::ostream& stream, const TypeSpecifierPtr& type) {
     type->print(stream);
     return stream;
 }
 
 
 void Declaration::print(std::ostream& stream) {
-    this->specifier.get()->print(stream); 
+    this->_specifier->print(stream); 
     // TODO 
     // this->declarator.get()->print(stream);
 }
@@ -29,15 +62,6 @@ void StructSpecifier::print(std::ostream& stream) {
     // TODO print struct components
 }
 
-bool Declarator::isEmptyDeclarator() {
-    // TODO
-    return false;
-}
-
-void FunctionDeclarator::addParameter(std::unique_ptr<Declaration> param) {
-    // TODO
-}
-
-void StructSpecifier::addComponent(std::unique_ptr<Declaration> spec_decl) {
+void StructSpecifier::addComponent(Declaration spec_decl) {
     // TODO
 }
