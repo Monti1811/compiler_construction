@@ -479,6 +479,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
                 statements.push_back(parseStatement());
             }
             expect(TK_RBRACE, "}");
+            return std::make_unique<BlockStatement>(token, std::move(statements));
         }
 
         case TK_IDENTIFIER: {
