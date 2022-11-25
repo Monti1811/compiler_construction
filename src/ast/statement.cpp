@@ -27,6 +27,11 @@ void LabeledStatement::print(std::ostream& stream) {
     
 }
 
+void ExpressionStatement::print(std::ostream& stream) {
+    this->_expr.get()->print(stream);
+    return;
+}
+
 void BlockStatement::print(std::ostream& stream) {
     if (!this->_items.empty()) {
         stream << "{";
