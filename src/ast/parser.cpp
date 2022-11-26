@@ -482,13 +482,6 @@ std::unique_ptr<Statement> Parser::parseStatement() {
             return std::make_unique<BlockStatement>(token, std::move(statements));
         }
 
-        case TK_IDENTIFIER: {
-            if (checkLookAhead(TK_COLON)) {
-                popToken();
-                std::unique_ptr<Statement> stat = parseStatement();
-                return std::make_unique<LabeledStatement>(token, token.Text, std::move(stat));
-            }
-        }
         case TK_VOID:
         case TK_CHAR:
         case TK_INT:
@@ -517,6 +510,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
             popToken();
             return std::make_unique<BreakStatement>(token, token.Text);
         }
+        
         case TK_BREAK: {
             popToken();
             return std::make_unique<BreakStatement>(token, token.Text);
@@ -529,6 +523,14 @@ std::unique_ptr<Statement> Parser::parseStatement() {
                 return std::make_unique<ReturnStatement>(token, token.Text, std::move(returnvalue));
             } else {
                 return std::make_unique<ReturnStatement>(token, token.Text);
+            }
+        }
+
+        case TK_IDENTIFIER: {
+            if (checkLookAhead(TK_COLON)) {
+                popToken();
+                std::unique_ptr<Statement> stat = parseStatement();
+                return std::make_unique<LabeledStatement>(token, token.Text, std::move(stat));
             }
         }
         
