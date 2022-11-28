@@ -507,6 +507,7 @@ StatementPtr Parser::parseStatement() {
             popToken();
             Token curr = peekToken();
             expect(TK_IDENTIFIER, "identifier");
+            expect(TokenKind::TK_SEMICOLON, ";");
             return std::make_unique<GotoStatement>(token, token.Text, curr.Text);
         }
 
@@ -538,7 +539,8 @@ StatementPtr Parser::parseStatement() {
 
         case TK_IDENTIFIER: {
             if (checkLookAhead(TK_COLON)) {
-                popToken();
+                popToken(); // remove identifier
+                popToken(); // remove ':'
                 StatementPtr stat = parseStatement();
                 return std::make_unique<LabeledStatement>(token, token.Text, std::move(stat));
             }
