@@ -10,7 +10,7 @@ ExpressionPtr Parser::parseNext() {
     return parseExpression();
 }
 
-Declaration Parser::parseSpecDecl(DeclKind dKind) {
+Declaration Parser::parseDeclaration(DeclKind dKind) {
     TypeSpecifierPtr spec(nullptr);
     Locatable loc(getLoc());
 
@@ -34,8 +34,8 @@ Declaration Parser::parseSpecDecl(DeclKind dKind) {
 
         if (accept(TK_LBRACE)) {
             do {  // parse struct member declarations
-                auto specDecl = parseSpecDecl(DeclKind::CONCRETE);
-                structSpec->addComponent(std::move(specDecl));
+                auto declaration = parseDeclaration(DeclKind::CONCRETE);
+                structSpec->addComponent(std::move(declaration));
                 expect(TK_SEMICOLON, ";");
             } while (!accept(TK_RBRACE));
         }
@@ -105,7 +105,7 @@ DeclaratorPtr Parser::parseDeclarator(void) {
         }
 
         do {
-            auto param = parseSpecDecl(DeclKind::ANY);
+            auto param = parseDeclaration(DeclKind::ANY);
             funDecl->addParameter(std::move(param));
         } while (accept(TK_COMMA));
 
@@ -486,7 +486,7 @@ StatementPtr Parser::parseStatement() {
         case TK_CHAR:
         case TK_INT:
         case TK_STRUCT: {
-            auto declaration = parseSpecDecl(DeclKind::ANY);
+            auto declaration = parseDeclaration(DeclKind::ANY);
             return std::make_unique<DeclarationStatement>(token, std::move(declaration));
         }
 

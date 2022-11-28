@@ -67,7 +67,7 @@ class Parser {
 
     StatementPtr parseStatement();
 
-    /// Internal methods for use in parseSpecDecl()
+    /// Internal methods for use in parseDeclaration()
     DeclaratorPtr parseDeclarator(void);
     DeclaratorPtr parseNonFunDeclarator(void);
 
@@ -81,5 +81,5 @@ class Parser {
     /// If `dKind` is `DeclKind::CONCRETE`: verify that the declarator is a
     /// valid non-abstract declarator.
     /// If `dKind` is `DeclKind::ANY`: do not verify abstractness.
-    Declaration parseSpecDecl(DeclKind dKind);
+    Declaration parseDeclaration(DeclKind dKind);
 };
