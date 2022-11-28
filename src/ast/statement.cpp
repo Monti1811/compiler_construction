@@ -2,7 +2,7 @@
 
 // TODO: Add a global way of checking the current identation
 
-std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Statement>& stat) {
+std::ostream& operator<<(std::ostream& stream, const StatementPtr& stat) {
     stat->print(stream);
     return stream;
 }
@@ -21,14 +21,14 @@ void LabeledStatement::print(std::ostream& stream) {
     } else {
         IdentManager& ident = IdentManager::getInstance();
         ident.increaseCurrIdentation(1);
-        stream << this->_name << ":\n" << ident << this->_inner.value();
+        stream << this->_name << ":\n" << ident << this->_inner;
         ident.decreaseCurrIdentation(1);
     }
     
 }
 
 void DeclarationStatement::print(std::ostream& stream) {
-    this->_declaration.get()->print(stream);
+    this->_declaration.print(stream);
     return;
 }
 

@@ -6,12 +6,12 @@
 
 Parser::Parser(Lexer& lexer, Token currentToken, Token nextToken) : _lexer(lexer), _currentToken(currentToken), _nextToken(nextToken) {};
 
-std::unique_ptr<Expression> Parser::parseNext() {
+ExpressionPtr Parser::parseNext() {
     return parseExpression();
 }
 
-std::unique_ptr<Declaration> Parser::parseSpecDecl(DeclKind dKind) {
-    std::unique_ptr<TypeSpecifier> spec(nullptr);
+Declaration Parser::parseSpecDecl(DeclKind dKind) {
+    TypeSpecifierPtr spec(nullptr);
     Locatable loc(getLoc());
 
     if (accept(TK_VOID)) {
@@ -46,7 +46,7 @@ std::unique_ptr<Declaration> Parser::parseSpecDecl(DeclKind dKind) {
                  "'");
     }
 
-    std::unique_ptr<Declarator> decl(parseDeclarator());
+    DeclaratorPtr decl(parseDeclarator());
 
     if (!decl->isEmptyDeclarator()) {
         // At all places where non-abstractness is required, declarators are
@@ -57,10 +57,10 @@ std::unique_ptr<Declaration> Parser::parseSpecDecl(DeclKind dKind) {
         //      that it fits with what is required by dKind
     }
 
-    return std::make_unique<Declaration>(std::move(spec), std::move(decl));
+    return Declaration(getLoc(), std::move(spec), std::move(decl));
 }
 
-Declarator* Parser::parseNonFunDeclarator(void) {
+DeclaratorPtr Parser::parseNonFunDeclarator(void) {
     switch (peekToken().Kind) {
         case TK_LPAREN: {
             if (checkLookAhead(TK_RPAREN) || checkLookAhead(TK_VOID) ||
@@ -69,10 +69,10 @@ Declarator* Parser::parseNonFunDeclarator(void) {
                 // this has to be an abstract function declarator, not a
                 // parenthesized declarator, so we add an empty primitive
                 // declarator
-                return new PrimitiveDeclarator(getLoc(), nullptr);
+                return std::make_unique<PrimitiveDeclarator>(getLoc(), nullptr);
             }
             popToken();
-            auto* res = parseDeclarator();
+            auto res = parseDeclarator();
             expect(TK_RPAREN, ")");
             return res;
         }
@@ -80,25 +80,24 @@ Declarator* Parser::parseNonFunDeclarator(void) {
         case TK_ASTERISK: {
             Locatable loc(getLoc());
             popToken();
-            auto* inner = parseDeclarator();
-            return new PointerDeclarator(loc, inner);
+            auto inner = parseDeclarator();
+            return std::make_unique<PointerDeclarator>(loc, std::move(inner));
         }
 
         case TK_IDENTIFIER: {
-            auto* res = new PrimitiveDeclarator(getLoc(), peekToken().Text);
+            auto res = std::make_unique<PrimitiveDeclarator>(getLoc(), peekToken().Text);
             popToken();
             return res;
         }
         default:
-            return new PrimitiveDeclarator(getLoc(), nullptr);
+            return std::make_unique<PrimitiveDeclarator>(getLoc(), nullptr);
     }
 }
 
-Declarator* Parser::parseDeclarator(void) {
-    Declarator* res = parseNonFunDeclarator();
+DeclaratorPtr Parser::parseDeclarator(void) {
+    DeclaratorPtr res = parseNonFunDeclarator();
     while (check(TK_LPAREN)) {
-        auto* funDecl = new FunctionDeclarator(getLoc(), res);
-        res = funDecl;
+        auto funDecl = std::make_unique<FunctionDeclarator>(getLoc(), std::move(res));
         popToken();
 
         if (accept(TK_RPAREN)) {
@@ -111,15 +110,16 @@ Declarator* Parser::parseDeclarator(void) {
         } while (accept(TK_COMMA));
 
         expect(TK_RPAREN, ")");
+        res = std::move(funDecl);
     }
     return res;
 }
 
-std::unique_ptr<Expression> Parser::parseExpression() {
+ExpressionPtr Parser::parseExpression() {
     return parseAssignmentExpression();
 }
 
-std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
+ExpressionPtr Parser::parsePrimaryExpression() {
     Token token = peekToken();
     Symbol sym = token.Text;
     switch(token.Kind) {
@@ -166,7 +166,7 @@ std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
     }
 }
 
-std::unique_ptr<Expression> Parser::parsePostfixExpression(std::optional<std::unique_ptr<Expression>> postfixExpression = std::nullopt) {
+ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfixExpression = std::nullopt) {
     // if there is no postfixExpression preceding the current token
     // parse current token, as this has to be a primaryExpression either way
     if (!postfixExpression) {
@@ -187,7 +187,7 @@ std::unique_ptr<Expression> Parser::parsePostfixExpression(std::optional<std::un
         case TokenKind::TK_LPAREN:
         {
             popToken(); // accept (
-            auto args = std::vector<std::unique_ptr<Expression>>();
+            auto args = std::vector<ExpressionPtr>();
             while (peekToken().Kind != TokenKind::TK_RPAREN) { // argumente lesen bis )
                 auto arg = parseExpression(); // parse a_i
                 accept(TK_COMMA); // accept ,
@@ -224,7 +224,7 @@ std::unique_ptr<Expression> Parser::parsePostfixExpression(std::optional<std::un
     }
 }
 
-std::unique_ptr<Expression> Parser::parseUnaryExpression() {
+ExpressionPtr Parser::parseUnaryExpression() {
     Token token = peekToken();
     switch (token.Kind) {
         // &unaryexpr
@@ -355,7 +355,7 @@ const int getPrecedenceLevel(TokenKind tk) {
     }
 }
 
-std::unique_ptr<Expression> Parser::parseBinaryExpression(int minPrec = 0, std::optional<std::unique_ptr<Expression>> left = std::nullopt) {
+ExpressionPtr Parser::parseBinaryExpression(int minPrec = 0, std::optional<ExpressionPtr> left = std::nullopt) {
     // compute unary expr
     // inbetween operators there has to be a unary expr
     if (!left) {
@@ -424,7 +424,7 @@ std::unique_ptr<Expression> Parser::parseBinaryExpression(int minPrec = 0, std::
 
 }
 
-std::unique_ptr<Expression> Parser::parseConditionalExpression(std::optional<std::unique_ptr<Expression>> left = std::nullopt) {
+ExpressionPtr Parser::parseConditionalExpression(std::optional<ExpressionPtr> left = std::nullopt) {
     // parse cond
     auto cond = (left.has_value()) ? parseBinaryExpression(0, std::move(left.value())) : parseBinaryExpression();
     // check for ?
@@ -439,12 +439,12 @@ std::unique_ptr<Expression> Parser::parseConditionalExpression(std::optional<std
     return cond;
 }
 
-std::unique_ptr<Expression> Parser::parseAssignmentExpression() {
-    std::unique_ptr<Expression> unaryExpr = parseUnaryExpression();
+ExpressionPtr Parser::parseAssignmentExpression() {
+    ExpressionPtr unaryExpr = parseUnaryExpression();
     // check for =
     if (accept(TokenKind::TK_EQUAL)) {
         // accept = and start parsing AssignmentExpression
-        std::unique_ptr<Expression> right = parseAssignmentExpression();
+        ExpressionPtr right = parseAssignmentExpression();
         return std::make_unique<AssignExpression>(getLoc(), std::move(unaryExpr), std::move(right));
     }
     // we know it's not an assignment and therefore we keep parsing a cond expression
@@ -454,18 +454,18 @@ std::unique_ptr<Expression> Parser::parseAssignmentExpression() {
     return parseConditionalExpression(std::move(unaryExpr));
 }
 
-std::unique_ptr<Statement> Parser::parseStatement() {
+StatementPtr Parser::parseStatement() {
     Token token = peekToken();
     switch (token.Kind) {
         case TK_IF: {
             popToken();
             expect(TK_LPAREN, "(");
-            std::unique_ptr<Expression> condition = parseExpression();
+            ExpressionPtr condition = parseExpression();
             expect(TK_RPAREN, ")");
-            std::unique_ptr<Statement> then_statement = parseStatement();
+            StatementPtr then_statement = parseStatement();
             if (check(TK_ELSE)) {
                 popToken();
-                std::unique_ptr<Statement> else_statement = parseStatement();
+                StatementPtr else_statement = parseStatement();
                 return std::make_unique<IfStatement>(token, std::move(condition), std::move(then_statement), std::move(else_statement));
             } else {
                 return std::make_unique<IfStatement>(token, std::move(condition), std::move(then_statement));
@@ -474,7 +474,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
 
         case TK_LBRACE: {
             popToken();
-            std::vector<std::unique_ptr<Statement>> statements;
+            std::vector<StatementPtr> statements;
             while (!check(TK_RBRACE)) {
                 statements.push_back(parseStatement());
             }
@@ -493,9 +493,9 @@ std::unique_ptr<Statement> Parser::parseStatement() {
         case TK_WHILE: {
             popToken();
             expect(TK_LPAREN, "(");
-            std::unique_ptr<Expression> condition = parseExpression();
+            ExpressionPtr condition = parseExpression();
             expect(TK_RPAREN, ")");
-            std::unique_ptr<Statement> stat = parseStatement();
+            StatementPtr stat = parseStatement();
             return std::make_unique<WhileStatement>(token, std::move(condition), std::move(stat));
         }
 
@@ -519,7 +519,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
         case TK_RETURN: {
             popToken();
             if (!check(TK_SEMICOLON)) {
-                std::unique_ptr<Expression> returnvalue = parseExpression();
+                ExpressionPtr returnvalue = parseExpression();
                 return std::make_unique<ReturnStatement>(token, token.Text, std::move(returnvalue));
             } else {
                 return std::make_unique<ReturnStatement>(token, token.Text);
@@ -529,7 +529,7 @@ std::unique_ptr<Statement> Parser::parseStatement() {
         case TK_IDENTIFIER: {
             if (checkLookAhead(TK_COLON)) {
                 popToken();
-                std::unique_ptr<Statement> stat = parseStatement();
+                StatementPtr stat = parseStatement();
                 return std::make_unique<LabeledStatement>(token, token.Text, std::move(stat));
             }
         }

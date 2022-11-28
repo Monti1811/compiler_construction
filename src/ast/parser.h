@@ -23,7 +23,7 @@ enum class DeclKind { ANY, ABSTRACT, CONCRETE };
 class Parser {
    public:
     Parser(Lexer& lexer, Token _currentToken, Token _nextToken);
-    std::unique_ptr<Expression> parseNext();
+    ExpressionPtr parseNext();
    private:
     Lexer& _lexer;
     Token _currentToken;
@@ -56,20 +56,20 @@ class Parser {
     /// both cases.
     bool checkLookAhead(TokenKind tk);
 
-    std::unique_ptr<Expression> parseExpression();
+    ExpressionPtr parseExpression();
     // help Functions to parse an Expression
-    std::unique_ptr<Expression> parsePrimaryExpression();
-    std::unique_ptr<Expression> parsePostfixExpression(std::optional<std::unique_ptr<Expression>> postfixExpression);
-    std::unique_ptr<Expression> parseUnaryExpression();
-    std::unique_ptr<Expression> parseBinaryExpression(int minPrec, std::optional<std::unique_ptr<Expression>> left);
-    std::unique_ptr<Expression> parseConditionalExpression(std::optional<std::unique_ptr<Expression>> left);
-    std::unique_ptr<Expression> parseAssignmentExpression();
+    ExpressionPtr parsePrimaryExpression();
+    ExpressionPtr parsePostfixExpression(std::optional<ExpressionPtr> postfixExpression);
+    ExpressionPtr parseUnaryExpression();
+    ExpressionPtr parseBinaryExpression(int minPrec, std::optional<ExpressionPtr> left);
+    ExpressionPtr parseConditionalExpression(std::optional<ExpressionPtr> left);
+    ExpressionPtr parseAssignmentExpression();
 
-    std::unique_ptr<Statement> parseStatement();
+    StatementPtr parseStatement();
 
     /// Internal methods for use in parseSpecDecl()
-    Declarator* parseDeclarator(void);
-    Declarator* parseNonFunDeclarator(void);
+    DeclaratorPtr parseDeclarator(void);
+    DeclaratorPtr parseNonFunDeclarator(void);
 
     /// Parse a type specifier followed by an abstract or non-abstract
     /// declarator (i.e. a typename or a declaration).
@@ -81,5 +81,5 @@ class Parser {
     /// If `dKind` is `DeclKind::CONCRETE`: verify that the declarator is a
     /// valid non-abstract declarator.
     /// If `dKind` is `DeclKind::ANY`: do not verify abstractness.
-    std::unique_ptr<Declaration> parseSpecDecl(DeclKind dKind);
+    Declaration parseSpecDecl(DeclKind dKind);
 };

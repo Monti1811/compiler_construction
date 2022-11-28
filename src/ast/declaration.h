@@ -4,14 +4,14 @@
 #include "expression.h"
 #include "statement.h"
 
-struct ExternalDeclaration {};
-
-struct FunctionDefinition: public ExternalDeclaration {
+struct FunctionDefinition {
     Declaration declaration;
     BlockStatement block;
 };
 
-// TODO: This is kinda ugly
-/*struct WrappedDeclaration: public ExternalDeclaration, public BlockItem {
-    Declaration declaration;
-};*/
+struct Program {
+    std::vector<Declaration> decls;
+    std::vector<FunctionDefinition> funcs;
+
+    // TODO Preserve order when printing
+};

@@ -9,8 +9,18 @@
 #include "../util/symbol_internalizer.h"
 
 struct Declarator {
+    public:
+    Declarator(const Locatable loc): _loc(loc) {};
     bool isEmptyDeclarator();
+
+    virtual void print(std::ostream& stream) = 0;
+    friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Declarator>& declarator);
+
+    private:
+    const Locatable _loc;
 };
+
+typedef std::unique_ptr<Declarator> DeclaratorPtr;
 
 struct TypeSpecifier {
     public:
@@ -18,51 +28,61 @@ struct TypeSpecifier {
     virtual ~TypeSpecifier() = default;
 
     virtual void print(std::ostream& stream) = 0;
-    friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<TypeSpecifier>& expr);
+    friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<TypeSpecifier>& type);
 
     private:
     const Locatable _loc;
 };
+
+typedef std::unique_ptr<TypeSpecifier> TypeSpecifierPtr;
 
 // int x;
 // ^   ^
 // |   declarator
 // type-specifier
 struct Declaration {
-    Declaration(std::unique_ptr<TypeSpecifier> spec, std::unique_ptr<Declarator> decl)
-        : specifier(std::move(spec))
-        , declarator(std::move(decl)) {};
+    Declaration(Locatable loc, TypeSpecifierPtr specifier, DeclaratorPtr declarator)
+        : _loc(loc)
+        , _specifier(std::move(specifier))
+        , _declarator(std::move(declarator)) {};
 
-    std::unique_ptr<TypeSpecifier> specifier;
-    std::unique_ptr<Declarator> declarator;
+    Locatable _loc;
+    TypeSpecifierPtr _specifier;
+    DeclaratorPtr _declarator;
+
     void print(std::ostream& stream);
 };
 
-struct ParameterDeclaration {
-    std::unique_ptr<TypeSpecifier> specifier;
-    std::optional<Declarator> declarator;
-};
-
 struct PrimitiveDeclarator: public Declarator {
-    PrimitiveDeclarator(Locatable loc, Symbol sym): ident(sym) {};
+    PrimitiveDeclarator(Locatable loc, Symbol ident)
+        : Declarator(loc)
+        , _ident(ident) {};
 
-    Symbol ident;
+    Symbol _ident;
+
+    void print(std::ostream& stream);
 };
 
 struct FunctionDeclarator : public Declarator {
-    FunctionDeclarator(Locatable loc, Declarator* _decl): decl(_decl) {};
+    FunctionDeclarator(Locatable loc, DeclaratorPtr decl)
+        : Declarator(loc)
+        , _decl(std::move(decl)) {};
 
-    Declarator* decl;
-    std::vector<ParameterDeclaration> parameters;
+    DeclaratorPtr _decl;
+    std::vector<Declaration> _parameters;
 
-    void addParameter(std::unique_ptr<Declaration> param);
+    void print(std::ostream& stream);
+    void addParameter(Declaration param);
 };
 
 struct PointerDeclarator : public Declarator {
-    PointerDeclarator(Locatable loc, Declarator* _inner): inner(_inner) {};
+    PointerDeclarator(Locatable loc, DeclaratorPtr inner)
+        : Declarator(loc)
+        , _inner(std::move(inner)) {};
 
-    // Pointer
-    Declarator* inner;
+    DeclaratorPtr _inner;
+
+    void print(std::ostream& stream);
 };
 
 struct VoidSpecifier: public TypeSpecifier {
@@ -87,7 +107,7 @@ struct StructSpecifier: public TypeSpecifier {
     public:
     StructSpecifier(const Locatable loc, Symbol tag) : TypeSpecifier(loc), _tag(tag) {};
     void print(std::ostream& stream);
-    void addComponent(std::unique_ptr<Declaration> spec_decl);
+    void addComponent(Declaration spec_decl);
 
     private:
     Symbol _tag;
