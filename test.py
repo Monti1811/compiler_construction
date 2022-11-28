@@ -66,7 +66,7 @@ def compareResults(expected: "Tuple[list[str], list[str], int]", actual: "Tuple[
     result: list[str] = list()
 
     if success != expectedSuccess:
-        result.append(f"Incorrect exit code: Should be {int(not expectedSuccess)}, is {int(not success)}")
+        result.append(f"Incorrect exit code: Should be {int(expectedSuccess)}, is {int(success)}")
 
     stdoutDelta = difflib.unified_diff(expectedStdout, stdout, lineterm="", fromfile="expected stdout", tofile="actual stdout")
     if fullDiff and len(list(stdoutDelta)) > 0:
@@ -116,12 +116,12 @@ def runParseTest(file: str) -> "None | str":
     expectedFile: str = f"{file}.parsed"
     formattedFile: str = f"{file}.formatted"
 
-    expected = ["", "", 0]
+    expected = [list(), list(), 0]
     if os.path.exists(expectedFile):
         expected = formatExpected(file, expectedFile)
     elif not os.path.exists(formattedFile):
         return None
-    
+
     actual = runCompiler("--parse", file)
 
     return compareResults(expected, actual)

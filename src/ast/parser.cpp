@@ -91,6 +91,7 @@ DeclaratorPtr Parser::parseDeclarator(void) {
         popToken();
 
         if (accept(TK_RPAREN)) {
+            res = std::move(funDecl);
             continue;
         }
 
@@ -486,7 +487,9 @@ StatementPtr Parser::parseStatement() {
         case TK_INT:
         case TK_STRUCT: {
             auto declaration = parseDeclaration(DeclKind::ANY);
-            return std::make_unique<DeclarationStatement>(token, std::move(declaration));
+            auto statement = std::make_unique<DeclarationStatement>(token, std::move(declaration));
+            expect(TokenKind::TK_SEMICOLON, ";");
+            return statement;
         }
 
         case TK_WHILE: {
@@ -507,20 +510,26 @@ StatementPtr Parser::parseStatement() {
 
         case TK_CONTINUE: {
             popToken();
-            return std::make_unique<BreakStatement>(token, token.Text);
+            auto statement = std::make_unique<BreakStatement>(token, token.Text);
+            expect(TokenKind::TK_SEMICOLON, ";");
+            return statement;
         }
         
         case TK_BREAK: {
             popToken();
-            return std::make_unique<BreakStatement>(token, token.Text);
+            auto statement = std::make_unique<BreakStatement>(token, token.Text);
+            expect(TokenKind::TK_SEMICOLON, ";");
+            return statement;
         }
 
         case TK_RETURN: {
             popToken();
             if (!check(TK_SEMICOLON)) {
                 ExpressionPtr returnvalue = parseExpression();
+                expect(TokenKind::TK_SEMICOLON, ";");
                 return std::make_unique<ReturnStatement>(token, token.Text, std::move(returnvalue));
             } else {
+                expect(TokenKind::TK_SEMICOLON, ";");
                 return std::make_unique<ReturnStatement>(token, token.Text);
             }
         }
@@ -534,9 +543,12 @@ StatementPtr Parser::parseStatement() {
             [[fallthrough]];
         }
         
-        default:
-            return std::make_unique<ExpressionStatement>(token, parseExpression());
+        default: {
+            auto statement = std::make_unique<ExpressionStatement>(token, parseExpression());
+            expect(TokenKind::TK_SEMICOLON, ";");
+            return statement;
         }
+    }
 }
 
 Program Parser::parseProgram() {

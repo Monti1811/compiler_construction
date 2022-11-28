@@ -19,18 +19,26 @@ void Program::print(std::ostream& stream) {
     auto decl_iter = this->_declarations.begin();
     auto func_iter = this->_functions.begin();
 
+    bool first = true;
+
     for (bool is_decl : this->_is_declaration) {
+        if (first) {
+            first = false;
+        } else {
+            stream << "\n\n";
+        }
+
         if (is_decl) {
             if (decl_iter == this->_declarations.end()) {
                 error("Internal error: Tried to read non-existent declaration");
             }
-            stream << decl_iter.base() << std::endl;
+            stream << *decl_iter.base() << ';';
             decl_iter++;
         } else {
             if (func_iter == this->_functions.end()) {
                 error("Internal error: Tried to read non-existent function definition");
             }
-            stream << func_iter.base() << std::endl;
+            stream << *func_iter.base();
             func_iter++;
         }
     }

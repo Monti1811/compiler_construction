@@ -19,15 +19,15 @@ std::ostream& operator<<(std::ostream& stream, Declaration& declaration) {
 }
 
 void Declaration::print(std::ostream& stream) {
-    stream << _specifier << ' ' << _declarator;
+    stream << _specifier << " (" << _declarator << ')';
 }
 
 void PrimitiveDeclarator::print(std::ostream& stream) {
-    stream << '(' << _ident << ')';
+    stream << *_ident;
 }
 
 void FunctionDeclarator::print(std::ostream& stream) {
-    stream << '(' << _decl << '(';
+    stream << _decl << '(';
     for (size_t i = 0; i < _parameters.size(); i++) {
         auto& par = _parameters[i];
         stream << par._specifier << ' ' << par._declarator;
@@ -35,7 +35,7 @@ void FunctionDeclarator::print(std::ostream& stream) {
             stream << ',';
         }
     }
-    stream << "))";
+    stream << ')';
 }
 
 void FunctionDeclarator::addParameter(Declaration param) {
@@ -43,7 +43,7 @@ void FunctionDeclarator::addParameter(Declaration param) {
 }
 
 void PointerDeclarator::print(std::ostream& stream) {
-    stream << "(*" << _inner << ')';
+    stream << "*" << _inner;
 }
 
 std::ostream& operator<<(std::ostream& stream, const TypeSpecifierPtr& type) {

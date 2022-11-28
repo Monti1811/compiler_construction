@@ -27,7 +27,7 @@ int main(int argc, char const* argv[]) {
             }
         } else if (strcmp(argv[i], "--parse") == 0) {
             Parser parser(lexer);
-            auto program = parser.parseProgram();
+            parser.parseProgram();
         } else if (strcmp(argv[i], "--print-ast") == 0) {
             Parser parser(lexer);
             auto program = parser.parseProgram();
