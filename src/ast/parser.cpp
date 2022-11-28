@@ -254,22 +254,24 @@ ExpressionPtr Parser::parseUnaryExpression() {
             if (check(TokenKind::TK_LPAREN))
             // sizeof (type-name)
             {
-                popToken(); // accept (
 
-                if (check(TokenKind::TK_INT)) {
+                if (checkLookAhead(TokenKind::TK_INT)) {
                     auto intSpec = std::make_unique<IntSpecifier>(peekToken());
+                    popToken(); // accept (
                     popToken();
                     auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), std::move(intSpec));
                     expect(TokenKind::TK_RPAREN, ")"); // expect )
                     return expr;
-                } else if (check(TokenKind::TK_VOID)) {
+                } else if (checkLookAhead(TokenKind::TK_VOID)) {
                     auto voidSpec = std::make_unique<VoidSpecifier>(peekToken());
+                    popToken(); // accept (
                     popToken();
                     auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), std::move(voidSpec));
                     expect(TokenKind::TK_RPAREN, ")");
                     return expr;
-                } else if (check(TokenKind::TK_CHAR)) {
+                } else if (checkLookAhead(TokenKind::TK_CHAR)) {
                     auto charSpec = std::make_unique<CharSpecifier>(peekToken());
+                    popToken(); // accept (
                     popToken();
                     auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), std::move(charSpec));
                     expect(TokenKind::TK_RPAREN, ")");
@@ -601,7 +603,9 @@ void Parser::expect(TokenKind tk, const char* txt) {
     if (_currentToken.Kind == tk) {
         popToken();
     } else {
-        errorloc(getLoc(), "TokenKind " + std::string(txt) + " was expected, but something else occured");
+        errorloc(getLoc(), "TokenKind '" + std::string(txt) 
+            + "' was expected, but it was '" + *_currentToken.Text 
+            + "', next token ist '" + *_nextToken.Text + "'");
     }
 }
 
