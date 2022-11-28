@@ -55,8 +55,6 @@ struct Declaration {
     Locatable _loc;
     TypeSpecifierPtr _specifier;
     DeclaratorPtr _declarator;
-
-    void print(std::ostream& stream);
 };
 
 struct PrimitiveDeclarator: public Declarator {

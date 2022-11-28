@@ -33,7 +33,7 @@ void DeclarationStatement::print(std::ostream& stream) {
 }
 
 void ExpressionStatement::print(std::ostream& stream) {
-    this->_expr.get()->print(stream);
+    this->_expr->print(stream);
     return;
 }
 

@@ -51,13 +51,6 @@ std::ostream& operator<<(std::ostream& stream, const TypeSpecifierPtr& type) {
     return stream;
 }
 
-
-void Declaration::print(std::ostream& stream) {
-    this->_specifier->print(stream); 
-    // TODO 
-    // this->declarator.get()->print(stream);
-}
-
 void VoidSpecifier::print(std::ostream& stream) {
     stream << "void";
 }
