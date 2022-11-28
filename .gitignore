@@ -72,3 +72,5 @@ llvm/
 # VS Code settings
 .vscode
 *.code-workspace
+
+test.c4
