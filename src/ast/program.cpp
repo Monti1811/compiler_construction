@@ -1,5 +1,15 @@
 #include "program.h"
 
+std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition) {
+    definition.print(stream);
+    return stream;
+}
+
+void FunctionDefinition::print(std::ostream& stream) {
+    stream << this->_declaration << '\n';
+    this->_block.print(stream);
+}
+
 void Program::addDeclaration(Declaration declaration) {
     this->_declarations.push_back(std::move(declaration));
     this->_is_declaration.push_back(true);

@@ -13,6 +13,9 @@ struct FunctionDefinition {
         : _declaration(std::move(declaration))
         , _block(std::move(block)) {};
 
+    void print(std::ostream& stream);
+    friend std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition);
+
     private:
     Declaration _declaration;
     BlockStatement _block;
