@@ -68,7 +68,7 @@ struct FunctionDeclarator : public Declarator {
         : Declarator(loc)
         , _decl(std::move(decl)) {};
 
-    std::unique_ptr<Declarator> _decl;
+    DeclaratorPtr _decl;
     std::vector<Declaration> _parameters;
 
     void print(std::ostream& stream);

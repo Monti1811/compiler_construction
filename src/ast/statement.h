@@ -45,11 +45,11 @@ struct LabeledStatement: public Statement {
 /// ```
 /// Also represents a null statement (`;`) if `items` is empty.
 struct BlockStatement: public Statement {
-    BlockStatement(Locatable loc, std::vector<std::unique_ptr<Statement>> items)
+    BlockStatement(Locatable loc, std::vector<StatementPtr> items)
         : Statement(loc)
         ,_items(std::move(items)) {};
     ~BlockStatement() = default;
-    std::vector<std::unique_ptr<Statement>> _items;
+    std::vector<StatementPtr> _items;
     void print(std::ostream& stream);
 };
 
@@ -147,11 +147,11 @@ struct ReturnStatement: public JumpStatement {
         : JumpStatement(loc, name)
         , _expr(std::nullopt) {};
 
-    ReturnStatement(Locatable loc, Symbol name, std::unique_ptr<Expression> expr)
+    ReturnStatement(Locatable loc, Symbol name, ExpressionPtr expr)
         : JumpStatement(loc, name)
         , _expr(std::make_optional(std::move(expr))) {};
 
-    std::optional<std::unique_ptr<Expression>> _expr;
+    std::optional<ExpressionPtr> _expr;
     void print(std::ostream& stream);
 };
 

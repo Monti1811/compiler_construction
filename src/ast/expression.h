@@ -71,7 +71,7 @@ struct StringLiteralExpression: public Expression {
 
 struct IndexExpression: public Expression {
     public:
-    IndexExpression(Locatable loc, ExpressionPtr expression, std::unique_ptr<Expression> index)
+    IndexExpression(Locatable loc, ExpressionPtr expression, ExpressionPtr index)
         : Expression(loc)
         , _expression(std::move(expression))
         , _index(std::move(index)) {};
@@ -86,7 +86,7 @@ struct IndexExpression: public Expression {
 
 struct CallExpression: public Expression {
     public:
-    CallExpression(Locatable loc, ExpressionPtr expression, std::vector<std::unique_ptr<Expression>> arguments)
+    CallExpression(Locatable loc, ExpressionPtr expression, std::vector<ExpressionPtr> arguments)
         : Expression(loc)
         , _expression(std::move(expression))
         , _arguments(std::move(arguments)) {};
@@ -152,7 +152,7 @@ struct SizeofExpression: public UnaryExpression {
 
 struct SizeofTypeExpression: public Expression {
     public:
-    SizeofTypeExpression(Locatable loc, std::unique_ptr<TypeSpecifier> type)
+    SizeofTypeExpression(Locatable loc, TypeSpecifierPtr type)
         : Expression(loc)
         , _type(std::move(type)) {};
 
@@ -160,7 +160,7 @@ struct SizeofTypeExpression: public Expression {
 
     // sizeof (inner)
     private:
-    std::unique_ptr<TypeSpecifier> _type;
+    TypeSpecifierPtr _type;
 };
 
 struct ReferenceExpression: public UnaryExpression {
@@ -197,7 +197,7 @@ struct LogicalNegationExpression: public UnaryExpression {
 
 struct BinaryExpression: public Expression {
     public:
-    BinaryExpression(Locatable loc, ExpressionPtr left, std::unique_ptr<Expression> right, const char* const op_str)
+    BinaryExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right, const char* const op_str)
         : Expression(loc)
         , _left(std::move(left))
         , _right(std::move(right))
@@ -216,7 +216,7 @@ struct MultiplyExpression: public BinaryExpression {
     // left * right
 
     public:
-    MultiplyExpression(Locatable loc, ExpressionPtr left, std::unique_ptr<Expression> right)
+    MultiplyExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "*") {};
 };
 
@@ -224,7 +224,7 @@ struct AddExpression: public BinaryExpression {
     // left + right
 
     public:
-    AddExpression(Locatable loc, ExpressionPtr left, std::unique_ptr<Expression> right)
+    AddExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "+") {};
 };
 
@@ -232,7 +232,7 @@ struct SubstractExpression: public BinaryExpression {
     // left - right
 
     public:
-    SubstractExpression(Locatable loc, ExpressionPtr left, std::unique_ptr<Expression> right)
+    SubstractExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "-") {};
 };
 
@@ -240,7 +240,7 @@ struct LessThanExpression: public BinaryExpression {
     // left < right
 
     public:
-    LessThanExpression(Locatable loc, ExpressionPtr left, std::unique_ptr<Expression> right)
+    LessThanExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "<") {};
 };
 
@@ -248,7 +248,7 @@ struct EqualExpression: public BinaryExpression {
     // left == right
 
     public:
-    EqualExpression(Locatable loc, ExpressionPtr left, std::unique_ptr<Expression> right)
+    EqualExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "==") {};
 };
 
@@ -256,7 +256,7 @@ struct UnequalExpression: public BinaryExpression {
     // left != right
 
     public:
-    UnequalExpression(Locatable loc, ExpressionPtr left, std::unique_ptr<Expression> right)
+    UnequalExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "!=") {};
 };
 
@@ -264,7 +264,7 @@ struct AndExpression: public BinaryExpression {
     // left && right
 
     public:
-    AndExpression(Locatable loc, ExpressionPtr left, std::unique_ptr<Expression> right)
+    AndExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "&&") {};
 };
 
@@ -272,7 +272,7 @@ struct OrExpression: public BinaryExpression {
     // left || right
 
     public:
-    OrExpression(Locatable loc, ExpressionPtr left, std::unique_ptr<Expression> right)
+    OrExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "||") {};
 };
 
@@ -280,7 +280,7 @@ struct TernaryExpression: public Expression {
     // condition ? left : right
 
     public:
-    TernaryExpression(Locatable loc, ExpressionPtr condition, std::unique_ptr<Expression> left, std::unique_ptr<Expression> right)
+    TernaryExpression(Locatable loc, ExpressionPtr condition, ExpressionPtr left, ExpressionPtr right)
         : Expression(loc)
         , _condition(std::move(condition))
         , _left(std::move(left))
@@ -298,6 +298,6 @@ struct AssignExpression: public BinaryExpression {
     // left = right
 
     public:
-    AssignExpression(Locatable loc, ExpressionPtr left, std::unique_ptr<Expression> right)
+    AssignExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "=") {};
 };

@@ -2,7 +2,7 @@
 
 // TODO: Add a global way of checking the current identation
 
-std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Statement>& stat) {
+std::ostream& operator<<(std::ostream& stream, const StatementPtr& stat) {
     stat->print(stream);
     return stream;
 }

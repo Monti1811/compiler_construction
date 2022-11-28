@@ -59,13 +59,13 @@ class Parser {
     ExpressionPtr parseExpression();
     // help Functions to parse an Expression
     ExpressionPtr parsePrimaryExpression();
-    ExpressionPtr parsePostfixExpression(std::optional<std::unique_ptr<Expression>> postfixExpression);
+    ExpressionPtr parsePostfixExpression(std::optional<ExpressionPtr> postfixExpression);
     ExpressionPtr parseUnaryExpression();
-    ExpressionPtr parseBinaryExpression(int minPrec, std::optional<std::unique_ptr<Expression>> left);
-    ExpressionPtr parseConditionalExpression(std::optional<std::unique_ptr<Expression>> left);
+    ExpressionPtr parseBinaryExpression(int minPrec, std::optional<ExpressionPtr> left);
+    ExpressionPtr parseConditionalExpression(std::optional<ExpressionPtr> left);
     ExpressionPtr parseAssignmentExpression();
 
-    std::unique_ptr<Statement> parseStatement();
+    StatementPtr parseStatement();
 
     /// Internal methods for use in parseSpecDecl()
     DeclaratorPtr parseDeclarator(void);
