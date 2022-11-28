@@ -8,8 +8,9 @@
 #include "../util/diagnostic.h"
 
 #include "declarator.h"
-#include "statement.h"
 #include "expression.h"
+#include "statement.h"
+#include "program.h"
 
 // Declarators and abstract declarators share a lot of syntactical and
 // semantical properties. Therefore, we use the same AST data structures to
@@ -65,7 +66,10 @@ class Parser {
     ExpressionPtr parseConditionalExpression(std::optional<ExpressionPtr> left);
     ExpressionPtr parseAssignmentExpression();
 
+    BlockStatement parseBlockStatement();
     StatementPtr parseStatement();
+
+    Program parseProgram();
 
     /// Internal methods for use in parseDeclaration()
     DeclaratorPtr parseDeclarator(void);
