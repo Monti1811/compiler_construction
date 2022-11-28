@@ -55,10 +55,10 @@ struct BlockStatement: public Statement {
 
 // int y;
 struct DeclarationStatement: public Statement {
-    DeclarationStatement(Locatable loc, std::unique_ptr<Declaration> declaration)
+    DeclarationStatement(Locatable loc, Declaration declaration)
         : Statement(loc)
-        ,_declaration(std::move(declaration)) {};
-    std::unique_ptr<Declaration> _declaration;
+        , _declaration(std::move(declaration)) {};
+    Declaration _declaration;
     void print(std::ostream& stream);
 };
 

@@ -28,7 +28,7 @@ void LabeledStatement::print(std::ostream& stream) {
 }
 
 void DeclarationStatement::print(std::ostream& stream) {
-    this->_declaration.get()->print(stream);
+    this->_declaration.print(stream);
     return;
 }
 
