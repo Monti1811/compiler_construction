@@ -29,9 +29,10 @@ typedef std::unique_ptr<Statement> StatementPtr;
 struct LabeledStatement: public Statement {
     LabeledStatement(Locatable loc, Symbol name, StatementPtr inner)
         : Statement(loc)
-        ,_name(name)
+        , _name(name)
         , _inner(std::move(inner)) {};
     Symbol _name;
+
     StatementPtr _inner;
     void print(std::ostream& stream);
 };
@@ -47,8 +48,8 @@ struct LabeledStatement: public Statement {
 struct BlockStatement: public Statement {
     BlockStatement(Locatable loc, std::vector<StatementPtr> items)
         : Statement(loc)
-        ,_items(std::move(items)) {};
-    ~BlockStatement() = default;
+        , _items(std::move(items)) {};
+
     std::vector<StatementPtr> _items;
     void print(std::ostream& stream);
 };
@@ -67,6 +68,7 @@ struct ExpressionStatement: public Statement {
     ExpressionStatement(Locatable loc, ExpressionPtr expr)
         : Statement(loc)
         , _expr(std::move(expr)) {};
+
     ExpressionPtr _expr;
     void print(std::ostream& stream);
 };

@@ -1,16 +1,6 @@
-#include "../util/diagnostic.h"
-#include "../lexer/token.h"
-
-#include "declarator.h"
 #include "parser.h"
 
-Parser::Parser(Lexer& lexer, Token currentToken, Token nextToken) : _lexer(lexer), _currentToken(currentToken), _nextToken(nextToken) {};
-
-ExpressionPtr Parser::parseNext() {
-    return parseExpression();
-}
-
-Declaration Parser::parseSpecDecl(DeclKind dKind) {
+Declaration Parser::parseDeclaration(DeclKind dKind) {
     TypeSpecifierPtr spec(nullptr);
     Locatable loc(getLoc());
 
@@ -34,8 +24,8 @@ Declaration Parser::parseSpecDecl(DeclKind dKind) {
 
         if (accept(TK_LBRACE)) {
             do {  // parse struct member declarations
-                auto specDecl = parseSpecDecl(DeclKind::CONCRETE);
-                structSpec->addComponent(std::move(specDecl));
+                auto declaration = parseDeclaration(DeclKind::CONCRETE);
+                structSpec->addComponent(std::move(declaration));
                 expect(TK_SEMICOLON, ";");
             } while (!accept(TK_RBRACE));
         }
@@ -48,7 +38,7 @@ Declaration Parser::parseSpecDecl(DeclKind dKind) {
 
     DeclaratorPtr decl(parseDeclarator());
 
-    if (!decl->isEmptyDeclarator()) {
+    if (!decl->isAbstract()) {
         // At all places where non-abstractness is required, declarators are
         // also optional in the grammar, therefore it's okay to accept a simple
         // empty primitive declarator here anyway.
@@ -101,11 +91,12 @@ DeclaratorPtr Parser::parseDeclarator(void) {
         popToken();
 
         if (accept(TK_RPAREN)) {
+            res = std::move(funDecl);
             continue;
         }
 
         do {
-            auto param = parseSpecDecl(DeclKind::ANY);
+            auto param = parseDeclaration(DeclKind::ANY);
             funDecl->addParameter(std::move(param));
         } while (accept(TK_COMMA));
 
@@ -263,22 +254,24 @@ ExpressionPtr Parser::parseUnaryExpression() {
             if (check(TokenKind::TK_LPAREN))
             // sizeof (type-name)
             {
-                popToken(); // accept (
 
-                if (check(TokenKind::TK_INT)) {
+                if (checkLookAhead(TokenKind::TK_INT)) {
                     auto intSpec = std::make_unique<IntSpecifier>(peekToken());
+                    popToken(); // accept (
                     popToken();
                     auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), std::move(intSpec));
                     expect(TokenKind::TK_RPAREN, ")"); // expect )
                     return expr;
-                } else if (check(TokenKind::TK_VOID)) {
+                } else if (checkLookAhead(TokenKind::TK_VOID)) {
                     auto voidSpec = std::make_unique<VoidSpecifier>(peekToken());
+                    popToken(); // accept (
                     popToken();
                     auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), std::move(voidSpec));
                     expect(TokenKind::TK_RPAREN, ")");
                     return expr;
-                } else if (check(TokenKind::TK_CHAR)) {
+                } else if (checkLookAhead(TokenKind::TK_CHAR)) {
                     auto charSpec = std::make_unique<CharSpecifier>(peekToken());
+                    popToken(); // accept (
                     popToken();
                     auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), std::move(charSpec));
                     expect(TokenKind::TK_RPAREN, ")");
@@ -295,7 +288,7 @@ ExpressionPtr Parser::parseUnaryExpression() {
     }
 }
 
-const int getPrecedenceLevel(TokenKind tk) {
+constexpr int getPrecedenceLevel(TokenKind tk) {
     /*
         precedence table
         operator --- precedence level
@@ -454,6 +447,21 @@ ExpressionPtr Parser::parseAssignmentExpression() {
     return parseConditionalExpression(std::move(unaryExpr));
 }
 
+BlockStatement Parser::parseBlockStatement() {
+    auto loc = getLoc();
+
+    expect(TK_LBRACE, "{");
+
+    std::vector<StatementPtr> statements;
+    while (!check(TK_RBRACE)) {
+        statements.push_back(parseStatement());
+    }
+
+    expect(TK_RBRACE, "}");
+
+    return BlockStatement(loc, std::move(statements));
+}
+
 StatementPtr Parser::parseStatement() {
     Token token = peekToken();
     switch (token.Kind) {
@@ -473,21 +481,17 @@ StatementPtr Parser::parseStatement() {
         }
 
         case TK_LBRACE: {
-            popToken();
-            std::vector<StatementPtr> statements;
-            while (!check(TK_RBRACE)) {
-                statements.push_back(parseStatement());
-            }
-            expect(TK_RBRACE, "}");
-            return std::make_unique<BlockStatement>(token, std::move(statements));
+            return std::make_unique<BlockStatement>(parseBlockStatement());
         }
 
         case TK_VOID:
         case TK_CHAR:
         case TK_INT:
         case TK_STRUCT: {
-            auto declaration = parseSpecDecl(DeclKind::ANY);
-            return std::make_unique<DeclarationStatement>(token, std::move(declaration));
+            auto declaration = parseDeclaration(DeclKind::ANY);
+            auto statement = std::make_unique<DeclarationStatement>(token, std::move(declaration));
+            expect(TokenKind::TK_SEMICOLON, ";");
+            return statement;
         }
 
         case TK_WHILE: {
@@ -503,40 +507,79 @@ StatementPtr Parser::parseStatement() {
             popToken();
             Token curr = peekToken();
             expect(TK_IDENTIFIER, "identifier");
+            expect(TokenKind::TK_SEMICOLON, ";");
             return std::make_unique<GotoStatement>(token, token.Text, curr.Text);
         }
 
         case TK_CONTINUE: {
             popToken();
-            return std::make_unique<BreakStatement>(token, token.Text);
+            auto statement = std::make_unique<BreakStatement>(token, token.Text);
+            expect(TokenKind::TK_SEMICOLON, ";");
+            return statement;
         }
         
         case TK_BREAK: {
             popToken();
-            return std::make_unique<BreakStatement>(token, token.Text);
+            auto statement = std::make_unique<BreakStatement>(token, token.Text);
+            expect(TokenKind::TK_SEMICOLON, ";");
+            return statement;
         }
 
         case TK_RETURN: {
             popToken();
             if (!check(TK_SEMICOLON)) {
                 ExpressionPtr returnvalue = parseExpression();
+                expect(TokenKind::TK_SEMICOLON, ";");
                 return std::make_unique<ReturnStatement>(token, token.Text, std::move(returnvalue));
             } else {
+                expect(TokenKind::TK_SEMICOLON, ";");
                 return std::make_unique<ReturnStatement>(token, token.Text);
             }
         }
 
         case TK_IDENTIFIER: {
             if (checkLookAhead(TK_COLON)) {
-                popToken();
+                popToken(); // remove identifier
+                popToken(); // remove ':'
                 StatementPtr stat = parseStatement();
                 return std::make_unique<LabeledStatement>(token, token.Text, std::move(stat));
             }
+            [[fallthrough]];
         }
         
-        default:
-            return std::make_unique<ExpressionStatement>(token, parseExpression());
+        default: {
+            auto statement = std::make_unique<ExpressionStatement>(token, parseExpression());
+            expect(TokenKind::TK_SEMICOLON, ";");
+            return statement;
         }
+    }
+}
+
+Program Parser::parseProgram() {
+    auto program = Program();
+
+    while (!check(TokenKind::TK_EOI)) {
+        // TODO: Which declKind is correct here?
+        auto declaration = parseDeclaration(DeclKind::ANY);
+
+        switch (peekToken().Kind) {
+            case TokenKind::TK_SEMICOLON: {
+                expect(TK_SEMICOLON, ";");
+                program.addDeclaration(std::move(declaration));
+                break;
+            }
+            case TokenKind::TK_LBRACE: {
+                auto block = parseBlockStatement();
+                auto function = FunctionDefinition(std::move(declaration), std::move(block));
+                program.addFunctionDefinition(std::move(function));
+                break;
+            }
+            default:
+                errorloc(getLoc(), "Expected either semicolon or block");
+        }
+    }
+
+    return program;
 }
 
 void Parser::popToken() {
@@ -562,7 +605,9 @@ void Parser::expect(TokenKind tk, const char* txt) {
     if (_currentToken.Kind == tk) {
         popToken();
     } else {
-        errorloc(getLoc(), "TokenKind " + std::string(txt) + " was expected, but something else occured");
+        errorloc(getLoc(), "TokenKind '" + std::string(txt) 
+            + "' was expected, but it was '" + *_currentToken.Text 
+            + "', next token ist '" + *_nextToken.Text + "'");
     }
 }
 

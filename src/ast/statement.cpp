@@ -17,24 +17,22 @@ std::ostream& operator<<(std::ostream& stream, const IdentManager& identmanager)
 
 void LabeledStatement::print(std::ostream& stream) {
     if (this->_inner) {
-        stream << this->_name << ':';
-    } else {
         IdentManager& ident = IdentManager::getInstance();
         ident.increaseCurrIdentation(1);
         stream << this->_name << ":\n" << ident << this->_inner;
         ident.decreaseCurrIdentation(1);
+    } else {
+        stream << this->_name << ':' << std::endl;
     }
     
 }
 
 void DeclarationStatement::print(std::ostream& stream) {
-    this->_declaration.print(stream);
-    return;
+    stream << this->_declaration << ';';
 }
 
 void ExpressionStatement::print(std::ostream& stream) {
-    this->_expr.get()->print(stream);
-    return;
+    stream << this->_expr << ';';
 }
 
 void BlockStatement::print(std::ostream& stream) {
@@ -64,7 +62,7 @@ void WhileStatement::print(std::ostream& stream) {
 }
 
 void JumpStatement::print(std::ostream& stream) {
-    stream << this->_jump_str;
+    stream << this->_jump_str << ';';
 }
 
 void ReturnStatement::print(std::ostream& stream) {
@@ -72,10 +70,11 @@ void ReturnStatement::print(std::ostream& stream) {
     if (this->_expr) {
         stream << " " << this->_expr.value();
     }
+    stream << ';';
 }
 
 void GotoStatement::print(std::ostream& stream) {
-    stream << "goto" << this->_ident;
+    stream << "goto" << this->_ident << ';';
 }
 
 // Identation manager to keep track of idendation

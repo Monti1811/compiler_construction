@@ -26,15 +26,12 @@ int main(int argc, char const* argv[]) {
                 token = lexer.next();
             }
         } else if (strcmp(argv[i], "--parse") == 0) {
-            Token currentToken = lexer.next();
-            Token nextToken = lexer.next();
-            Parser parser(lexer, currentToken, nextToken);
-            auto expr = parser.parseNext();
-
-            std::cout << expr << std::endl;
-            // TODO
+            Parser parser(lexer);
+            parser.parseProgram();
         } else if (strcmp(argv[i], "--print-ast") == 0) {
-            // TODO
+            Parser parser(lexer);
+            auto program = parser.parseProgram();
+            std::cout << program << std::endl;
         }    
     }
     

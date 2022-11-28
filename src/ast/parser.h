@@ -8,8 +8,9 @@
 #include "../util/diagnostic.h"
 
 #include "declarator.h"
-#include "statement.h"
 #include "expression.h"
+#include "statement.h"
+#include "program.h"
 
 // Declarators and abstract declarators share a lot of syntactical and
 // semantical properties. Therefore, we use the same AST data structures to
@@ -22,8 +23,13 @@ enum class DeclKind { ANY, ABSTRACT, CONCRETE };
 /// into an abstract syntax tree.
 class Parser {
    public:
-    Parser(Lexer& lexer, Token _currentToken, Token _nextToken);
-    ExpressionPtr parseNext();
+    Parser(Lexer& lexer)
+    : _lexer(lexer)
+    , _currentToken(lexer.next())
+    , _nextToken(lexer.next()) {};
+
+    Program parseProgram();
+
    private:
     Lexer& _lexer;
     Token _currentToken;
@@ -65,9 +71,10 @@ class Parser {
     ExpressionPtr parseConditionalExpression(std::optional<ExpressionPtr> left);
     ExpressionPtr parseAssignmentExpression();
 
+    BlockStatement parseBlockStatement();
     StatementPtr parseStatement();
 
-    /// Internal methods for use in parseSpecDecl()
+    /// Internal methods for use in parseDeclaration()
     DeclaratorPtr parseDeclarator(void);
     DeclaratorPtr parseNonFunDeclarator(void);
 
@@ -81,5 +88,5 @@ class Parser {
     /// If `dKind` is `DeclKind::CONCRETE`: verify that the declarator is a
     /// valid non-abstract declarator.
     /// If `dKind` is `DeclKind::ANY`: do not verify abstractness.
-    Declaration parseSpecDecl(DeclKind dKind);
+    Declaration parseDeclaration(DeclKind dKind);
 };
