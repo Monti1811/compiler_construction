@@ -80,7 +80,7 @@ struct IfStatement: public Statement {
         , _condition(std::move(condition))
         , _then_statement(std::move(then_statement))
         , _else_statement(std::move(else_statement)) {};
-    IfStatement(Locatable loc, ExpressionPtr condition, StatementPtr then_statement, StatementPtr else_statement)
+    IfStatement(Locatable loc, ExpressionPtr condition, StatementPtr then_statement)
         : IfStatement(loc, std::move(condition), std::move(then_statement), std::nullopt) {};
 
     private:
