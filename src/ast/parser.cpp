@@ -10,7 +10,7 @@ std::unique_ptr<Expression> Parser::parseNext() {
     return parseExpression();
 }
 
-Declaration Parser::parseSpecDecl(DeclKind dKind) {
+std::unique_ptr<Declaration> Parser::parseSpecDecl(DeclKind dKind) {
     std::unique_ptr<TypeSpecifier> spec(nullptr);
     Locatable loc(getLoc());
 
@@ -57,7 +57,7 @@ Declaration Parser::parseSpecDecl(DeclKind dKind) {
         //      that it fits with what is required by dKind
     }
 
-    return Declaration(std::move(spec), std::move(decl));
+    return std::make_unique<Declaration>(std::move(spec), std::move(decl));
 }
 
 Declarator* Parser::parseNonFunDeclarator(void) {
@@ -116,7 +116,7 @@ Declarator* Parser::parseDeclarator(void) {
 }
 
 std::unique_ptr<Expression> Parser::parseExpression() {
-    return std::move(parseAssignmentExpression());
+    return parseAssignmentExpression();
 }
 
 std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
@@ -158,7 +158,7 @@ std::unique_ptr<Expression> Parser::parsePrimaryExpression() {
             popToken();
             auto expr = parseExpression();
             expect(TokenKind::TK_RPAREN, ")");
-            return std::move(expr);
+            return expr;
         }
         default: {
             errorloc(getLoc(), "wanted to parse PrimaryExpression but found no fitting token");
@@ -452,6 +452,91 @@ std::unique_ptr<Expression> Parser::parseAssignmentExpression() {
     // this works since every binaryexpression starts with a unary expression 
     // and every conditionalexpression starts with a binary expression
     return parseConditionalExpression(std::move(unaryExpr));
+}
+
+std::unique_ptr<Statement> Parser::parseStatement() {
+    Token token = peekToken();
+    switch (token.Kind) {
+        case TK_IF: {
+            popToken();
+            expect(TK_LPAREN, "(");
+            std::unique_ptr<Expression> condition = parseExpression();
+            expect(TK_RPAREN, ")");
+            std::unique_ptr<Statement> then_statement = parseStatement();
+            if (check(TK_ELSE)) {
+                popToken();
+                std::unique_ptr<Statement> else_statement = parseStatement();
+                return std::make_unique<IfStatement>(token, std::move(condition), std::move(then_statement), std::move(else_statement));
+            } else {
+                return std::make_unique<IfStatement>(token, std::move(condition), std::move(then_statement));
+            }
+        }
+
+        case TK_LBRACE: {
+            popToken();
+            std::vector<std::unique_ptr<Statement>> statements;
+            while (!check(TK_RBRACE)) {
+                statements.push_back(parseStatement());
+            }
+            expect(TK_RBRACE, "}");
+            return std::make_unique<BlockStatement>(token, std::move(statements));
+        }
+
+        case TK_VOID:
+        case TK_CHAR:
+        case TK_INT:
+        case TK_STRUCT: {
+            auto declaration = parseSpecDecl(DeclKind::ANY);
+            return std::make_unique<DeclarationStatement>(token, std::move(declaration));
+        }
+
+        case TK_WHILE: {
+            popToken();
+            expect(TK_LPAREN, "(");
+            std::unique_ptr<Expression> condition = parseExpression();
+            expect(TK_RPAREN, ")");
+            std::unique_ptr<Statement> stat = parseStatement();
+            return std::make_unique<WhileStatement>(token, std::move(condition), std::move(stat));
+        }
+
+        case TK_GOTO: {
+            popToken();
+            Token curr = peekToken();
+            expect(TK_IDENTIFIER, "identifier");
+            return std::make_unique<GotoStatement>(token, token.Text, curr.Text);
+        }
+
+        case TK_CONTINUE: {
+            popToken();
+            return std::make_unique<BreakStatement>(token, token.Text);
+        }
+        
+        case TK_BREAK: {
+            popToken();
+            return std::make_unique<BreakStatement>(token, token.Text);
+        }
+
+        case TK_RETURN: {
+            popToken();
+            if (!check(TK_SEMICOLON)) {
+                std::unique_ptr<Expression> returnvalue = parseExpression();
+                return std::make_unique<ReturnStatement>(token, token.Text, std::move(returnvalue));
+            } else {
+                return std::make_unique<ReturnStatement>(token, token.Text);
+            }
+        }
+
+        case TK_IDENTIFIER: {
+            if (checkLookAhead(TK_COLON)) {
+                popToken();
+                std::unique_ptr<Statement> stat = parseStatement();
+                return std::make_unique<LabeledStatement>(token, token.Text, std::move(stat));
+            }
+        }
+        
+        default:
+            return std::make_unique<ExpressionStatement>(token, parseExpression());
+        }
 }
 
 void Parser::popToken() {

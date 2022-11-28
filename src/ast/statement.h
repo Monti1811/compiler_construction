@@ -15,7 +15,7 @@
 struct Statement {
     Statement(Locatable loc)
         : loc(loc) {};
-
+    virtual ~Statement() = default;
     Locatable loc;
 
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Statement>& stat);
@@ -55,15 +55,12 @@ struct BlockStatement: public Statement {
     void print(std::ostream& stream);
 };
 
-// int x = 2;
 // int y;
 struct DeclarationStatement: public Statement {
-    DeclarationStatement(Locatable loc, std::unique_ptr<TypeSpecifier> type, Symbol name)
+    DeclarationStatement(Locatable loc, std::unique_ptr<Declaration> declaration)
         : Statement(loc)
-        ,_type(std::move(type))
-        ,_name(name) {};
-    std::unique_ptr<TypeSpecifier> _type;
-    Symbol _name;
+        ,_declaration(std::move(declaration)) {};
+    std::unique_ptr<Declaration> _declaration;
     void print(std::ostream& stream);
 };
 
@@ -122,11 +119,11 @@ struct JumpStatement: public Statement {
 
 // goto identifier
 struct GotoStatement: public JumpStatement {
-    GotoStatement(Locatable loc, Symbol name, const char** ident)
+    GotoStatement(Locatable loc, Symbol name, Symbol ident)
         : JumpStatement(loc, name)
         ,_ident(ident) {};
 
-    const char** _ident;
+    Symbol _ident;
 
     void print(std::ostream& stream);
 };

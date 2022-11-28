@@ -5,6 +5,13 @@ std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<TypeSpecifi
     return stream;
 }
 
+
+void Declaration::print(std::ostream& stream) {
+    this->specifier.get()->print(stream); 
+    // TODO 
+    // this->declarator.get()->print(stream);
+}
+
 void VoidSpecifier::print(std::ostream& stream) {
     stream << "void";
 }
@@ -24,12 +31,13 @@ void StructSpecifier::print(std::ostream& stream) {
 
 bool Declarator::isEmptyDeclarator() {
     // TODO
+    return false;
 }
 
-void FunctionDeclarator::addParameter(Declaration param) {
+void FunctionDeclarator::addParameter(std::unique_ptr<Declaration> param) {
     // TODO
 }
 
-void StructSpecifier::addComponent(Declaration spec_decl) {
+void StructSpecifier::addComponent(std::unique_ptr<Declaration> spec_decl) {
     // TODO
 }

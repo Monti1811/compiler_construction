@@ -13,7 +13,7 @@
 struct Expression {
     Expression(Locatable loc)
         : loc(loc) {};
-
+    virtual ~Expression() = default;
     Locatable loc;
 
     virtual void print(std::ostream& stream) = 0;
