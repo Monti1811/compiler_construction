@@ -1,11 +1,5 @@
 #include "parser.h"
 
-Parser::Parser(Lexer& lexer, Token currentToken, Token nextToken) : _lexer(lexer), _currentToken(currentToken), _nextToken(nextToken) {};
-
-ExpressionPtr Parser::parseNext() {
-    return parseExpression();
-}
-
 Declaration Parser::parseDeclaration(DeclKind dKind) {
     TypeSpecifierPtr spec(nullptr);
     Locatable loc(getLoc());

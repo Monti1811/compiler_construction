@@ -10,7 +10,7 @@ void Program::addFunctionDefinition(FunctionDefinition definition) {
     this->_is_declaration.push_back(false);
 }
 
-std::ostream& operator<<(std::ostream& stream, Program program) {
+std::ostream& operator<<(std::ostream& stream, Program& program) {
     program.print(stream);
     return stream;
 }

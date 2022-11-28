@@ -23,8 +23,13 @@ enum class DeclKind { ANY, ABSTRACT, CONCRETE };
 /// into an abstract syntax tree.
 class Parser {
    public:
-    Parser(Lexer& lexer, Token _currentToken, Token _nextToken);
-    ExpressionPtr parseNext();
+    Parser(Lexer& lexer)
+    : _lexer(lexer)
+    , _currentToken(lexer.next())
+    , _nextToken(lexer.next()) {};
+
+    Program parseProgram();
+
    private:
     Lexer& _lexer;
     Token _currentToken;
@@ -68,8 +73,6 @@ class Parser {
 
     BlockStatement parseBlockStatement();
     StatementPtr parseStatement();
-
-    Program parseProgram();
 
     /// Internal methods for use in parseDeclaration()
     DeclaratorPtr parseDeclarator(void);
