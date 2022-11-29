@@ -112,7 +112,7 @@ void IfStatement::print(std::ostream& stream) {
         } else {
             stream << "else";
             ident.increaseCurrIdentation(1);
-            stream << "\n" << ident << else_statement << "\n";
+            stream << "\n" << ident << else_statement;
             ident.decreaseCurrIdentation(1);
         }
     }
