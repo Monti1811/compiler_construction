@@ -1,1 +1,1 @@
-2:13: error: TokenKind ')' was expected, but it was 'y', next token is ')'
+2:10: error: TokenKind ')' was expected, but it was 'y', next token is ')'

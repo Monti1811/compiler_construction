@@ -182,9 +182,10 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
             bool next_argument = true;
             while (next_argument) { // argumente lesen bis )
                 auto arg = parseExpression(); // parse a_i
-                next_argument = accept(TK_COMMA) ? true : false;
+                auto comma_pos = getLoc();
+                next_argument = accept(TK_COMMA);
                 if (next_argument && check(TK_RPAREN)) { // accept ,
-                    errorloc(getLoc(), "An erroneous comma was found!");
+                    errorloc(comma_pos, "An erroneous comma was found!");
                 }
                 args.push_back(std::move(arg));
             }
