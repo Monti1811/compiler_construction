@@ -59,7 +59,7 @@ DeclaratorPtr Parser::parseNonFunDeclarator(void) {
                 // this has to be an abstract function declarator, not a
                 // parenthesized declarator, so we add an empty primitive
                 // declarator
-                return std::make_unique<PrimitiveDeclarator>(getLoc(), nullptr);
+                return std::make_unique<PrimitiveDeclarator>(getLoc());
             }
             popToken();
             auto res = parseDeclarator();
@@ -80,7 +80,7 @@ DeclaratorPtr Parser::parseNonFunDeclarator(void) {
             return res;
         }
         default:
-            return std::make_unique<PrimitiveDeclarator>(getLoc(), nullptr);
+            return std::make_unique<PrimitiveDeclarator>(getLoc());
     }
 }
 

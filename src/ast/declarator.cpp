@@ -5,10 +5,6 @@ std::ostream& operator<<(std::ostream& stream, const DeclaratorPtr& declarator) 
     return stream;
 }
 
-void Declarator::makeAbstract() {
-    this->_abstract = true;
-}
-
 bool Declarator::isAbstract() {
     return this->_abstract;
 }
@@ -23,7 +19,9 @@ void Declaration::print(std::ostream& stream) {
 }
 
 void PrimitiveDeclarator::print(std::ostream& stream) {
-    stream << *_ident;
+    if (!isAbstract()) {
+        stream << *_ident;
+    }
 }
 
 void FunctionDeclarator::print(std::ostream& stream) {
