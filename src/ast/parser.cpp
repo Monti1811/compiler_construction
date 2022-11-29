@@ -182,6 +182,9 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
             while (peekToken().Kind != TokenKind::TK_RPAREN) { // argumente lesen bis )
                 auto arg = parseExpression(); // parse a_i
                 accept(TK_COMMA); // accept ,
+                if (check(TK_RPAREN)) {
+                    errorloc(getLoc(), "An erroneous comma was found!");
+                }
                 args.push_back(std::move(arg));
             }
             popToken(); // accept )
@@ -537,6 +540,7 @@ StatementPtr Parser::parseStatement() {
             }
         }
 
+        //TODO: Empty statements are not parsed properly
         case TK_IDENTIFIER: {
             if (checkLookAhead(TK_COLON)) {
                 popToken(); // remove identifier
