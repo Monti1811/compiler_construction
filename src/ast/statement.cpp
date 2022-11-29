@@ -12,22 +12,38 @@ std::ostream& operator<<(std::ostream& stream, const IdentManager& identmanager)
     return stream;
 }
 
+StatementType LabeledStatement::getType() {
+    return StatementType::LABELED;
+}
 
 void LabeledStatement::print(std::ostream& stream) {
     IdentManager& ident = IdentManager::getInstance();
-    stream << '\n' << *this->_name << ":\n" << ident << this->_inner;
+    stream << '\n' << *this->_name << ':';
+    if (this->_inner.get()->getType() == StatementType::LABELED) {
+        stream << this->_inner;
+    } else {
+        stream << '\n' << ident << this->_inner;
+    }
+}
+
+StatementType DeclarationStatement::getType() {
+    return StatementType::DECLARATION;
 }
 
 void DeclarationStatement::print(std::ostream& stream) {
     stream << this->_declaration << ';';
 }
 
+StatementType ExpressionStatement::getType() {
+    return StatementType::EXPRESSION;
+}
+
 void ExpressionStatement::print(std::ostream& stream) {
     stream << this->_expr << ';';
 }
 
-bool BlockStatement::isBlockStatement() {
-    return true;
+StatementType BlockStatement::getType() {
+    return StatementType::BLOCK;
 }
 
 void BlockStatement::print(std::ostream& stream) {
@@ -45,16 +61,16 @@ void BlockStatement::print(std::ostream& stream) {
     }
 }
 
-bool IfStatement::isIfStatement() {
-    return true;
+StatementType IfStatement::getType() {
+    return StatementType::IF;
 }
 
 void IfStatement::print(std::ostream& stream) {
-    stream << "if (" << this->_condition << ") ";
+    stream << "if (" << this->_condition << ')';
     IdentManager& ident = IdentManager::getInstance();
     bool hasElseStatement = this->_else_statement.has_value();
-    if (this->_then_statement.get()->isBlockStatement()) {
-        stream << this->_then_statement;
+    if (this->_then_statement.get()->getType() == StatementType::BLOCK) {
+        stream << ' ' << this->_then_statement;
         if (hasElseStatement) {
             stream << " ";
         }
@@ -68,8 +84,8 @@ void IfStatement::print(std::ostream& stream) {
     }
         
     if (hasElseStatement) {
-        bool no_new_line = this->_else_statement.value().get()->isBlockStatement()
-            || this->_else_statement.value().get()->isIfStatement();
+        bool no_new_line = this->_else_statement.value().get()->getType() == StatementType::BLOCK
+            || this->_else_statement.value().get()->getType() == StatementType::IF;
         if (no_new_line) {
             stream << "else " << this->_else_statement.value();
         } else {
@@ -81,12 +97,25 @@ void IfStatement::print(std::ostream& stream) {
     }
 }
 
+StatementType WhileStatement::getType() {
+    return StatementType::WHILE;
+}
+
 void WhileStatement::print(std::ostream& stream) {
     stream << "while (" << this->_condition << ") ";
     IdentManager& ident = IdentManager::getInstance();
-    ident.increaseCurrIdentation(1);
-    stream << this->_statement;
-    ident.decreaseCurrIdentation(1);
+    if (this->_statement.get()->getType() == StatementType::BLOCK) {
+        stream << this->_statement;
+    } else {
+        ident.increaseCurrIdentation(1);
+        stream << this->_statement;
+        ident.decreaseCurrIdentation(1);
+    }
+    
+}
+
+StatementType JumpStatement::getType() {
+    return StatementType::JUMP;
 }
 
 void JumpStatement::print(std::ostream& stream) {
