@@ -14,6 +14,7 @@
 enum class StatementType {
     LABELED,
     BLOCK,
+    EMPTY,
     DECLARATION,
     EXPRESSION,
     IF,
@@ -55,13 +56,20 @@ struct LabeledStatement: public Statement {
 ///    stmt2;
 /// }
 /// ```
-/// Also represents a null statement (`;`) if `items` is empty.
 struct BlockStatement: public Statement {
     BlockStatement(Locatable loc, std::vector<StatementPtr> items)
         : Statement(loc)
         , _items(std::move(items)) {};
 
     std::vector<StatementPtr> _items;
+    void print(std::ostream& stream);
+    StatementType getType();
+};
+
+struct EmptyStatement: public Statement {
+    EmptyStatement(Locatable loc)
+        : Statement(loc) {};
+    
     void print(std::ostream& stream);
     StatementType getType();
 };

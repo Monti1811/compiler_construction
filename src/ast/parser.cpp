@@ -548,7 +548,12 @@ StatementPtr Parser::parseStatement() {
             }
         }
 
-        //TODO: Empty statements are not parsed properly
+        // Empty statement
+        case TK_SEMICOLON: {
+            expect(TokenKind::TK_SEMICOLON, ";");
+            return std::make_unique<EmptyStatement>(token);
+        }
+
         case TK_IDENTIFIER: {
             if (checkLookAhead(TK_COLON)) {
                 expect(TK_IDENTIFIER, "identifier");
