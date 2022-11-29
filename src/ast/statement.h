@@ -171,6 +171,8 @@ class IdentManager
         void decreaseCurrIdentation(int value);
         void printCurrIdentation(std::ostream& stream);
         int currIdent = 0;
+
+        friend std::ostream& operator<<(std::ostream& stream, const IdentManager& ident);
     private:
         IdentManager() {}
         IdentManager(IdentManager const&); 

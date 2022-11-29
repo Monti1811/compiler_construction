@@ -51,7 +51,11 @@ void IfStatement::print(std::ostream& stream) {
 }
 
 void WhileStatement::print(std::ostream& stream) {
-    stream << "while (" << this->_condition << ") " << this->_statement;
+    stream << "while (" << this->_condition << ") ";
+    IdentManager& ident = IdentManager::getInstance();
+    ident.increaseCurrIdentation(1);
+    stream << this->_statement;
+    ident.decreaseCurrIdentation(1);
 }
 
 void JumpStatement::print(std::ostream& stream) {

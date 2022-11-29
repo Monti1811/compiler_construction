@@ -1,4 +1,5 @@
 #include "declarator.h"
+#include "statement.h"
 
 std::ostream& operator<<(std::ostream& stream, const DeclaratorPtr& declarator) {
     declarator->print(stream);
@@ -68,12 +69,14 @@ void StructSpecifier::print(std::ostream& stream) {
     stream << "struct " << *_tag;
 
     if (_components.size() > 0) {
-        // TODO: Indent
-        stream << "\n{\n";
+        IdentManager& ident = IdentManager::getInstance();
+        stream << '\n' << ident << "{\n";
+        ident.increaseCurrIdentation(1);
         for (auto& component : _components) {
-            stream << component << ";\n";
+            stream << ident << component << ";\n";
         }
-        stream << '}';
+        ident.decreaseCurrIdentation(1);
+        stream << ident << '}';
     }
 }
 
