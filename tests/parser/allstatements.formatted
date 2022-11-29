@@ -1,0 +1,39 @@
+int (f())
+{
+label:
+label2:
+	{
+		int z;
+	}
+	void a;
+	char (*string);
+	(a = (5 * 10));
+	(string = "test");
+	if (x) {
+		return 0;
+	} else {
+		return 1;
+	}
+	if (x)
+		return 0;
+	else
+		return 1;
+
+	while ((string == "test")) {
+		(string = "notest");
+	}
+	while ((string == "test")) 
+		(string = "notest");
+	goto label3;
+label3:
+	while ((string == "test")) {
+		(string = "notest");
+		continue;
+	}
+	while ((string == "test")) {
+		(string = "notest");
+		break;
+	}
+	return x;
+	return;
+}

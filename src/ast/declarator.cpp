@@ -1,12 +1,9 @@
 #include "declarator.h"
+#include "statement.h"
 
 std::ostream& operator<<(std::ostream& stream, const DeclaratorPtr& declarator) {
     declarator->print(stream);
     return stream;
-}
-
-void Declarator::makeAbstract() {
-    this->_abstract = true;
 }
 
 bool Declarator::isAbstract() {
@@ -19,23 +16,28 @@ std::ostream& operator<<(std::ostream& stream, Declaration& declaration) {
 }
 
 void Declaration::print(std::ostream& stream) {
-    stream << _specifier << " (" << _declarator << ')';
+    stream << _specifier << " " << _declarator;
 }
 
 void PrimitiveDeclarator::print(std::ostream& stream) {
-    stream << *_ident;
+    if (!isAbstract()) {
+        stream << *_ident;
+    }
 }
 
 void FunctionDeclarator::print(std::ostream& stream) {
-    stream << _decl << '(';
+    stream << '(' << _decl << '(';
     for (size_t i = 0; i < _parameters.size(); i++) {
         auto& par = _parameters[i];
-        stream << par._specifier << ' ' << par._declarator;
+        stream << par._specifier;
+        if (!par._declarator->isAbstract()) {
+            stream << ' ' << par._declarator;
+        }
         if (i < _parameters.size() - 1) {
-            stream << ',';
+            stream << ", ";
         }
     }
-    stream << ')';
+    stream << "))";
 }
 
 void FunctionDeclarator::addParameter(Declaration param) {
@@ -43,7 +45,7 @@ void FunctionDeclarator::addParameter(Declaration param) {
 }
 
 void PointerDeclarator::print(std::ostream& stream) {
-    stream << "*" << _inner;
+    stream << "(*" << _inner << ')';
 }
 
 std::ostream& operator<<(std::ostream& stream, const TypeSpecifierPtr& type) {
@@ -64,8 +66,18 @@ void IntSpecifier::print(std::ostream& stream) {
 }
 
 void StructSpecifier::print(std::ostream& stream) {
-    stream << "struct";
-    // TODO print struct components
+    stream << "struct " << *_tag;
+
+    if (_components.size() > 0) {
+        IdentManager& ident = IdentManager::getInstance();
+        stream << '\n' << ident << "{\n";
+        ident.increaseCurrIdentation(1);
+        for (auto& component : _components) {
+            stream << ident << component << ";\n";
+        }
+        ident.decreaseCurrIdentation(1);
+        stream << ident << '}';
+    }
 }
 
 void StructSpecifier::addComponent(Declaration declaration) {

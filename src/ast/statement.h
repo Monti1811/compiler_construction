@@ -11,6 +11,15 @@
 #include "expression.h"
 #include "declarator.h"
 
+enum class StatementType {
+    LABELED,
+    BLOCK,
+    DECLARATION,
+    EXPRESSION,
+    IF,
+    WHILE,
+    JUMP
+};
 
 struct Statement {
     Statement(Locatable loc)
@@ -20,6 +29,7 @@ struct Statement {
 
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Statement>& stat);
     virtual void print(std::ostream& stream) = 0;
+    virtual StatementType getType() = 0;
 };
 
 typedef std::unique_ptr<Statement> StatementPtr;
@@ -35,6 +45,7 @@ struct LabeledStatement: public Statement {
 
     StatementPtr _inner;
     void print(std::ostream& stream);
+    StatementType getType();
 };
 
 /// Block statement, e.g.:
@@ -52,6 +63,7 @@ struct BlockStatement: public Statement {
 
     std::vector<StatementPtr> _items;
     void print(std::ostream& stream);
+    StatementType getType();
 };
 
 // int y;
@@ -61,6 +73,7 @@ struct DeclarationStatement: public Statement {
         , _declaration(std::move(declaration)) {};
     Declaration _declaration;
     void print(std::ostream& stream);
+    StatementType getType();
 };
 
 // Just an expression disguised as a Statement
@@ -71,6 +84,7 @@ struct ExpressionStatement: public Statement {
 
     ExpressionPtr _expr;
     void print(std::ostream& stream);
+    StatementType getType();
 };
 
 // if (cond) then stat
@@ -90,6 +104,7 @@ struct IfStatement: public Statement {
     StatementPtr _then_statement;
     std::optional<StatementPtr> _else_statement;
     void print(std::ostream& stream);
+    StatementType getType();
 };
 
 // while (condition) statement
@@ -104,6 +119,7 @@ struct WhileStatement: public Statement {
     ExpressionPtr _condition;
     StatementPtr _statement;
     void print(std::ostream& stream);
+    StatementType getType();
 };
 
 // Parent class of jump instructions
@@ -115,6 +131,7 @@ struct JumpStatement: public Statement {
     void print(std::ostream& stream);
 
     const std::string _jump_str;
+    StatementType getType();
 };
 
 // goto identifier
@@ -171,6 +188,8 @@ class IdentManager
         void decreaseCurrIdentation(int value);
         void printCurrIdentation(std::ostream& stream);
         int currIdent = 0;
+
+        friend std::ostream& operator<<(std::ostream& stream, const IdentManager& ident);
     private:
         IdentManager() {}
         IdentManager(IdentManager const&); 

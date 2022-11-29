@@ -10,13 +10,14 @@
 
 struct Declarator {
     public:
-    Declarator(const Locatable loc): _loc(loc) {};
+    Declarator(const Locatable loc, const bool abstract)
+        : _loc(loc)
+        , _abstract(abstract) {};
 
     virtual void print(std::ostream& stream) = 0;
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Declarator>& declarator);
 
     bool isAbstract();
-    void makeAbstract();
 
     private:
     const Locatable _loc;
@@ -59,8 +60,12 @@ struct Declaration {
 
 struct PrimitiveDeclarator: public Declarator {
     PrimitiveDeclarator(Locatable loc, Symbol ident)
-        : Declarator(loc)
+        : Declarator(loc, false)
         , _ident(ident) {};
+
+    PrimitiveDeclarator(Locatable loc)
+        : Declarator(loc, true)
+        , _ident(nullptr) {};
 
     Symbol _ident;
 
@@ -69,7 +74,7 @@ struct PrimitiveDeclarator: public Declarator {
 
 struct FunctionDeclarator : public Declarator {
     FunctionDeclarator(Locatable loc, DeclaratorPtr decl)
-        : Declarator(loc)
+        : Declarator(loc, decl->isAbstract())
         , _decl(std::move(decl)) {};
 
     DeclaratorPtr _decl;
@@ -81,7 +86,7 @@ struct FunctionDeclarator : public Declarator {
 
 struct PointerDeclarator : public Declarator {
     PointerDeclarator(Locatable loc, DeclaratorPtr inner)
-        : Declarator(loc)
+        : Declarator(loc, inner->isAbstract())
         , _inner(std::move(inner)) {};
 
     DeclaratorPtr _inner;

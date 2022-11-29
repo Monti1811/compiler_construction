@@ -1,1 +1,4 @@
-(((a * b) + d) + e)
+int (f(int a, int b, int d, int e))
+{
+	(((a * b) + d) + e);
+}

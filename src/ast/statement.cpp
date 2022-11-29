@@ -1,7 +1,5 @@
 #include "statement.h"
 
-// TODO: Add a global way of checking the current identation
-
 std::ostream& operator<<(std::ostream& stream, const StatementPtr& stat) {
     stat->print(stream);
     return stream;
@@ -14,25 +12,38 @@ std::ostream& operator<<(std::ostream& stream, const IdentManager& identmanager)
     return stream;
 }
 
+StatementType LabeledStatement::getType() {
+    return StatementType::LABELED;
+}
 
 void LabeledStatement::print(std::ostream& stream) {
-    if (this->_inner) {
-        IdentManager& ident = IdentManager::getInstance();
-        ident.increaseCurrIdentation(1);
-        stream << this->_name << ":\n" << ident << this->_inner;
-        ident.decreaseCurrIdentation(1);
+    IdentManager& ident = IdentManager::getInstance();
+    stream << *this->_name << ':';
+    if (this->_inner.get()->getType() == StatementType::LABELED) {
+        stream << '\n' << this->_inner;
     } else {
-        stream << this->_name << ':' << std::endl;
+        stream << '\n' << ident << this->_inner;
     }
-    
+}
+
+StatementType DeclarationStatement::getType() {
+    return StatementType::DECLARATION;
 }
 
 void DeclarationStatement::print(std::ostream& stream) {
     stream << this->_declaration << ';';
 }
 
+StatementType ExpressionStatement::getType() {
+    return StatementType::EXPRESSION;
+}
+
 void ExpressionStatement::print(std::ostream& stream) {
     stream << this->_expr << ';';
+}
+
+StatementType BlockStatement::getType() {
+    return StatementType::BLOCK;
 }
 
 void BlockStatement::print(std::ostream& stream) {
@@ -41,24 +52,76 @@ void BlockStatement::print(std::ostream& stream) {
         IdentManager& ident = IdentManager::getInstance();
         ident.increaseCurrIdentation(1);
         for (auto &item : this->_items) {
-            stream << '\n' << ident << item;
+            if (item.get()->getType() == StatementType::LABELED) {
+                stream << '\n' << item;
+            } else {
+                stream << '\n' << ident << item;
+            }
         }
         ident.decreaseCurrIdentation(1);
-        stream << "\n}";
+        stream << '\n' << ident << '}';
     } else {
         stream << "{}";
     }
 }
 
+StatementType IfStatement::getType() {
+    return StatementType::IF;
+}
+
 void IfStatement::print(std::ostream& stream) {
-    stream << "if (" << this->_condition << ") " << this->_then_statement;
-    if (this->_else_statement) {
-        stream << "else " << this->_else_statement.value();
+    stream << "if (" << this->_condition << ')';
+    IdentManager& ident = IdentManager::getInstance();
+    bool hasElseStatement = this->_else_statement.has_value();
+    if (this->_then_statement.get()->getType() == StatementType::BLOCK) {
+        stream << ' ' << this->_then_statement;
+        if (hasElseStatement) {
+            stream << " ";
+        }
+    } else {
+        ident.increaseCurrIdentation(1);
+        stream << "\n" << ident << this->_then_statement << "\n";
+        ident.decreaseCurrIdentation(1);
+        if (hasElseStatement) {
+            stream << ident;
+        }
+    }
+        
+    if (hasElseStatement) {
+        bool no_new_line = this->_else_statement.value().get()->getType() == StatementType::BLOCK
+            || this->_else_statement.value().get()->getType() == StatementType::IF;
+        if (no_new_line) {
+            stream << "else " << this->_else_statement.value();
+        } else {
+            stream << "else ";
+            ident.increaseCurrIdentation(1);
+            stream << "\n" << ident << this->_else_statement.value() << "\n";
+            ident.decreaseCurrIdentation(1);
+        }
     }
 }
 
+StatementType WhileStatement::getType() {
+    return StatementType::WHILE;
+}
+
 void WhileStatement::print(std::ostream& stream) {
-    stream << "while (" << this->_condition << ") " << this->_statement;
+    stream << "while (" << this->_condition << ") ";
+    IdentManager& ident = IdentManager::getInstance();
+    if (this->_statement.get()->getType() == StatementType::BLOCK) {
+        stream << this->_statement;
+    } else if (this->_statement.get()->getType() == StatementType::LABELED) {
+        stream << '\n' << this->_statement;
+    } else {
+        ident.increaseCurrIdentation(1);
+        stream << '\n' << ident << this->_statement;
+        ident.decreaseCurrIdentation(1);
+    }
+    
+}
+
+StatementType JumpStatement::getType() {
+    return StatementType::JUMP;
 }
 
 void JumpStatement::print(std::ostream& stream) {
@@ -74,7 +137,7 @@ void ReturnStatement::print(std::ostream& stream) {
 }
 
 void GotoStatement::print(std::ostream& stream) {
-    stream << "goto" << this->_ident << ';';
+    stream << "goto " << *this->_ident << ';';
 }
 
 // Identation manager to keep track of idendation

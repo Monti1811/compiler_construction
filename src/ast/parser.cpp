@@ -59,7 +59,7 @@ DeclaratorPtr Parser::parseNonFunDeclarator(void) {
                 // this has to be an abstract function declarator, not a
                 // parenthesized declarator, so we add an empty primitive
                 // declarator
-                return std::make_unique<PrimitiveDeclarator>(getLoc(), nullptr);
+                return std::make_unique<PrimitiveDeclarator>(getLoc());
             }
             popToken();
             auto res = parseDeclarator();
@@ -80,7 +80,7 @@ DeclaratorPtr Parser::parseNonFunDeclarator(void) {
             return res;
         }
         default:
-            return std::make_unique<PrimitiveDeclarator>(getLoc(), nullptr);
+            return std::make_unique<PrimitiveDeclarator>(getLoc());
     }
 }
 
@@ -179,11 +179,16 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
         {
             popToken(); // accept (
             auto args = std::vector<ExpressionPtr>();
-            while (peekToken().Kind != TokenKind::TK_RPAREN) { // argumente lesen bis )
+            bool next_argument = true;
+            while (next_argument) { // argumente lesen bis )
                 auto arg = parseExpression(); // parse a_i
-                accept(TK_COMMA); // accept ,
+                next_argument = accept(TK_COMMA) ? true : false;
+                if (next_argument && check(TK_RPAREN)) { // accept ,
+                    errorloc(getLoc(), "An erroneous comma was found!");
+                }
                 args.push_back(std::move(arg));
             }
+            expect(TK_RPAREN, ")");
             popToken(); // accept )
             auto newPostfixExpr = std::make_unique<CallExpression>(getLoc(), std::move(postfixExpression.value()), std::move(args));
             return parsePostfixExpression(std::move(newPostfixExpr));
@@ -231,6 +236,12 @@ ExpressionPtr Parser::parseUnaryExpression() {
             popToken();
             auto pointerExpr = std::make_unique<PointerExpression>(getLoc(), parseUnaryExpression());
             return pointerExpr;
+        }
+        // +unaryexpr
+        case TokenKind::TK_PLUS:
+        {
+            popToken();
+            return parseUnaryExpression();
         }
         // -unaryexpr
         case TokenKind::TK_MINUS:
@@ -537,6 +548,7 @@ StatementPtr Parser::parseStatement() {
             }
         }
 
+        //TODO: Empty statements are not parsed properly
         case TK_IDENTIFIER: {
             if (checkLookAhead(TK_COLON)) {
                 popToken(); // remove identifier
