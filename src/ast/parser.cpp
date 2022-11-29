@@ -118,31 +118,31 @@ ExpressionPtr Parser::parsePrimaryExpression() {
         {
             expect(TokenKind::TK_IDENTIFIER, "identifier");
             auto expr = std::make_unique<IdentExpression>(getLoc(), sym);
-            return std::move(expr);
+            return expr;
         }
         case TokenKind::TK_ZERO_CONSTANT: 
         {
             expect(TokenKind::TK_ZERO_CONSTANT, "zero constant");
             auto expr = std::make_unique<IntConstantExpression>(getLoc(), sym);
-            return std::move(expr);
+            return expr;
         }
         case TokenKind::TK_DECIMAL_CONSTANT: 
         {
             expect(TokenKind::TK_DECIMAL_CONSTANT, "decimal constant");
             auto expr = std::make_unique<IntConstantExpression>(getLoc(), sym);
-            return std::move(expr);
+            return expr;
         }
         case TokenKind::TK_CHARACTER_CONSTANT:
         {
             expect(TokenKind::TK_CHARACTER_CONSTANT, "char constant");
             auto expr = std::make_unique<CharConstantExpression>(getLoc(), sym);
-            return std::move(expr);
+            return expr;
         }
         case TokenKind::TK_STRING_LITERAL: 
         {
             expect(TokenKind::TK_STRING_LITERAL, "string literal");
             auto expr = std::make_unique<StringLiteralExpression>(getLoc(), sym);
-            return std::move(expr);
+            return expr;
         }
         case TokenKind::TK_LPAREN: 
         {
@@ -180,7 +180,7 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
             expect(TK_LPAREN, "(");
             auto args = std::vector<ExpressionPtr>();
             bool next_argument = true;
-            while (next_argument) { // argumente lesen bis )
+            while (next_argument && !check(TK_RPAREN)) { // argumente lesen bis )
                 auto arg = parseExpression(); // parse a_i
                 auto comma_pos = getLoc();
                 next_argument = accept(TK_COMMA);
