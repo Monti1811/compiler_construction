@@ -179,14 +179,16 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
         {
             popToken(); // accept (
             auto args = std::vector<ExpressionPtr>();
-            while (peekToken().Kind != TokenKind::TK_RPAREN) { // argumente lesen bis )
+            bool next_argument = true;
+            while (next_argument) { // argumente lesen bis )
                 auto arg = parseExpression(); // parse a_i
-                accept(TK_COMMA); // accept ,
-                if (check(TK_RPAREN)) {
+                next_argument = accept(TK_COMMA) ? true : false;
+                if (next_argument && check(TK_RPAREN)) { // accept ,
                     errorloc(getLoc(), "An erroneous comma was found!");
                 }
                 args.push_back(std::move(arg));
             }
+            expect(TK_RPAREN, ")");
             popToken(); // accept )
             auto newPostfixExpr = std::make_unique<CallExpression>(getLoc(), std::move(postfixExpression.value()), std::move(args));
             return parsePostfixExpression(std::move(newPostfixExpr));
@@ -234,6 +236,12 @@ ExpressionPtr Parser::parseUnaryExpression() {
             popToken();
             auto pointerExpr = std::make_unique<PointerExpression>(getLoc(), parseUnaryExpression());
             return pointerExpr;
+        }
+        // +unaryexpr
+        case TokenKind::TK_PLUS:
+        {
+            popToken();
+            return parseUnaryExpression();
         }
         // -unaryexpr
         case TokenKind::TK_MINUS:
