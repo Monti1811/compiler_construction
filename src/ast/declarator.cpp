@@ -15,7 +15,7 @@ std::ostream& operator<<(std::ostream& stream, Declaration& declaration) {
 }
 
 void Declaration::print(std::ostream& stream) {
-    stream << _specifier << " (" << _declarator << ')';
+    stream << _specifier << " " << _declarator;
 }
 
 void PrimitiveDeclarator::print(std::ostream& stream) {
@@ -25,15 +25,18 @@ void PrimitiveDeclarator::print(std::ostream& stream) {
 }
 
 void FunctionDeclarator::print(std::ostream& stream) {
-    stream << _decl << '(';
+    stream << '(' << _decl << '(';
     for (size_t i = 0; i < _parameters.size(); i++) {
         auto& par = _parameters[i];
-        stream << par._specifier << ' ' << par._declarator;
+        stream << par._specifier;
+        if (!par._declarator->isAbstract()) {
+            stream << ' ' << par._declarator;
+        }
         if (i < _parameters.size() - 1) {
-            stream << ',';
+            stream << ", ";
         }
     }
-    stream << ')';
+    stream << "))";
 }
 
 void FunctionDeclarator::addParameter(Declaration param) {
@@ -41,7 +44,7 @@ void FunctionDeclarator::addParameter(Declaration param) {
 }
 
 void PointerDeclarator::print(std::ostream& stream) {
-    stream << "*" << _inner;
+    stream << "(*" << _inner << ')';
 }
 
 std::ostream& operator<<(std::ostream& stream, const TypeSpecifierPtr& type) {
@@ -62,8 +65,16 @@ void IntSpecifier::print(std::ostream& stream) {
 }
 
 void StructSpecifier::print(std::ostream& stream) {
-    stream << "struct";
-    // TODO print struct components
+    stream << "struct " << *_tag;
+
+    if (_components.size() > 0) {
+        // TODO: Indent
+        stream << "\n{\n";
+        for (auto& component : _components) {
+            stream << component << ";\n";
+        }
+        stream << '}';
+    }
 }
 
 void StructSpecifier::addComponent(Declaration declaration) {

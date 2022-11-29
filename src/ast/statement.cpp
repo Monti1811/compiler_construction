@@ -16,15 +16,8 @@ std::ostream& operator<<(std::ostream& stream, const IdentManager& identmanager)
 
 
 void LabeledStatement::print(std::ostream& stream) {
-    if (this->_inner) {
-        IdentManager& ident = IdentManager::getInstance();
-        ident.increaseCurrIdentation(1);
-        stream << this->_name << ":\n" << ident << this->_inner;
-        ident.decreaseCurrIdentation(1);
-    } else {
-        stream << this->_name << ':' << std::endl;
-    }
-    
+    IdentManager& ident = IdentManager::getInstance();
+    stream << '\n' << *this->_name << ":\n" << ident << this->_inner;
 }
 
 void DeclarationStatement::print(std::ostream& stream) {
@@ -44,7 +37,7 @@ void BlockStatement::print(std::ostream& stream) {
             stream << '\n' << ident << item;
         }
         ident.decreaseCurrIdentation(1);
-        stream << "\n}";
+        stream << '\n' << ident << '}';
     } else {
         stream << "{}";
     }
@@ -53,7 +46,7 @@ void BlockStatement::print(std::ostream& stream) {
 void IfStatement::print(std::ostream& stream) {
     stream << "if (" << this->_condition << ") " << this->_then_statement;
     if (this->_else_statement) {
-        stream << "else " << this->_else_statement.value();
+        stream << " else " << this->_else_statement.value();
     }
 }
 
@@ -74,7 +67,7 @@ void ReturnStatement::print(std::ostream& stream) {
 }
 
 void GotoStatement::print(std::ostream& stream) {
-    stream << "goto" << this->_ident << ';';
+    stream << "goto " << *this->_ident << ';';
 }
 
 // Identation manager to keep track of idendation

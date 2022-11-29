@@ -37,7 +37,7 @@ void CallExpression::print(std::ostream& stream) {
     for (int i = 0; i < length; i++) {
         this->_arguments.at(i)->print(stream);
         if (i != length - 1) {
-            stream << ',';
+            stream << ", ";
         }
     }
 
