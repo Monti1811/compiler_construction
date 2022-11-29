@@ -22,7 +22,7 @@ label2:
 	while ((string == "test")) {
 		(string = "notest");
 	}
-	while ((string == "test")) 
+	while ((string == "test"))
 		(string = "notest");
 	goto label3;
 label3:
