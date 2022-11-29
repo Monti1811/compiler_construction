@@ -180,7 +180,7 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
             popToken(); // accept (
             auto args = std::vector<ExpressionPtr>();
             bool next_argument = true;
-            while (next_argument) { // argumente lesen bis )
+            while (next_argument && !check(TK_RPAREN)) { // argumente lesen bis )
                 auto arg = parseExpression(); // parse a_i
                 next_argument = accept(TK_COMMA) ? true : false;
                 if (next_argument && check(TK_RPAREN)) { // accept ,
