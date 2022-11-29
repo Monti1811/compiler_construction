@@ -1,7 +1,5 @@
 int f() {
 label:
-	int x; // it should fail here
+	int x;
 	goto label;
 }
-
-// should not work

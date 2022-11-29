@@ -1,6 +1,10 @@
 int (f())
 {
-	{};
-	while (x) {};
+	{}
+	if (x) {} else {}
+	while (x) {}
+	if (x);
+	else;
+	while (x);
 	;
 }

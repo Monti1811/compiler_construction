@@ -1,12 +1,10 @@
-int (f(int x))
+int (main())
 {
-	if (x) {
-		if (x) {
-			int z;
-		} else {
-			int y;
-		}
-	} else {
-		int a;
-	}
+	if (x)
+		if (y)
+			int a;
+		else
+			int b;
+	else
+		int c;
 }

@@ -8,5 +8,3 @@ int test(int y) {
 	x = f(42,);
 	return 0;
 }
-
-// should fail

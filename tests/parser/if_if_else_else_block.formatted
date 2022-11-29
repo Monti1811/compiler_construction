@@ -1,0 +1,12 @@
+int (f(int x))
+{
+	if (x) {
+		if (x) {
+			int z;
+		} else {
+			int y;
+		}
+	} else {
+		int a;
+	}
+}
