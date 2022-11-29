@@ -177,7 +177,7 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
         // function call (a_1, a_2, ...)
         case TokenKind::TK_LPAREN:
         {
-            popToken(); // accept (
+            expect(TK_LPAREN, "(");
             auto args = std::vector<ExpressionPtr>();
             bool next_argument = true;
             while (next_argument) { // argumente lesen bis )
@@ -189,7 +189,6 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
                 args.push_back(std::move(arg));
             }
             expect(TK_RPAREN, ")");
-            popToken(); // accept )
             auto newPostfixExpr = std::make_unique<CallExpression>(getLoc(), std::move(postfixExpression.value()), std::move(args));
             return parsePostfixExpression(std::move(newPostfixExpr));
         }

@@ -1,0 +1,5 @@
+int (main()) {
+    while (((a < (sizeof b)) || (!(b == (f(23, (sizeof(int))))))))
+foo:
+        break;
+}

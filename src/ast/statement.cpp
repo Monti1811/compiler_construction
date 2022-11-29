@@ -93,7 +93,7 @@ void IfStatement::print(std::ostream& stream) {
         if (no_new_line) {
             stream << "else " << this->_else_statement.value();
         } else {
-            stream << "else ";
+            stream << "else";
             ident.increaseCurrIdentation(1);
             stream << "\n" << ident << this->_else_statement.value() << "\n";
             ident.decreaseCurrIdentation(1);
@@ -106,12 +106,14 @@ StatementType WhileStatement::getType() {
 }
 
 void WhileStatement::print(std::ostream& stream) {
-    stream << "while (" << this->_condition << ") ";
+    stream << "while (" << this->_condition << ')';
     IdentManager& ident = IdentManager::getInstance();
     if (this->_statement.get()->getType() == StatementType::BLOCK) {
-        stream << this->_statement;
+        stream << ' ' << this->_statement;
     } else if (this->_statement.get()->getType() == StatementType::LABELED) {
+        ident.increaseCurrIdentation(1);
         stream << '\n' << this->_statement;
+        ident.decreaseCurrIdentation(1);
     } else {
         ident.increaseCurrIdentation(1);
         stream << '\n' << ident << this->_statement;
