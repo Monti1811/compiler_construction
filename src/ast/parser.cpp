@@ -118,31 +118,31 @@ ExpressionPtr Parser::parsePrimaryExpression() {
         {
             auto expr = std::make_unique<IdentExpression>(getLoc(), sym);
             popToken();
-            return std::move(expr);
+            return expr;
         }
         case TokenKind::TK_ZERO_CONSTANT: 
         {
             auto expr = std::make_unique<IntConstantExpression>(getLoc(), sym);
             popToken();
-            return std::move(expr);
+            return expr;
         }
         case TokenKind::TK_DECIMAL_CONSTANT: 
         {
             auto expr = std::make_unique<IntConstantExpression>(getLoc(), sym);
             popToken();
-            return std::move(expr);
+            return expr;
         }
         case TokenKind::TK_CHARACTER_CONSTANT:
         {
             auto expr = std::make_unique<CharConstantExpression>(getLoc(), sym);
             popToken();
-            return std::move(expr);
+            return expr;
         }
         case TokenKind::TK_STRING_LITERAL: 
         {
             auto expr = std::make_unique<StringLiteralExpression>(getLoc(), sym);
             popToken();
-            return std::move(expr);
+            return expr;
         }
         case TokenKind::TK_LPAREN: 
         {
@@ -189,7 +189,6 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
                 args.push_back(std::move(arg));
             }
             expect(TK_RPAREN, ")");
-            popToken(); // accept )
             auto newPostfixExpr = std::make_unique<CallExpression>(getLoc(), std::move(postfixExpression.value()), std::move(args));
             return parsePostfixExpression(std::move(newPostfixExpr));
         }
