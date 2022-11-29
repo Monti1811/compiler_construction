@@ -3,5 +3,3 @@ label:
 	int x; // it should fail here
 	goto label;
 }
-
-// should not work
