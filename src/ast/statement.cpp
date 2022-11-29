@@ -18,9 +18,9 @@ StatementType LabeledStatement::getType() {
 
 void LabeledStatement::print(std::ostream& stream) {
     IdentManager& ident = IdentManager::getInstance();
-    stream << '\n' << *this->_name << ':';
+    stream << *this->_name << ':';
     if (this->_inner.get()->getType() == StatementType::LABELED) {
-        stream << this->_inner;
+        stream << '\n' << this->_inner;
     } else {
         stream << '\n' << ident << this->_inner;
     }
@@ -52,7 +52,11 @@ void BlockStatement::print(std::ostream& stream) {
         IdentManager& ident = IdentManager::getInstance();
         ident.increaseCurrIdentation(1);
         for (auto &item : this->_items) {
-            stream << '\n' << ident << item;
+            if (item.get()->getType() == StatementType::LABELED) {
+                stream << '\n' << item;
+            } else {
+                stream << '\n' << ident << item;
+            }
         }
         ident.decreaseCurrIdentation(1);
         stream << '\n' << ident << '}';
@@ -106,9 +110,11 @@ void WhileStatement::print(std::ostream& stream) {
     IdentManager& ident = IdentManager::getInstance();
     if (this->_statement.get()->getType() == StatementType::BLOCK) {
         stream << this->_statement;
+    } else if (this->_statement.get()->getType() == StatementType::LABELED) {
+        stream << '\n' << this->_statement;
     } else {
         ident.increaseCurrIdentation(1);
-        stream << this->_statement;
+        stream << '\n' << ident << this->_statement;
         ident.decreaseCurrIdentation(1);
     }
     
