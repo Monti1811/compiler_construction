@@ -20,6 +20,12 @@ struct Statement {
 
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Statement>& stat);
     virtual void print(std::ostream& stream) = 0;
+    virtual bool isBlockStatement() {
+        return false;
+    };
+    virtual bool isIfStatement() {
+        return false;
+    };
 };
 
 typedef std::unique_ptr<Statement> StatementPtr;
@@ -52,6 +58,7 @@ struct BlockStatement: public Statement {
 
     std::vector<StatementPtr> _items;
     void print(std::ostream& stream);
+    bool isBlockStatement();
 };
 
 // int y;
@@ -90,6 +97,7 @@ struct IfStatement: public Statement {
     StatementPtr _then_statement;
     std::optional<StatementPtr> _else_statement;
     void print(std::ostream& stream);
+    bool isIfStatement();
 };
 
 // while (condition) statement

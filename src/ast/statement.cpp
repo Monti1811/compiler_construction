@@ -1,7 +1,5 @@
 #include "statement.h"
 
-// TODO: Add a global way of checking the current identation
-
 std::ostream& operator<<(std::ostream& stream, const StatementPtr& stat) {
     stat->print(stream);
     return stream;
@@ -28,6 +26,10 @@ void ExpressionStatement::print(std::ostream& stream) {
     stream << this->_expr << ';';
 }
 
+bool BlockStatement::isBlockStatement() {
+    return true;
+}
+
 void BlockStatement::print(std::ostream& stream) {
     if (!this->_items.empty()) {
         stream << "{";
@@ -43,10 +45,39 @@ void BlockStatement::print(std::ostream& stream) {
     }
 }
 
+bool IfStatement::isIfStatement() {
+    return true;
+}
+
 void IfStatement::print(std::ostream& stream) {
-    stream << "if (" << this->_condition << ") " << this->_then_statement;
-    if (this->_else_statement) {
-        stream << " else " << this->_else_statement.value();
+    stream << "if (" << this->_condition << ") ";
+    IdentManager& ident = IdentManager::getInstance();
+    bool hasElseStatement = this->_else_statement.has_value();
+    if (this->_then_statement.get()->isBlockStatement()) {
+        stream << this->_then_statement;
+        if (hasElseStatement) {
+            stream << " ";
+        }
+    } else {
+        ident.increaseCurrIdentation(1);
+        stream << "\n" << ident << this->_then_statement << "\n";
+        ident.decreaseCurrIdentation(1);
+        if (hasElseStatement) {
+            stream << ident;
+        }
+    }
+        
+    if (hasElseStatement) {
+        bool no_new_line = this->_else_statement.value().get()->isBlockStatement()
+            || this->_else_statement.value().get()->isIfStatement();
+        if (no_new_line) {
+            stream << "else " << this->_else_statement.value();
+        } else {
+            stream << "else ";
+            ident.increaseCurrIdentation(1);
+            stream << "\n" << ident << this->_else_statement.value() << "\n";
+            ident.decreaseCurrIdentation(1);
+        }
     }
 }
 
