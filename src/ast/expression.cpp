@@ -57,7 +57,7 @@ void UnaryExpression::print(std::ostream& stream) {
 }
 
 void SizeofTypeExpression::print(std::ostream& stream) {
-    stream << "(sizeof (" << this->_type << "))";
+    stream << "(sizeof(" << this->_type << "))";
 }
 
 void BinaryExpression::print(std::ostream& stream) {
