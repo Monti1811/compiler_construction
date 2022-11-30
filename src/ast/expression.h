@@ -50,7 +50,7 @@ struct CharConstantExpression: public Expression {
     public:
     CharConstantExpression(Locatable loc, Symbol value)
         : Expression(loc)
-        , _value( (*value)[0] ) {};
+        , _value( (*value)[1] ) {};
 
     void print(std::ostream& stream);
 
