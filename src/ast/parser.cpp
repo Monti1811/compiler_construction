@@ -53,7 +53,11 @@ Declaration Parser::parseDeclaration(DeclKind dKind) {
 DeclaratorPtr Parser::parseNonFunDeclarator(void) {
     switch (peekToken().Kind) {
         case TK_LPAREN: {
-            if (checkLookAhead(TK_RPAREN) || checkLookAhead(TK_VOID) ||
+            if (checkLookAhead(TK_RPAREN)) {
+                // type () not allowed
+                errorloc(getLoc(), "nameless function");
+            }
+            if (checkLookAhead(TK_VOID) ||
                 checkLookAhead(TK_CHAR) || checkLookAhead(TK_INT) ||
                 checkLookAhead(TK_STRUCT)) {
                 // this has to be an abstract function declarator, not a
@@ -95,10 +99,16 @@ DeclaratorPtr Parser::parseDeclarator(void) {
             continue;
         }
 
-        do {
+        bool next_decl = true;
+        while (next_decl && !check(TK_RPAREN)) {
             auto param = parseDeclaration(DeclKind::ANY);
+            auto comma_pos = getLoc();
+            next_decl = accept(TK_COMMA); // accept ,
+            if (next_decl && check(TK_RPAREN)) {
+                errorloc(comma_pos, "An erroneous comma was found!");
+            }
             funDecl->addParameter(std::move(param));
-        } while (accept(TK_COMMA));
+        }
 
         expect(TK_RPAREN, ")");
         res = std::move(funDecl);
@@ -183,8 +193,8 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
             while (next_argument && !check(TK_RPAREN)) { // argumente lesen bis )
                 auto arg = parseExpression(); // parse a_i
                 auto comma_pos = getLoc();
-                next_argument = accept(TK_COMMA);
-                if (next_argument && check(TK_RPAREN)) { // accept ,
+                next_argument = accept(TK_COMMA); // accept ,
+                if (next_argument && check(TK_RPAREN)) { 
                     errorloc(comma_pos, "An erroneous comma was found!");
                 }
                 args.push_back(std::move(arg));
