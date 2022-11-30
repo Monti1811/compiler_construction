@@ -53,7 +53,11 @@ Declaration Parser::parseDeclaration(DeclKind dKind) {
 DeclaratorPtr Parser::parseNonFunDeclarator(void) {
     switch (peekToken().Kind) {
         case TK_LPAREN: {
-            if (checkLookAhead(TK_RPAREN) || checkLookAhead(TK_VOID) ||
+            if (checkLookAhead(TK_RPAREN)) {
+                // type () not allowed
+                errorloc(getLoc(), "nameless function");
+            }
+            if (checkLookAhead(TK_VOID) ||
                 checkLookAhead(TK_CHAR) || checkLookAhead(TK_INT) ||
                 checkLookAhead(TK_STRUCT)) {
                 // this has to be an abstract function declarator, not a
