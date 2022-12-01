@@ -102,10 +102,9 @@ DeclaratorPtr Parser::parseDeclarator(void) {
         bool next_decl = true;
         while (next_decl && !check(TK_RPAREN)) {
             auto param = parseDeclaration(DeclKind::ANY);
-            auto comma_pos = getLoc();
-            next_decl = accept(TK_COMMA); // accept ,
+            next_decl = accept(TK_COMMA);
             if (next_decl && check(TK_RPAREN)) {
-                errorloc(comma_pos, "An erroneous comma was found!");
+                errorloc(getLoc(), "Expected another function argument");
             }
             funDecl->addParameter(std::move(param));
         }
@@ -192,10 +191,9 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
             bool next_argument = true;
             while (next_argument && !check(TK_RPAREN)) { // argumente lesen bis )
                 auto arg = parseExpression(); // parse a_i
-                auto comma_pos = getLoc();
-                next_argument = accept(TK_COMMA); // accept ,
+                next_argument = accept(TK_COMMA);
                 if (next_argument && check(TK_RPAREN)) { 
-                    errorloc(comma_pos, "An erroneous comma was found!");
+                    errorloc(getLoc(), "Expected another function argument");
                 }
                 args.push_back(std::move(arg));
             }
