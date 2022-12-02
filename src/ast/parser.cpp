@@ -494,9 +494,9 @@ StatementPtr Parser::parseStatement() {
             expect(TK_LPAREN, "(");
             ExpressionPtr condition = parseExpression();
             expect(TK_RPAREN, ")");
-            StatementPtr then_statement = parseStatement();
+            StatementPtr then_statement = parseNonDeclStatement();
             if (accept(TK_ELSE)) {
-                StatementPtr else_statement = parseStatement();
+                StatementPtr else_statement = parseNonDeclStatement();
                 return std::make_unique<IfStatement>(token, std::move(condition), std::move(then_statement), std::move(else_statement));
             } else {
                 return std::make_unique<IfStatement>(token, std::move(condition), std::move(then_statement));
@@ -522,7 +522,7 @@ StatementPtr Parser::parseStatement() {
             expect(TK_LPAREN, "(");
             ExpressionPtr condition = parseExpression();
             expect(TK_RPAREN, ")");
-            StatementPtr stat = parseStatement();
+            StatementPtr stat = parseNonDeclStatement();
             return std::make_unique<WhileStatement>(token, std::move(condition), std::move(stat));
         }
 
@@ -585,6 +585,14 @@ StatementPtr Parser::parseStatement() {
             return statement;
         }
     }
+}
+
+StatementPtr Parser::parseNonDeclStatement() {
+    auto statement = parseStatement();
+    if (statement->getType() == StatementType::DECLARATION) {
+        errorloc(statement->loc, "Expected statement, got declaration");
+    }
+    return statement;
 }
 
 Program Parser::parseProgram() {

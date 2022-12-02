@@ -73,6 +73,7 @@ class Parser {
 
     BlockStatement parseBlockStatement();
     StatementPtr parseStatement();
+    StatementPtr parseNonDeclStatement();
 
     /// Internal methods for use in parseDeclaration()
     DeclaratorPtr parseDeclarator(void);

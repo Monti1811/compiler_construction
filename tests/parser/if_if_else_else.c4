@@ -1,5 +1,5 @@
 int main() {
-    if(x) if(y) int a;
-    else int b;
-    else int c;
+    if(x) if(y) (a = 0);
+    else (b = 1);
+    else (c = 2);
 }

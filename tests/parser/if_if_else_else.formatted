@@ -2,9 +2,9 @@ int (main())
 {
 	if (x)
 		if (y)
-			int a;
+			(a = 0);
 		else
-			int b;
+			(b = 1);
 	else
-		int c;
+		(c = 2);
 }
