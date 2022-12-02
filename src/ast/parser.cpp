@@ -1,6 +1,6 @@
 #include "parser.h"
 
-Declaration Parser::parseDeclaration(DeclKind dKind) {
+Declaration Parser::parseDeclaration(DeclKind declKind) {
     TypeSpecifierPtr spec(nullptr);
     Locatable loc(getLoc());
 
@@ -38,13 +38,14 @@ Declaration Parser::parseDeclaration(DeclKind dKind) {
 
     DeclaratorPtr decl(parseDeclarator());
 
-    if (!decl->isAbstract()) {
+    if (decl->isAbstract() && declKind == DeclKind::CONCRETE) {
         // At all places where non-abstractness is required, declarators are
         // also optional in the grammar, therefore it's okay to accept a simple
         // empty primitive declarator here anyway.
 
-        // TODO check if decl is a valid declarator or abstract declarator and
-        //      that it fits with what is required by dKind
+        errorloc(loc, "This declarator must not be abstract");
+    } else if (!decl->isAbstract() && declKind == DeclKind::ABSTRACT) {
+        errorloc(loc, "This declarator must be abstract");
     }
 
     return Declaration(getLoc(), std::move(spec), std::move(decl));
@@ -510,7 +511,7 @@ StatementPtr Parser::parseStatement() {
         case TK_CHAR:
         case TK_INT:
         case TK_STRUCT: {
-            auto declaration = parseDeclaration(DeclKind::ANY);
+            auto declaration = parseDeclaration(DeclKind::CONCRETE);
             auto statement = std::make_unique<DeclarationStatement>(token, std::move(declaration));
             expect(TokenKind::TK_SEMICOLON, ";");
             return statement;
@@ -590,8 +591,7 @@ Program Parser::parseProgram() {
     auto program = Program();
 
     while (!check(TokenKind::TK_EOI)) {
-        // TODO: Which declKind is correct here?
-        auto declaration = parseDeclaration(DeclKind::ANY);
+        auto declaration = parseDeclaration(DeclKind::CONCRETE);
 
         switch (peekToken().Kind) {
             case TokenKind::TK_SEMICOLON: {

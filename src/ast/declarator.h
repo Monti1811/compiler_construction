@@ -75,9 +75,9 @@ struct PrimitiveDeclarator: public Declarator {
 struct FunctionDeclarator : public Declarator {
     FunctionDeclarator(Locatable loc, DeclaratorPtr decl)
         : Declarator(loc, decl->isAbstract())
-        , _decl(std::move(decl)) {};
+        , _name(std::move(decl)) {};
 
-    DeclaratorPtr _decl;
+    DeclaratorPtr _name;
     std::vector<Declaration> _parameters;
 
     void print(std::ostream& stream);

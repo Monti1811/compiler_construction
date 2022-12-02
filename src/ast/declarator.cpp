@@ -26,18 +26,29 @@ void PrimitiveDeclarator::print(std::ostream& stream) {
 }
 
 void FunctionDeclarator::print(std::ostream& stream) {
-    stream << '(' << _decl << '(';
+    if (_name->isAbstract()) {
+        stream << '(';
+    } else {
+        stream << '(' << _name << '(';
+    }
+
     for (size_t i = 0; i < _parameters.size(); i++) {
         auto& par = _parameters[i];
         stream << par._specifier;
         if (!par._declarator->isAbstract()) {
-            stream << ' ' << par._declarator;
+            stream << ' ';
         }
+        stream << par._declarator;
         if (i < _parameters.size() - 1) {
             stream << ", ";
         }
     }
-    stream << "))";
+
+    if (_name->isAbstract()) {
+        stream << ')';
+    } else {
+        stream << "))";
+    }
 }
 
 void FunctionDeclarator::addParameter(Declaration param) {
