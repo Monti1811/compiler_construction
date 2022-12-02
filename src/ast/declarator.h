@@ -11,7 +11,7 @@
 struct Declarator {
     public:
     Declarator(const Locatable loc, const bool abstract)
-        : _loc(loc)
+        : loc(loc)
         , _abstract(abstract) {};
 
     virtual void print(std::ostream& stream) = 0;
@@ -19,8 +19,8 @@ struct Declarator {
 
     bool isAbstract();
 
+    const Locatable loc;
     private:
-    const Locatable _loc;
     bool _abstract = false;
 };
 
@@ -114,11 +114,11 @@ struct IntSpecifier: public TypeSpecifier {
 
 struct StructSpecifier: public TypeSpecifier {
     public:
-    StructSpecifier(const Locatable loc, Symbol tag) : TypeSpecifier(loc), _tag(tag) {};
+    StructSpecifier(const Locatable loc, std::optional<Symbol> tag) : TypeSpecifier(loc), _tag(tag) {};
     void print(std::ostream& stream);
     void addComponent(Declaration declaration);
 
     private:
     std::vector<Declaration> _components;
-    Symbol _tag;
+    std::optional<Symbol> _tag;
 };

@@ -11,7 +11,7 @@ Declaration Parser::parseDeclaration(DeclKind declKind) {
     } else if (accept(TK_INT)) {
         spec = std::make_unique<IntSpecifier>(loc);
     } else if (accept(TK_STRUCT)) {
-        Symbol tag = nullptr;
+        std::optional<Symbol> tag = std::nullopt;
         if (check(TK_IDENTIFIER)) {
             tag = peekToken().Text;
             expect(TK_IDENTIFIER, "identifier");
@@ -24,7 +24,7 @@ Declaration Parser::parseDeclaration(DeclKind declKind) {
 
         if (accept(TK_LBRACE)) {
             do {  // parse struct member declarations
-                auto declaration = parseDeclaration(DeclKind::CONCRETE);
+                auto declaration = parseDeclaration(DeclKind::ANY);
                 structSpec->addComponent(std::move(declaration));
                 expect(TK_SEMICOLON, ";");
             } while (!accept(TK_RBRACE));
@@ -38,14 +38,12 @@ Declaration Parser::parseDeclaration(DeclKind declKind) {
 
     DeclaratorPtr decl(parseDeclarator());
 
-    if (decl->isAbstract() && declKind == DeclKind::CONCRETE) {
+    if (!decl->isAbstract() && declKind == DeclKind::ABSTRACT) {
         // At all places where non-abstractness is required, declarators are
         // also optional in the grammar, therefore it's okay to accept a simple
         // empty primitive declarator here anyway.
 
-        errorloc(loc, "This declarator must not be abstract");
-    } else if (!decl->isAbstract() && declKind == DeclKind::ABSTRACT) {
-        errorloc(loc, "This declarator must be abstract");
+        errorloc(decl->loc, "This declarator must be abstract");
     }
 
     return Declaration(getLoc(), std::move(spec), std::move(decl));
@@ -511,7 +509,7 @@ StatementPtr Parser::parseStatement() {
         case TK_CHAR:
         case TK_INT:
         case TK_STRUCT: {
-            auto declaration = parseDeclaration(DeclKind::CONCRETE);
+            auto declaration = parseDeclaration(DeclKind::ANY);
             auto statement = std::make_unique<DeclarationStatement>(token, std::move(declaration));
             expect(TokenKind::TK_SEMICOLON, ";");
             return statement;
@@ -599,7 +597,7 @@ Program Parser::parseProgram() {
     auto program = Program();
 
     while (!check(TokenKind::TK_EOI)) {
-        auto declaration = parseDeclaration(DeclKind::CONCRETE);
+        auto declaration = parseDeclaration(DeclKind::ANY);
 
         switch (peekToken().Kind) {
             case TokenKind::TK_SEMICOLON: {

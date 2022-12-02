@@ -16,7 +16,11 @@ std::ostream& operator<<(std::ostream& stream, Declaration& declaration) {
 }
 
 void Declaration::print(std::ostream& stream) {
-    stream << _specifier << " " << _declarator;
+    stream << _specifier;
+    if (!_declarator->isAbstract()) {
+        stream << ' ';
+    }
+    stream << _declarator;
 }
 
 void PrimitiveDeclarator::print(std::ostream& stream) {
@@ -77,7 +81,10 @@ void IntSpecifier::print(std::ostream& stream) {
 }
 
 void StructSpecifier::print(std::ostream& stream) {
-    stream << "struct " << *_tag;
+    stream << "struct";
+    if (_tag.has_value()) {
+        stream << ' ' << *_tag.value();
+    } 
 
     if (_components.size() > 0) {
         IdentManager& ident = IdentManager::getInstance();
