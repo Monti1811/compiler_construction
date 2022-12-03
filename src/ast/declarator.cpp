@@ -16,7 +16,11 @@ std::ostream& operator<<(std::ostream& stream, Declaration& declaration) {
 }
 
 void Declaration::print(std::ostream& stream) {
-    stream << _specifier << " " << _declarator;
+    stream << _specifier;
+    if (!_declarator->isAbstract()) {
+        stream << ' ';
+    }
+    stream << _declarator;
 }
 
 void PrimitiveDeclarator::print(std::ostream& stream) {
@@ -26,18 +30,29 @@ void PrimitiveDeclarator::print(std::ostream& stream) {
 }
 
 void FunctionDeclarator::print(std::ostream& stream) {
-    stream << '(' << _decl << '(';
+    if (_name->isAbstract()) {
+        stream << '(';
+    } else {
+        stream << '(' << _name << '(';
+    }
+
     for (size_t i = 0; i < _parameters.size(); i++) {
         auto& par = _parameters[i];
         stream << par._specifier;
         if (!par._declarator->isAbstract()) {
-            stream << ' ' << par._declarator;
+            stream << ' ';
         }
+        stream << par._declarator;
         if (i < _parameters.size() - 1) {
             stream << ", ";
         }
     }
-    stream << "))";
+
+    if (_name->isAbstract()) {
+        stream << ')';
+    } else {
+        stream << "))";
+    }
 }
 
 void FunctionDeclarator::addParameter(Declaration param) {
@@ -66,7 +81,10 @@ void IntSpecifier::print(std::ostream& stream) {
 }
 
 void StructSpecifier::print(std::ostream& stream) {
-    stream << "struct " << *_tag;
+    stream << "struct";
+    if (_tag.has_value()) {
+        stream << ' ' << *_tag.value();
+    } 
 
     if (_components.size() > 0) {
         IdentManager& ident = IdentManager::getInstance();

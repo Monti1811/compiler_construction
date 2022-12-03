@@ -1,0 +1,8 @@
+struct s
+{
+	struct
+	{
+		int i;
+	};
+	int;
+};

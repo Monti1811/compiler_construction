@@ -73,10 +73,11 @@ class Parser {
 
     BlockStatement parseBlockStatement();
     StatementPtr parseStatement();
+    StatementPtr parseNonDeclStatement();
 
     /// Internal methods for use in parseDeclaration()
-    DeclaratorPtr parseDeclarator(void);
-    DeclaratorPtr parseNonFunDeclarator(void);
+    DeclaratorPtr parseDeclarator(DeclKind declKind);
+    DeclaratorPtr parseNonFunDeclarator(DeclKind declKind);
 
     /// Parse a type specifier followed by an abstract or non-abstract
     /// declarator (i.e. a typename or a declaration).
@@ -88,5 +89,5 @@ class Parser {
     /// If `dKind` is `DeclKind::CONCRETE`: verify that the declarator is a
     /// valid non-abstract declarator.
     /// If `dKind` is `DeclKind::ANY`: do not verify abstractness.
-    Declaration parseDeclaration(DeclKind dKind);
+    Declaration parseDeclaration(DeclKind declKind);
 };

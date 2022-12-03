@@ -1,6 +1,6 @@
 #include "parser.h"
 
-Declaration Parser::parseDeclaration(DeclKind dKind) {
+Declaration Parser::parseDeclaration(DeclKind declKind) {
     TypeSpecifierPtr spec(nullptr);
     Locatable loc(getLoc());
 
@@ -11,7 +11,7 @@ Declaration Parser::parseDeclaration(DeclKind dKind) {
     } else if (accept(TK_INT)) {
         spec = std::make_unique<IntSpecifier>(loc);
     } else if (accept(TK_STRUCT)) {
-        Symbol tag = nullptr;
+        std::optional<Symbol> tag = std::nullopt;
         if (check(TK_IDENTIFIER)) {
             tag = peekToken().Text;
             expect(TK_IDENTIFIER, "identifier");
@@ -36,21 +36,20 @@ Declaration Parser::parseDeclaration(DeclKind dKind) {
                  "'");
     }
 
-    DeclaratorPtr decl(parseDeclarator());
+    DeclaratorPtr decl(parseDeclarator(declKind));
 
-    if (!decl->isAbstract()) {
+    if (!decl->isAbstract() && declKind == DeclKind::ABSTRACT) {
         // At all places where non-abstractness is required, declarators are
         // also optional in the grammar, therefore it's okay to accept a simple
         // empty primitive declarator here anyway.
 
-        // TODO check if decl is a valid declarator or abstract declarator and
-        //      that it fits with what is required by dKind
+        errorloc(decl->loc, "This declarator must be abstract");
     }
 
     return Declaration(getLoc(), std::move(spec), std::move(decl));
 }
 
-DeclaratorPtr Parser::parseNonFunDeclarator(void) {
+DeclaratorPtr Parser::parseNonFunDeclarator(DeclKind declKind) {
     switch (peekToken().Kind) {
         case TK_LPAREN: {
             if (checkLookAhead(TK_RPAREN)) {
@@ -66,7 +65,7 @@ DeclaratorPtr Parser::parseNonFunDeclarator(void) {
                 return std::make_unique<PrimitiveDeclarator>(getLoc());
             }
             expect(TK_LPAREN, "(");
-            auto res = parseDeclarator();
+            auto res = parseDeclarator(declKind);
             expect(TK_RPAREN, ")");
             return res;
         }
@@ -74,7 +73,7 @@ DeclaratorPtr Parser::parseNonFunDeclarator(void) {
         case TK_ASTERISK: {
             Locatable loc(getLoc());
             expect(TK_ASTERISK, "*");
-            auto inner = parseDeclarator();
+            auto inner = parseDeclarator(declKind);
             return std::make_unique<PointerDeclarator>(loc, std::move(inner));
         }
 
@@ -88,9 +87,13 @@ DeclaratorPtr Parser::parseNonFunDeclarator(void) {
     }
 }
 
-DeclaratorPtr Parser::parseDeclarator(void) {
-    DeclaratorPtr res = parseNonFunDeclarator();
+DeclaratorPtr Parser::parseDeclarator(DeclKind declKind) {
+    DeclaratorPtr res = parseNonFunDeclarator(declKind);
     while (check(TK_LPAREN)) {
+        if (res->isAbstract() && declKind == DeclKind::CONCRETE) {
+            errorloc(getLoc(), "Functions must have a name");
+        }
+
         auto funDecl = std::make_unique<FunctionDeclarator>(getLoc(), std::move(res));
         expect(TK_LPAREN, "(");
 
@@ -493,9 +496,9 @@ StatementPtr Parser::parseStatement() {
             expect(TK_LPAREN, "(");
             ExpressionPtr condition = parseExpression();
             expect(TK_RPAREN, ")");
-            StatementPtr then_statement = parseStatement();
+            StatementPtr then_statement = parseNonDeclStatement();
             if (accept(TK_ELSE)) {
-                StatementPtr else_statement = parseStatement();
+                StatementPtr else_statement = parseNonDeclStatement();
                 return std::make_unique<IfStatement>(token, std::move(condition), std::move(then_statement), std::move(else_statement));
             } else {
                 return std::make_unique<IfStatement>(token, std::move(condition), std::move(then_statement));
@@ -510,7 +513,7 @@ StatementPtr Parser::parseStatement() {
         case TK_CHAR:
         case TK_INT:
         case TK_STRUCT: {
-            auto declaration = parseDeclaration(DeclKind::ANY);
+            auto declaration = parseDeclaration(DeclKind::CONCRETE);
             auto statement = std::make_unique<DeclarationStatement>(token, std::move(declaration));
             expect(TokenKind::TK_SEMICOLON, ";");
             return statement;
@@ -521,7 +524,7 @@ StatementPtr Parser::parseStatement() {
             expect(TK_LPAREN, "(");
             ExpressionPtr condition = parseExpression();
             expect(TK_RPAREN, ")");
-            StatementPtr stat = parseStatement();
+            StatementPtr stat = parseNonDeclStatement();
             return std::make_unique<WhileStatement>(token, std::move(condition), std::move(stat));
         }
 
@@ -586,12 +589,19 @@ StatementPtr Parser::parseStatement() {
     }
 }
 
+StatementPtr Parser::parseNonDeclStatement() {
+    auto statement = parseStatement();
+    if (statement->getType() == StatementType::DECLARATION) {
+        errorloc(statement->loc, "Expected statement, got declaration");
+    }
+    return statement;
+}
+
 Program Parser::parseProgram() {
     auto program = Program();
 
     while (!check(TokenKind::TK_EOI)) {
-        // TODO: Which declKind is correct here?
-        auto declaration = parseDeclaration(DeclKind::ANY);
+        auto declaration = parseDeclaration(DeclKind::CONCRETE);
 
         switch (peekToken().Kind) {
             case TokenKind::TK_SEMICOLON: {
