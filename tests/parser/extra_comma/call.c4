@@ -1,0 +1,10 @@
+int (f(int x))
+{
+    return 42;
+}
+
+int test(int y) {
+    int x;
+    x = f(42,);
+    return 0;
+}

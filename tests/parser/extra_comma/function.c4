@@ -1,0 +1,3 @@
+int (test(int alpha, int beta, )) {
+    return 0;
+}
