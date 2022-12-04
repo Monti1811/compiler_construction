@@ -1,0 +1,9 @@
+int (main())
+{
+	if (x) {
+	} else if (y) {
+	} else {
+	}
+	while (z) {
+	}
+}

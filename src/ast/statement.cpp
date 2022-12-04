@@ -47,22 +47,18 @@ StatementType BlockStatement::getType() {
 }
 
 void BlockStatement::print(std::ostream& stream) {
-    if (!this->_items.empty()) {
-        stream << "{";
-        IdentManager& ident = IdentManager::getInstance();
-        ident.increaseCurrIdentation(1);
-        for (auto &item : this->_items) {
-            if (item.get()->getType() == StatementType::LABELED) {
-                stream << '\n' << item;
-            } else {
-                stream << '\n' << ident << item;
-            }
+    stream << "{";
+    IdentManager& ident = IdentManager::getInstance();
+    ident.increaseCurrIdentation(1);
+    for (auto &item : this->_items) {
+        if (item.get()->getType() == StatementType::LABELED) {
+            stream << '\n' << item;
+        } else {
+            stream << '\n' << ident << item;
         }
-        ident.decreaseCurrIdentation(1);
-        stream << '\n' << ident << '}';
-    } else {
-        stream << "{}";
     }
+    ident.decreaseCurrIdentation(1);
+    stream << '\n' << ident << '}';
 }
 
 StatementType EmptyStatement::getType() {
