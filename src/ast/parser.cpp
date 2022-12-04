@@ -570,10 +570,7 @@ StatementPtr Parser::parseStatement() {
             if (checkLookAhead(TK_COLON)) {
                 expect(TK_IDENTIFIER, "identifier");
                 expect(TK_COLON, ":");
-                StatementPtr stat = parseStatement();
-                if (stat->getType() == StatementType::DECLARATION) {
-                    errorloc(stat->loc, "Declarations cannot be labeled");
-                }
+                StatementPtr stat = parseNonDeclStatement();
                 return std::make_unique<LabeledStatement>(token, token.Text, std::move(stat));
             }
             [[fallthrough]];

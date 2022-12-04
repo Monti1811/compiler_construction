@@ -1,0 +1,8 @@
+int f() {
+	if(x);
+	else if(y);
+	else;
+	while (z);
+
+	;
+}
