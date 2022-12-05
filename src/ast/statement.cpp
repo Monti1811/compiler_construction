@@ -90,17 +90,17 @@ void IfStatement::print(std::ostream& stream) {
         }
     } else {
         ident.increaseCurrIdentation(1);
-        stream << "\n" << ident << this->_then_statement << "\n";
+        stream << "\n" << ident << this->_then_statement;
         ident.decreaseCurrIdentation(1);
         if (hasElseStatement) {
-            stream << ident;
+            stream << "\n" << ident;
         }
     }
         
     if (hasElseStatement) {
         auto& else_statement = this->_else_statement.value();
         auto else_type = else_statement->getType();
-
+        
         if (else_type == StatementType::BLOCK || else_type == StatementType::IF) {
             stream << "else " << else_statement;
         } else if (else_type == StatementType::EMPTY) {
