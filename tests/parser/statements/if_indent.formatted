@@ -1,0 +1,6 @@
+int (main())
+{
+	if (condition)
+		(a = b);
+	(c = d);
+}

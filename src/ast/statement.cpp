@@ -83,11 +83,6 @@ void IfStatement::print(std::ostream& stream) {
         if (hasElseStatement) {
             stream << " ";
         }
-    } else if (this->_then_statement->getType() == StatementType::EMPTY) {
-        stream << this->_then_statement;
-        if (hasElseStatement) {
-            stream << '\n' << ident;
-        }
     } else {
         ident.increaseCurrIdentation(1);
         stream << "\n" << ident << this->_then_statement;
@@ -103,8 +98,6 @@ void IfStatement::print(std::ostream& stream) {
         
         if (else_type == StatementType::BLOCK || else_type == StatementType::IF) {
             stream << "else " << else_statement;
-        } else if (else_type == StatementType::EMPTY) {
-            stream << "else" << else_statement;
         } else {
             stream << "else";
             ident.increaseCurrIdentation(1);
@@ -127,8 +120,6 @@ void WhileStatement::print(std::ostream& stream) {
         ident.increaseCurrIdentation(1);
         stream << '\n' << this->_statement;
         ident.decreaseCurrIdentation(1);
-    } else if (this->_statement->getType() == StatementType::EMPTY) {
-        stream << this->_statement;
     } else {
         ident.increaseCurrIdentation(1);
         stream << '\n' << ident << this->_statement;

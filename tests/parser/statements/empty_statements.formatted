@@ -1,8 +1,12 @@
 int (f())
 {
-	if (x);
-	else if (y);
-	else;
-	while (z);
+	if (x)
+		;
+	else if (y)
+		;
+	else
+		;
+	while (z)
+		;
 	;
 }
