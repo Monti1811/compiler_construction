@@ -8,10 +8,17 @@
 #include "../util/diagnostic.h"
 #include "../util/symbol_internalizer.h"
 
+enum DeclaratorKind {
+    PRIMITIVE,
+    FUNCTION,
+    POINTER
+};
+
 struct Declarator {
     public:
-    Declarator(const Locatable loc, const bool abstract)
+    Declarator(const Locatable loc, const bool abstract, const DeclaratorKind kind)
         : loc(loc)
+        , kind(kind)
         , _abstract(abstract) {};
 
     virtual void print(std::ostream& stream) = 0;
@@ -20,6 +27,8 @@ struct Declarator {
     bool isAbstract();
 
     const Locatable loc;
+    const DeclaratorKind kind;
+
     private:
     bool _abstract = false;
 };
@@ -60,11 +69,11 @@ struct Declaration {
 
 struct PrimitiveDeclarator: public Declarator {
     PrimitiveDeclarator(Locatable loc, Symbol ident)
-        : Declarator(loc, false)
+        : Declarator(loc, false, DeclaratorKind::PRIMITIVE)
         , _ident(ident) {};
 
     PrimitiveDeclarator(Locatable loc)
-        : Declarator(loc, true)
+        : Declarator(loc, true, DeclaratorKind::PRIMITIVE)
         , _ident(nullptr) {};
 
     Symbol _ident;
@@ -74,7 +83,7 @@ struct PrimitiveDeclarator: public Declarator {
 
 struct FunctionDeclarator : public Declarator {
     FunctionDeclarator(Locatable loc, DeclaratorPtr decl)
-        : Declarator(loc, decl->isAbstract())
+        : Declarator(loc, decl->isAbstract(), DeclaratorKind::FUNCTION)
         , _name(std::move(decl)) {};
 
     DeclaratorPtr _name;
@@ -86,7 +95,7 @@ struct FunctionDeclarator : public Declarator {
 
 struct PointerDeclarator : public Declarator {
     PointerDeclarator(Locatable loc, DeclaratorPtr inner)
-        : Declarator(loc, inner->isAbstract())
+        : Declarator(loc, inner->isAbstract(), DeclaratorKind::POINTER)
         , _inner(std::move(inner)) {};
 
     DeclaratorPtr _inner;

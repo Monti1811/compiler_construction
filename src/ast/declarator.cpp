@@ -17,7 +17,7 @@ std::ostream& operator<<(std::ostream& stream, Declaration& declaration) {
 
 void Declaration::print(std::ostream& stream) {
     stream << _specifier;
-    if (!_declarator->isAbstract()) {
+    if (_declarator->kind != DeclaratorKind::PRIMITIVE || !_declarator->isAbstract()) {
         stream << ' ';
     }
     stream << _declarator;
@@ -38,11 +38,7 @@ void FunctionDeclarator::print(std::ostream& stream) {
 
     for (size_t i = 0; i < _parameters.size(); i++) {
         auto& par = _parameters[i];
-        stream << par._specifier;
-        if (!par._declarator->isAbstract()) {
-            stream << ' ';
-        }
-        stream << par._declarator;
+        stream << par;
         if (i < _parameters.size() - 1) {
             stream << ", ";
         }
