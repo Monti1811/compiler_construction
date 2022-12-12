@@ -1,0 +1,19 @@
+struct S {
+    int a;
+    int b(void);
+    int* c;
+};
+
+struct T {
+    int d;
+};
+
+int main() {
+    struct U {
+        int e;
+    };
+
+    struct V {
+        int f;
+    };
+}
