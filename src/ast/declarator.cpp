@@ -17,7 +17,7 @@ std::ostream& operator<<(std::ostream& stream, Declaration& declaration) {
 
 void Declaration::print(std::ostream& stream) {
     stream << _specifier;
-    if (_declarator->kind != DeclaratorKind::PRIMITIVE || !_declarator->isAbstract()) {
+    if (_declarator->kind == DeclaratorKind::POINTER || !_declarator->isAbstract()) {
         stream << ' ';
     }
     stream << _declarator;
