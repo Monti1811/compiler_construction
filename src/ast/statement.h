@@ -34,6 +34,8 @@ struct Statement {
 
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Statement>& stat);
     virtual void print(std::ostream& stream) = 0;
+
+    virtual void typecheck(ScopePtr& scope) = 0;
 };
 
 typedef std::unique_ptr<Statement> StatementPtr;
@@ -51,6 +53,11 @@ struct LabeledStatement: public Statement {
     StatementPtr _inner;
 
     void print(std::ostream& stream);
+
+    void typecheck(ScopePtr& scope) {
+        // TODO: Check that labels are unique within a function
+        this->_inner->typecheck(scope);
+    }
 };
 
 /// Block statement, e.g.:
@@ -65,10 +72,17 @@ struct BlockStatement: public Statement {
         : Statement(loc, StatementKind::ST_BLOCK)
         , _items(std::move(items)) {};
 
+    void print(std::ostream& stream);
+
     private:
     std::vector<StatementPtr> _items;
 
-    void print(std::ostream& stream);
+    void typecheck(ScopePtr& scope) {
+        // TODO: Make new scope
+        for (auto& item : this->_items) {
+            item->typecheck(scope);
+        }
+    }
 };
 
 struct EmptyStatement: public Statement {
@@ -77,6 +91,8 @@ struct EmptyStatement: public Statement {
     
     private:
     void print(std::ostream& stream);
+
+    void typecheck(ScopePtr&) {}
 };
 
 // int y;
@@ -89,6 +105,10 @@ struct DeclarationStatement: public Statement {
     Declaration _declaration;
 
     void print(std::ostream& stream);
+
+    void typecheck(ScopePtr&) {
+        // TODO: Add declaration to scope
+    }
 };
 
 // Just an expression disguised as a Statement
@@ -101,6 +121,10 @@ struct ExpressionStatement: public Statement {
     ExpressionPtr _expr;
 
     void print(std::ostream& stream);
+
+    void typecheck(ScopePtr& scope) {
+        this->_expr->typecheck(scope);
+    }
 };
 
 // if (cond) then stat
@@ -121,6 +145,17 @@ struct IfStatement: public Statement {
     std::optional<StatementPtr> _else_statement;
 
     void print(std::ostream& stream);
+
+    void typecheck(ScopePtr& scope) {
+        auto condition_type = this->_condition->typecheck(scope);
+        if (!condition_type->isScalar()) {
+            errorloc(this->loc, "Condition of an if statement must be scalar");
+        }
+        this->_then_statement->typecheck(scope);
+        if (this->_else_statement.has_value()) {
+            this->_else_statement->get()->typecheck(scope);
+        }
+    }
 };
 
 // while (condition) statement
@@ -129,13 +164,21 @@ struct WhileStatement: public Statement {
     WhileStatement(Locatable loc, ExpressionPtr condition, StatementPtr statement)
         : Statement(loc, StatementKind::ST_WHILE)
         , _condition(std::move(condition))
-        , _statement(std::move(statement)) {};
+        , _body(std::move(statement)) {};
 
     private:
     ExpressionPtr _condition;
-    StatementPtr _statement;
+    StatementPtr _body;
 
     void print(std::ostream& stream);
+
+    void typecheck(ScopePtr& scope) {
+        auto condition_type = this->_condition->typecheck(scope);
+        if (!condition_type->isScalar()) {
+            errorloc(this->loc, "Condition of a while statement must be scalar");
+        }
+        this->_body->typecheck(scope);
+    }
 };
 
 // Parent class of jump instructions
@@ -148,6 +191,8 @@ struct JumpStatement: public Statement {
     const std::string _jump_str;
 
     void print(std::ostream& stream);
+
+    void typecheck(ScopePtr&) {}
 };
 
 // goto identifier
@@ -160,6 +205,13 @@ struct GotoStatement: public JumpStatement {
     Symbol _ident;
 
     void print(std::ostream& stream);
+
+    void typecheck(ScopePtr&) {
+        if (_ident->length() == 0) {
+            errorloc(this->loc, "Labels cannot be empty");
+        }
+        // TODO: Check if _ident is in the function's labels
+    }
 };
 
 // continue; (in loops)
@@ -189,6 +241,11 @@ struct ReturnStatement: public JumpStatement {
     std::optional<ExpressionPtr> _expr;
 
     void print(std::ostream& stream);
+
+    void typecheck(ScopePtr&) {
+        // TODO: Check that expression matches return type of current function
+        // Also if current function has return type void, expr must not be set
+    }
 };
 
 // Class implemented as singleton pattern to get the current identation to print the AST correctly

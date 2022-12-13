@@ -86,15 +86,15 @@ void IfStatement::print(std::ostream& stream) {
 void WhileStatement::print(std::ostream& stream) {
     stream << "while (" << this->_condition << ')';
     IdentManager& ident = IdentManager::getInstance();
-    if (this->_statement->kind == StatementKind::ST_BLOCK) {
-        stream << ' ' << this->_statement;
-    } else if (this->_statement->kind == StatementKind::ST_LABELED) {
+    if (this->_body->kind == StatementKind::ST_BLOCK) {
+        stream << ' ' << this->_body;
+    } else if (this->_body->kind == StatementKind::ST_LABELED) {
         ident.increaseCurrIdentation(1);
-        stream << '\n' << this->_statement;
+        stream << '\n' << this->_body;
         ident.decreaseCurrIdentation(1);
     } else {
         ident.increaseCurrIdentation(1);
-        stream << '\n' << ident << this->_statement;
+        stream << '\n' << ident << this->_body;
         ident.decreaseCurrIdentation(1);
     }
     
