@@ -74,15 +74,15 @@ struct BlockStatement: public Statement {
 
     void print(std::ostream& stream);
 
-    private:
-    std::vector<StatementPtr> _items;
-
     void typecheck(ScopePtr& scope) {
         // TODO: Make new scope
         for (auto& item : this->_items) {
             item->typecheck(scope);
         }
     }
+
+    private:
+    std::vector<StatementPtr> _items;
 };
 
 struct EmptyStatement: public Statement {

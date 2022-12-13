@@ -8,6 +8,8 @@
 #include "../util/diagnostic.h"
 #include "../util/symbol_internalizer.h"
 
+#include "types.h"
+
 enum DeclaratorKind {
     PRIMITIVE,
     FUNCTION,
@@ -61,6 +63,8 @@ struct Declaration {
 
     void print(std::ostream& stream);
     friend std::ostream& operator<<(std::ostream& stream, Declaration& declaration);
+
+    void typecheck(ScopePtr& scope);
 
     Locatable _loc;
     TypeSpecifierPtr _specifier;

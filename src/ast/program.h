@@ -16,6 +16,8 @@ struct FunctionDefinition {
     void print(std::ostream& stream);
     friend std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition);
 
+    void typecheck(ScopePtr& scope);
+
     private:
     Declaration _declaration;
     BlockStatement _block;
@@ -30,6 +32,7 @@ struct Program {
 
     void addDeclaration(Declaration declaration);
     void addFunctionDefinition(FunctionDefinition definition);
+    void typecheck();
 
     private:
     std::vector<Declaration> _declarations;

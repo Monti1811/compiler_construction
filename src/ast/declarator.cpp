@@ -23,6 +23,10 @@ void Declaration::print(std::ostream& stream) {
     stream << _declarator;
 }
 
+void Declaration::typecheck(ScopePtr&) {
+    // TODO: Add this declaration to scope
+}
+
 void PrimitiveDeclarator::print(std::ostream& stream) {
     if (!isAbstract()) {
         stream << *_ident;
