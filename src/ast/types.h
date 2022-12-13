@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../util/symbol_internalizer.h"
-
 #include <memory>
 #include <optional>
 #include <unordered_map>
 #include <vector>
+
+#include "../util/symbol_internalizer.h"
 
 enum TypeKind {
     TY_INT,
@@ -74,8 +74,9 @@ struct StructType: Type {
     StructType()
         : Type(TypeKind::TY_STRUCT) {};
 
-    // TODO
-    // void addField(Declaration decl);
+    void addField(Symbol name, TypePtr type) {
+        this->fields.insert({ name, std::move(type) });
+    }
 
     bool equals(TypePtr&) {
         // TODO?
@@ -87,11 +88,13 @@ struct StructType: Type {
 
 struct FunctionType: Type {
     public:
-    FunctionType()
-        : Type(TypeKind::TY_FUNCTION) {};
+    FunctionType(TypePtr return_type)
+        : Type(TypeKind::TY_FUNCTION)
+        , return_type(std::move(return_type)) {};
     
-    // TODO
-    // void addArgument(Declaration arg);
+    void addArgument(TypePtr type) {
+        this->args.push_back(std::move(type));
+    }
 
     bool equals(TypePtr&) {
         return false; // TODO
@@ -125,6 +128,11 @@ struct Scope {
         }
         return std::move(structs.at(ident));
     }
+
+    void addDeclaration(Symbol name, TypePtr type) {
+        this->vars.insert({ name, std::move(type) });
+    }
+
     // TODO: Vars & things in parent scope also present in child scope
     std::unique_ptr<Scope> parent;
 };

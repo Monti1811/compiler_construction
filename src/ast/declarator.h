@@ -28,6 +28,9 @@ struct Declarator {
 
     bool isAbstract();
 
+    virtual Symbol getName() = 0;
+    virtual TypePtr wrapType(TypePtr) = 0;
+
     const Locatable loc;
     const DeclaratorKind kind;
 
@@ -44,6 +47,8 @@ struct TypeSpecifier {
 
     virtual void print(std::ostream& stream) = 0;
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<TypeSpecifier>& type);
+
+    virtual TypePtr toType() = 0;
 
     private:
     const Locatable _loc;
@@ -65,6 +70,7 @@ struct Declaration {
     friend std::ostream& operator<<(std::ostream& stream, Declaration& declaration);
 
     void typecheck(ScopePtr& scope);
+    std::pair<Symbol, TypePtr> toType();
 
     Locatable _loc;
     TypeSpecifierPtr _specifier;
@@ -83,6 +89,13 @@ struct PrimitiveDeclarator: public Declarator {
     Symbol _ident;
 
     void print(std::ostream& stream);
+
+    Symbol getName() {
+        return this->_ident;
+    }
+    TypePtr wrapType(TypePtr type) {
+        return type;
+    }
 };
 
 struct FunctionDeclarator : public Declarator {
@@ -95,6 +108,18 @@ struct FunctionDeclarator : public Declarator {
 
     void print(std::ostream& stream);
     void addParameter(Declaration param);
+
+    Symbol getName() {
+        return this->_name->getName();
+    }
+    TypePtr wrapType(TypePtr type) {
+        auto function_type = FunctionType(std::move(type));
+        for (auto& arg : this->_parameters) {
+            auto pair = arg.toType();
+            function_type.addArgument(std::move(pair.second));
+        }
+        return std::make_unique<Type>(function_type);
+    }
 };
 
 struct PointerDeclarator : public Declarator {
@@ -105,31 +130,54 @@ struct PointerDeclarator : public Declarator {
     DeclaratorPtr _inner;
 
     void print(std::ostream& stream);
+
+    Symbol getName() {
+        return this->_inner->getName();
+    }
+    TypePtr wrapType(TypePtr type) {
+        auto ptr_type = PointerType(std::move(type));
+        return std::make_unique<Type>(ptr_type);
+    }
 };
 
 struct VoidSpecifier: public TypeSpecifier {
     public: 
     VoidSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
     void print(std::ostream& stream);
+
+    TypePtr toType() {
+        return Type::makeVoid();
+    }
 };
 
 struct CharSpecifier: public TypeSpecifier {
     public: 
     CharSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
+
     void print(std::ostream& stream);
+    TypePtr toType() {
+        return Type::makeChar();
+    }
 };
 
 struct IntSpecifier: public TypeSpecifier {
     public: 
     IntSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
+
     void print(std::ostream& stream);
+    TypePtr toType() {
+        return Type::makeInt();
+    }
 };
 
 struct StructSpecifier: public TypeSpecifier {
     public:
     StructSpecifier(const Locatable loc, std::optional<Symbol> tag) : TypeSpecifier(loc), _tag(tag) {};
+
     void print(std::ostream& stream);
+
     void addComponent(Declaration declaration);
+    TypePtr toType();
 
     private:
     std::vector<Declaration> _components;

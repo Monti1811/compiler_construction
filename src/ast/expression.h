@@ -529,7 +529,7 @@ struct AssignExpression: public BinaryExpression {
 
     TypePtr typecheck(ScopePtr& scope) {
         auto left_type = this->_left->typecheck(scope);
-        if (this->_left->isLvalue()) {
+        if (!this->_left->isLvalue()) {
             errorloc(this->loc, "Cannot assign to rvalue");
         }
         return left_type;

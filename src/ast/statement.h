@@ -106,8 +106,8 @@ struct DeclarationStatement: public Statement {
 
     void print(std::ostream& stream);
 
-    void typecheck(ScopePtr&) {
-        // TODO: Add declaration to scope
+    void typecheck(ScopePtr& scope) {
+        this->_declaration.typecheck(scope);
     }
 };
 

@@ -23,8 +23,18 @@ void Declaration::print(std::ostream& stream) {
     stream << _declarator;
 }
 
-void Declaration::typecheck(ScopePtr&) {
-    // TODO: Add this declaration to scope
+void Declaration::typecheck(ScopePtr& scope) {
+    if (this->_declarator->isAbstract()) {
+        return;
+    }
+    auto pair = this->toType();
+    scope->addDeclaration(pair.first, std::move(pair.second));
+}
+
+std::pair<Symbol, TypePtr> Declaration::toType() {
+    auto name = this->_declarator->getName();
+    auto type = this->_declarator->wrapType(this->_specifier->toType());
+    return std::make_pair(name, std::move(type));
 }
 
 void PrimitiveDeclarator::print(std::ostream& stream) {
@@ -100,4 +110,13 @@ void StructSpecifier::print(std::ostream& stream) {
 
 void StructSpecifier::addComponent(Declaration declaration) {
     this->_components.push_back(std::move(declaration));
+}
+
+TypePtr StructSpecifier::toType() {
+    auto type = StructType();
+    for (auto& field : this->_components) {
+        auto pair = field.toType();
+        type.addField(pair.first, std::move(pair.second));
+    }
+    return std::make_unique<Type>(type);
 }
