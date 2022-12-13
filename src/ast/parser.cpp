@@ -586,7 +586,7 @@ StatementPtr Parser::parseStatement() {
 
 StatementPtr Parser::parseNonDeclStatement() {
     auto statement = parseStatement();
-    if (statement->getType() == StatementType::DECLARATION) {
+    if (statement->kind == StatementKind::ST_DECLARATION) {
         errorloc(statement->loc, "Expected statement, got declaration");
     }
     return statement;
