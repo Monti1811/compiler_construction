@@ -33,7 +33,11 @@ struct IdentExpression: public Expression {
         , _ident(ident) {};
 
     TypePtr typecheck(ScopePtr& scope) {
-        return scope->getTypeVar(this->_ident);
+        auto type = scope->getTypeVar(this->_ident);
+        if (!type.has_value()) {
+            errorloc(this->loc, "Variable ", *this->_ident, " is not defined");
+        }
+        return std::move(type.value());
     }
     bool isLvalue() { return true; }
 

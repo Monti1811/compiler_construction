@@ -3,6 +3,7 @@
 #include "../util/symbol_internalizer.h"
 
 #include <memory>
+#include <optional>
 #include <unordered_map>
 #include <vector>
 
@@ -105,20 +106,20 @@ struct Scope {
     std::unordered_map<Symbol, TypePtr> vars;
     std::unordered_map<Symbol, StructType> structs;
 
-    TypePtr getTypeVar(Symbol ident) {
+    std::optional<TypePtr> getTypeVar(Symbol ident) {
         if (vars.find(ident) == vars.end()) {
             if (!parent) {
-                // return something so that we know that we should throw an error
+                return std::nullopt;
             }
             return parent->getTypeVar(ident);
         }
         return std::move(vars.at(ident));
     }
 
-    StructType getTypeStruct(Symbol ident) {
+    std::optional<StructType> getTypeStruct(Symbol ident) {
         if (structs.find(ident) == structs.end()) {
             if (!parent) {
-                // return something so that we know that we should throw an error
+                return std::nullopt;
             }
             return parent->getTypeStruct(ident);
         }
