@@ -12,11 +12,22 @@ void FunctionDefinition::print(std::ostream& stream) {
 
 void FunctionDefinition::typecheck(ScopePtr& scope) {
     // Add this function's signature to the scope given as an argument
-    auto function_type = this->_declaration.toType();
-    scope->addDeclaration(function_type.first, function_type.second);
+    auto function = this->_declaration.toType();
+    scope->addDeclaration(function.first, function.second);
 
-    // TODO: New scope with function arguments
-    this->_block.typecheck(scope);
+    auto& decl = this->_declaration._declarator;
+    if (decl->kind != DeclaratorKind::FUNCTION) {
+        error("Internal error: Expected function definition to have a function declarator");
+    }
+    auto function_decl = static_cast<FunctionDeclarator*>(decl.get());
+
+    // Create inner function scope and add function arguments
+    auto function_scope = std::make_shared<Scope>(scope);
+    for (auto& par_decl : function_decl->_parameters) {
+        auto parameter = par_decl.toType();
+        function_scope->addDeclaration(parameter.first, parameter.second);
+    }
+    this->_block.typecheck(function_scope);
 }
 
 void Program::addDeclaration(Declaration declaration) {
@@ -67,7 +78,7 @@ void Program::typecheck() {
     auto decl_iter = this->_declarations.begin();
     auto func_iter = this->_functions.begin();
 
-    auto scope = std::make_unique<Scope>();
+    auto scope = std::make_shared<Scope>();
 
     for (bool is_decl : this->_is_declaration) {
         if (is_decl) {

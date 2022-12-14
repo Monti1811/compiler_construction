@@ -101,26 +101,30 @@ struct FunctionType: public Type {
 };
 
 struct Scope {
+    Scope() : parent(std::nullopt) {};
+    Scope(std::shared_ptr<Scope> parent)
+        : parent(parent) {};
+
     // TODO: Remember to put function pointers in here as well
     std::unordered_map<Symbol, TypePtr> vars;
     std::unordered_map<Symbol, StructType> structs;
 
     std::optional<TypePtr> getTypeVar(Symbol ident) {
         if (vars.find(ident) == vars.end()) {
-            if (!parent) {
+            if (!parent.has_value()) {
                 return std::nullopt;
             }
-            return parent->getTypeVar(ident);
+            return parent.value()->getTypeVar(ident);
         }
         return vars.at(ident);
     }
 
     std::optional<StructType> getTypeStruct(Symbol ident) {
         if (structs.find(ident) == structs.end()) {
-            if (!parent) {
+            if (!parent.has_value()) {
                 return std::nullopt;
             }
-            return parent->getTypeStruct(ident);
+            return parent.value()->getTypeStruct(ident);
         }
         return structs.at(ident);
     }
@@ -130,8 +134,8 @@ struct Scope {
     }
 
     // TODO: Vars & things in parent scope also present in child scope
-    std::unique_ptr<Scope> parent;
+    std::optional<std::shared_ptr<Scope>> parent;
 };
 
-typedef std::unique_ptr<Scope> ScopePtr;
+typedef std::shared_ptr<Scope> ScopePtr;
 
