@@ -1,5 +1,12 @@
+int (f(int x, int y))
+{
+	return 0;
+}
+
 int (main())
 {
+	int a;
+	int b;
 	while (((a < (sizeof b)) || (!(b == (f(23, (sizeof(int))))))))
 foo:
 		break;
