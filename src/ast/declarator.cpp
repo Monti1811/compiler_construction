@@ -113,10 +113,10 @@ void StructSpecifier::addComponent(Declaration declaration) {
 }
 
 TypePtr StructSpecifier::toType() {
-    auto type = StructType();
+    auto type = std::make_unique<StructType>();
     for (auto& field : this->_components) {
         auto pair = field.toType();
-        type.addField(pair.first, std::move(pair.second));
+        type->addField(pair.first, std::move(pair.second));
     }
-    return std::make_unique<Type>(type);
+    return type;
 }

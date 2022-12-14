@@ -51,7 +51,7 @@ struct Type {
 
 typedef std::unique_ptr<Type> TypePtr;
 
-struct PointerType: Type {
+struct PointerType: public Type {
     public:
     PointerType(TypePtr inner)
         : Type(TypeKind::TY_POINTER)
@@ -69,7 +69,7 @@ struct PointerType: Type {
     TypePtr inner; 
 };
 
-struct StructType: Type {
+struct StructType: public Type {
     public:
     StructType()
         : Type(TypeKind::TY_STRUCT) {};
@@ -86,7 +86,7 @@ struct StructType: Type {
     std::unordered_map<Symbol, TypePtr> fields;
 };
 
-struct FunctionType: Type {
+struct FunctionType: public Type {
     public:
     FunctionType(TypePtr return_type)
         : Type(TypeKind::TY_FUNCTION)

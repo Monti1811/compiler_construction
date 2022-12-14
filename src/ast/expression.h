@@ -178,13 +178,13 @@ struct DotExpression: public Expression {
         auto struct_type = static_cast<StructType*>(expr_type.get());
 
         auto ident = this->_ident->_ident;
-        if (!struct_type->fields.at(ident)) {
+        if (struct_type->fields.find(ident) == struct_type->fields.end()) {
             errorloc(this->loc, "Field does not exist on this struct");
         }
 
         return std::move(struct_type->fields.at(ident));
     }
-    bool isLvalue() { return false; } // TODO
+    bool isLvalue() { return true; } // TODO
 
     // expression.ident
     private:
@@ -358,10 +358,10 @@ struct BinaryExpression: public Expression {
         TypePtr leftType = _left->typecheck(scope);
         TypePtr rightType = _right->typecheck(scope);
         // TODO: Check for arithmetic types, not just int
-        if (!leftType->kind == TypeKind::TY_INT) {
+        if (leftType->kind != TypeKind::TY_INT) {
             errorloc(this->loc, "left side of a binary expression must be of type int");
         } 
-        if (!rightType->kind == TypeKind::TY_INT) {
+        if (rightType->kind != TypeKind::TY_INT) {
             errorloc(this->loc, "right side of a binary expression must be of type int");
         }
         return Type::makeInt();

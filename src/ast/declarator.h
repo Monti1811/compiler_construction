@@ -113,12 +113,12 @@ struct FunctionDeclarator : public Declarator {
         return this->_name->getName();
     }
     TypePtr wrapType(TypePtr type) {
-        auto function_type = FunctionType(std::move(type));
+        auto function_type = std::make_unique<FunctionType>(std::move(type));
         for (auto& arg : this->_parameters) {
             auto pair = arg.toType();
-            function_type.addArgument(std::move(pair.second));
+            function_type->addArgument(std::move(pair.second));
         }
-        return std::make_unique<Type>(function_type);
+        return function_type;
     }
 };
 
@@ -135,8 +135,7 @@ struct PointerDeclarator : public Declarator {
         return this->_inner->getName();
     }
     TypePtr wrapType(TypePtr type) {
-        auto ptr_type = PointerType(std::move(type));
-        return std::make_unique<Type>(ptr_type);
+        return std::make_unique<PointerType>(std::move(type));
     }
 };
 
