@@ -33,7 +33,11 @@ struct IdentExpression: public Expression {
         , _ident(ident) {};
 
     TypePtr typecheck(ScopePtr& scope) {
-        return scope->getTypeVar(this->_ident);
+        auto type = scope->getTypeVar(this->_ident);
+        if (!type.has_value()) {
+            errorloc(this->loc, "Variable ", *this->_ident, " is not defined");
+        }
+        return type.value();
     }
     bool isLvalue() { return true; }
 
@@ -50,7 +54,7 @@ struct IntConstantExpression: public Expression {
         : Expression(loc)
         , _value(std::stoull(*value)) {};
 
-    TypePtr typecheck(ScopePtr&) { return Type::makeInt(); }
+    TypePtr typecheck(ScopePtr&) { return INT_TYPE; }
     bool isLvalue() { return false; }
 
     void print(std::ostream& stream);
@@ -64,7 +68,7 @@ struct CharConstantExpression: public Expression {
         : Expression(loc)
         , _value( (*value) ) {};
 
-    TypePtr typecheck(ScopePtr&) { return Type::makeChar(); }
+    TypePtr typecheck(ScopePtr&) { return CHAR_TYPE; }
     bool isLvalue() { return false; }
 
     void print(std::ostream& stream);
@@ -78,9 +82,7 @@ struct StringLiteralExpression: public Expression {
         : Expression(loc)
         , _value(*value) {};
 
-    TypePtr typecheck(ScopePtr&) {
-        return std::make_unique<PointerType>(Type::makeChar());
-    }
+    TypePtr typecheck(ScopePtr&) { return STRING_TYPE; }
     bool isLvalue() { return true; }
 
     void print(std::ostream& stream);
@@ -104,8 +106,8 @@ struct IndexExpression: public Expression {
         if (this->_index->typecheck(scope)->kind != TypeKind::TY_INT) {
             errorloc(this->loc, "Index must have integer type");
         }
-        auto expr_pointer_type = static_cast<PointerType>(std::move(expr_type));
-        return std::move(expr_pointer_type.inner);
+        auto expr_pointer_type = std::static_pointer_cast<PointerType>(expr_type);
+        return std::make_shared<Type>(*expr_pointer_type->inner);
     }
     bool isLvalue() {
         return true; // TODO
@@ -131,11 +133,12 @@ struct CallExpression: public Expression {
         if (expr_type->kind != TypeKind::TY_POINTER) {
             errorloc(this->_expression->loc, "Call epression needs to be called on a function pointer");
         }
-        auto called_type = static_cast<PointerType>(std::move(expr_type)).inner;
-        if (called_type->kind != TypeKind::TY_FUNCTION) {
+        auto pointer_type = std::static_pointer_cast<PointerType>(expr_type);
+        auto& callee_type = pointer_type->inner;
+        if (callee_type->kind != TypeKind::TY_FUNCTION) {
             errorloc(this->_expression->loc, "Cannot call a non-function");
         }
-        auto function_type = dynamic_cast<FunctionType*>(called_type.get());
+        auto function_type = std::static_pointer_cast<FunctionType>(callee_type);
         if (this->_arguments.size() != function_type->args.size()) {
             // TODO: Technically not quite correct, a function f() can accept any number of args
             errorloc(this->loc, "Invalid number of arguments");
@@ -146,7 +149,7 @@ struct CallExpression: public Expression {
                 errorloc(this->_arguments[i]->loc, "Incorrect argument type");
             }
         }
-        return std::move(function_type->return_type);
+        return function_type->return_type;
     }
     bool isLvalue() { return false; } // TODO
 
@@ -171,16 +174,16 @@ struct DotExpression: public Expression {
         if (expr_type->kind != TypeKind::TY_STRUCT) {
             errorloc(this->loc, "Cannot access a field of a non-struct expression");
         }
-        auto struct_type = static_cast<StructType*>(expr_type.get());
+        auto struct_type = std::static_pointer_cast<StructType>(expr_type);
 
         auto ident = this->_ident->_ident;
-        if (!struct_type->fields.at(ident)) {
+        if (struct_type->fields.find(ident) == struct_type->fields.end()) {
             errorloc(this->loc, "Field does not exist on this struct");
         }
 
-        return std::move(struct_type->fields.at(ident));
+        return struct_type->fields.at(ident);
     }
-    bool isLvalue() { return false; } // TODO
+    bool isLvalue() { return true; } // TODO
 
     // expression.ident
     private:
@@ -202,19 +205,19 @@ struct ArrowExpression: public Expression {
         if (expr_type->kind != TypeKind::TY_POINTER) {
             errorloc(this->loc, "Cannot access non-pointers using the arrow operator");
         }
-        auto pointer_type = static_cast<PointerType*>(expr_type.get());
+        auto pointer_type = std::static_pointer_cast<PointerType>(expr_type);
 
         if (pointer_type->inner->kind != TypeKind::TY_STRUCT) {
             errorloc(this->loc, "Cannot index a non-struct expression");
         }
-        auto struct_type = static_cast<StructType*>(pointer_type->inner.get());
+        auto struct_type = std::static_pointer_cast<StructType>(pointer_type->inner);
 
         auto ident = this->_ident->_ident;
-        if (!struct_type->fields.at(ident)) {
+        if (struct_type->fields.find(ident) == struct_type->fields.end()) {
             errorloc(this->loc, "Field does not exist on this struct");
         }
 
-        return std::move(struct_type->fields.at(ident));
+        return struct_type->fields.at(ident);
     }
     bool isLvalue() { return false; } // TODO
 
@@ -248,7 +251,7 @@ struct SizeofExpression: public UnaryExpression {
         
     TypePtr typecheck(ScopePtr&) {
         // TODO: Additional checks
-        return Type::makeInt();
+        return INT_TYPE;
     }
     bool isLvalue() { return false; }
 };
@@ -263,7 +266,7 @@ struct SizeofTypeExpression: public Expression {
 
     TypePtr typecheck(ScopePtr&) {
         // TODO: Additional checks
-        return Type::makeInt();
+        return INT_TYPE;
     }
     bool isLvalue() { return false; }
 
@@ -283,7 +286,7 @@ struct ReferenceExpression: public UnaryExpression {
         // TODO: Additional checks
 
         auto inner_type = this->_inner->typecheck(scope);
-        return std::make_unique<PointerType>(std::move(inner_type));
+        return std::make_shared<PointerType>(inner_type);
     }
     bool isLvalue() { return false; }
 };
@@ -300,8 +303,8 @@ struct PointerExpression: public UnaryExpression {
         if (inner_type->kind != TypeKind::TY_POINTER) {
             errorloc(this->loc, "Cannot dereference a non-pointer");
         }
-        auto pointer_type = static_cast<PointerType>(std::move(inner_type));
-        return std::move(pointer_type.inner);
+        auto pointer_type = std::static_pointer_cast<PointerType>(inner_type);
+        return pointer_type->inner;
     }
     bool isLvalue() { return true; }
 };
@@ -314,11 +317,11 @@ struct NegationExpression: public UnaryExpression {
         : UnaryExpression(loc, std::move(inner), "-") {};
         
     TypePtr typecheck(ScopePtr& scope) {
-        TypePtr innerType = _inner->typecheck(scope);
-        if (innerType->kind != TypeKind::TY_INT) {
+        auto inner_type = this->_inner->typecheck(scope);
+        if (inner_type->kind != TypeKind::TY_INT) {
             errorloc(this->loc, "type to be negated has to be int");
         }
-        return Type::makeInt();
+        return INT_TYPE;
     }
 
     bool isLvalue() { return false; }
@@ -332,11 +335,11 @@ struct LogicalNegationExpression: public UnaryExpression {
         : UnaryExpression(loc, std::move(inner), "!") {};
 
     TypePtr typecheck(ScopePtr& scope) {
-        TypePtr innerType = _inner->typecheck(scope);
-        if (innerType->kind != TypeKind::TY_INT) {
+        auto inner_type = _inner->typecheck(scope);
+        if (inner_type->kind != TypeKind::TY_INT) {
             errorloc(this->loc, "type to be logcially negated has to be int");
         }
-        return Type::makeInt();
+        return INT_TYPE;
     }
     bool isLvalue() { return false; }
 };
@@ -351,16 +354,16 @@ struct BinaryExpression: public Expression {
 
     void print(std::ostream& stream);
     TypePtr typecheck(ScopePtr& scope) {
-        TypePtr leftType = _left->typecheck(scope);
-        TypePtr rightType = _right->typecheck(scope);
+        auto left_type = _left->typecheck(scope);
+        auto right_type = _right->typecheck(scope);
         // TODO: Check for arithmetic types, not just int
-        if (!leftType->kind == TypeKind::TY_INT) {
+        if (left_type->kind != TypeKind::TY_INT) {
             errorloc(this->loc, "left side of a binary expression must be of type int");
         } 
-        if (!rightType->kind == TypeKind::TY_INT) {
+        if (right_type->kind != TypeKind::TY_INT) {
             errorloc(this->loc, "right side of a binary expression must be of type int");
         }
-        return Type::makeInt();
+        return INT_TYPE;
     }
     bool isLvalue() { return false; }
 
@@ -409,9 +412,8 @@ struct LessThanExpression: public BinaryExpression {
         if (!left_type->equals(right_type)) {
             errorloc(this->loc, "Both sides of a less than expression must have the same type");
         }
-        return Type::makeInt();
+        return INT_TYPE;
     }
-    bool isLvalue() { return false; }
 };
 
 struct EqualExpression: public BinaryExpression {
@@ -428,9 +430,8 @@ struct EqualExpression: public BinaryExpression {
         if (!left_type->equals(right_type)) {
             errorloc(this->loc, "Both sides of an equal expression must have the same type");
         }
-        return Type::makeInt();
+        return INT_TYPE;
     }
-    bool isLvalue() { return false; }
 };
 
 struct UnequalExpression: public BinaryExpression {
@@ -447,9 +448,8 @@ struct UnequalExpression: public BinaryExpression {
         if (!left_type->equals(right_type)) {
             errorloc(this->loc, "Both sides of unequal expression must have the same type");
         }
-        return Type::makeInt();
+        return INT_TYPE;
     }
-    bool isLvalue() { return false; }
 };
 
 struct AndExpression: public BinaryExpression {
@@ -463,9 +463,8 @@ struct AndExpression: public BinaryExpression {
         if (!this->_left->typecheck(scope)->isScalar() || !this->_right->typecheck(scope)->isScalar()) {
             errorloc(this->loc, "Both sides of a logical and expression must be scalar types");
         }
-        return Type::makeInt();
+        return INT_TYPE;
     }
-    bool isLvalue() { return false; }
 };
 
 struct OrExpression: public BinaryExpression {
@@ -479,9 +478,8 @@ struct OrExpression: public BinaryExpression {
         if (!this->_left->typecheck(scope)->isScalar() || !this->_right->typecheck(scope)->isScalar()) {
             errorloc(this->loc, "Both sides of a logical or expression must be scalar types");
         }
-        return Type::makeInt();
+        return INT_TYPE;
     }
-    bool isLvalue() { return false; }
 };
 
 struct TernaryExpression: public Expression {
@@ -525,7 +523,7 @@ struct AssignExpression: public BinaryExpression {
 
     TypePtr typecheck(ScopePtr& scope) {
         auto left_type = this->_left->typecheck(scope);
-        if (this->_left->isLvalue()) {
+        if (!this->_left->isLvalue()) {
             errorloc(this->loc, "Cannot assign to rvalue");
         }
         return left_type;

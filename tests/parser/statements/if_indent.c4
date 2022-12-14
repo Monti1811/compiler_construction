@@ -1,5 +1,9 @@
 int main() {
+    int condition;
+    int a;
+    int b;
+
     if (condition)
-        a = b;
-    c = d;
+        a = 0;
+    b = 1;
 }

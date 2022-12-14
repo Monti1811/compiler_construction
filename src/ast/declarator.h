@@ -8,6 +8,8 @@
 #include "../util/diagnostic.h"
 #include "../util/symbol_internalizer.h"
 
+#include "types.h"
+
 enum DeclaratorKind {
     PRIMITIVE,
     FUNCTION,
@@ -26,6 +28,9 @@ struct Declarator {
 
     bool isAbstract();
 
+    virtual Symbol getName() = 0;
+    virtual TypePtr wrapType(TypePtr const&) = 0;
+
     const Locatable loc;
     const DeclaratorKind kind;
 
@@ -42,6 +47,8 @@ struct TypeSpecifier {
 
     virtual void print(std::ostream& stream) = 0;
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<TypeSpecifier>& type);
+
+    virtual TypePtr toType() = 0;
 
     private:
     const Locatable _loc;
@@ -62,6 +69,9 @@ struct Declaration {
     void print(std::ostream& stream);
     friend std::ostream& operator<<(std::ostream& stream, Declaration& declaration);
 
+    void typecheck(ScopePtr& scope);
+    std::pair<Symbol, TypePtr> toType();
+
     Locatable _loc;
     TypeSpecifierPtr _specifier;
     DeclaratorPtr _declarator;
@@ -79,6 +89,13 @@ struct PrimitiveDeclarator: public Declarator {
     Symbol _ident;
 
     void print(std::ostream& stream);
+
+    Symbol getName() {
+        return this->_ident;
+    }
+    TypePtr wrapType(TypePtr const& type) {
+        return type;
+    }
 };
 
 struct FunctionDeclarator : public Declarator {
@@ -91,6 +108,18 @@ struct FunctionDeclarator : public Declarator {
 
     void print(std::ostream& stream);
     void addParameter(Declaration param);
+
+    Symbol getName() {
+        return this->_name->getName();
+    }
+    TypePtr wrapType(TypePtr const& type) {
+        auto function_type = std::make_shared<FunctionType>(type);
+        for (auto& arg : this->_parameters) {
+            auto pair = arg.toType();
+            function_type->addArgument(pair.second);
+        }
+        return std::make_shared<PointerType>(function_type);
+    }
 };
 
 struct PointerDeclarator : public Declarator {
@@ -101,31 +130,49 @@ struct PointerDeclarator : public Declarator {
     DeclaratorPtr _inner;
 
     void print(std::ostream& stream);
+
+    Symbol getName() {
+        return this->_inner->getName();
+    }
+    TypePtr wrapType(TypePtr const& type) {
+        return std::make_shared<PointerType>(type);
+    }
 };
 
 struct VoidSpecifier: public TypeSpecifier {
     public: 
     VoidSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
+
     void print(std::ostream& stream);
+
+    TypePtr toType() { return VOID_TYPE; }
 };
 
 struct CharSpecifier: public TypeSpecifier {
     public: 
     CharSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
+
     void print(std::ostream& stream);
+    TypePtr toType() { return CHAR_TYPE; }
 };
 
 struct IntSpecifier: public TypeSpecifier {
     public: 
     IntSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
+
     void print(std::ostream& stream);
+
+    TypePtr toType() { return INT_TYPE; }
 };
 
 struct StructSpecifier: public TypeSpecifier {
     public:
     StructSpecifier(const Locatable loc, std::optional<Symbol> tag) : TypeSpecifier(loc), _tag(tag) {};
+
     void print(std::ostream& stream);
+
     void addComponent(Declaration declaration);
+    TypePtr toType();
 
     private:
     std::vector<Declaration> _components;

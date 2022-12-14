@@ -1,10 +1,11 @@
 #pragma once
 
-#include "../util/symbol_internalizer.h"
-
 #include <memory>
+#include <optional>
 #include <unordered_map>
 #include <vector>
+
+#include "../util/symbol_internalizer.h"
 
 enum TypeKind {
     TY_INT,
@@ -20,17 +21,7 @@ struct Type {
     Type(const TypeKind kind)
         : kind(kind) {};
 
-    static std::unique_ptr<Type> makeInt() {
-        return std::make_unique<Type>(TypeKind::TY_INT);
-    }
-    static std::unique_ptr<Type> makeVoid() {
-        return std::make_unique<Type>(TypeKind::TY_VOID);
-    }
-    static std::unique_ptr<Type> makeChar() {
-        return std::make_unique<Type>(TypeKind::TY_CHAR);
-    }
-
-    virtual bool equals(std::unique_ptr<Type>& other) {
+    virtual bool equals(std::shared_ptr<Type> const& other) {
         return this->kind == other->kind;
     }
 
@@ -48,18 +39,22 @@ struct Type {
     const TypeKind kind;
 };
 
-typedef std::unique_ptr<Type> TypePtr;
+typedef std::shared_ptr<Type> TypePtr;
 
-struct PointerType: Type {
+static TypePtr INT_TYPE = std::make_shared<Type>(TypeKind::TY_INT);
+static TypePtr VOID_TYPE = std::make_shared<Type>(TypeKind::TY_VOID);
+static TypePtr CHAR_TYPE = std::make_shared<Type>(TypeKind::TY_CHAR);
+
+struct PointerType: public Type {
     public:
     PointerType(TypePtr inner)
         : Type(TypeKind::TY_POINTER)
-        , inner(std::move(inner)) {};
+        , inner(inner) {};
 
-    bool equals(TypePtr& other) {
+    bool equals(TypePtr const& other) {
         if (other->kind == TypeKind::TY_POINTER) {
-            auto other_pointer = static_cast<PointerType>(std::move(other));
-            return this->inner->equals(other_pointer.inner);
+            auto other_pointer = std::static_pointer_cast<PointerType>(other);
+            return this->inner->equals(other_pointer->inner);
         } else {
             return false;
         }
@@ -68,15 +63,18 @@ struct PointerType: Type {
     TypePtr inner; 
 };
 
-struct StructType: Type {
+static TypePtr STRING_TYPE = std::make_shared<PointerType>(CHAR_TYPE);
+
+struct StructType: public Type {
     public:
     StructType()
         : Type(TypeKind::TY_STRUCT) {};
 
-    // TODO
-    // void addField(Declaration decl);
+    void addField(Symbol name, TypePtr const& type) {
+        this->fields.insert({ name, type });
+    }
 
-    bool equals(TypePtr&) {
+    bool equals(TypePtr const&) {
         // TODO?
         return false;
     }
@@ -84,15 +82,17 @@ struct StructType: Type {
     std::unordered_map<Symbol, TypePtr> fields;
 };
 
-struct FunctionType: Type {
+struct FunctionType: public Type {
     public:
-    FunctionType()
-        : Type(TypeKind::TY_FUNCTION) {};
+    FunctionType(TypePtr const& return_type)
+        : Type(TypeKind::TY_FUNCTION)
+        , return_type(return_type) {};
     
-    // TODO
-    // void addArgument(Declaration arg);
+    void addArgument(TypePtr const& type) {
+        this->args.push_back(type);
+    }
 
-    bool equals(TypePtr&) {
+    bool equals(TypePtr const&) {
         return false; // TODO
     }
 
@@ -101,32 +101,41 @@ struct FunctionType: Type {
 };
 
 struct Scope {
+    Scope() : parent(std::nullopt) {};
+    Scope(std::shared_ptr<Scope> parent)
+        : parent(parent) {};
+
     // TODO: Remember to put function pointers in here as well
     std::unordered_map<Symbol, TypePtr> vars;
     std::unordered_map<Symbol, StructType> structs;
 
-    TypePtr getTypeVar(Symbol ident) {
+    std::optional<TypePtr> getTypeVar(Symbol ident) {
         if (vars.find(ident) == vars.end()) {
-            if (!parent) {
-                // return something so that we know that we should throw an error
+            if (!parent.has_value()) {
+                return std::nullopt;
             }
-            return parent->getTypeVar(ident);
+            return parent.value()->getTypeVar(ident);
         }
-        return std::move(vars.at(ident));
+        return vars.at(ident);
     }
 
-    StructType getTypeStruct(Symbol ident) {
+    std::optional<StructType> getTypeStruct(Symbol ident) {
         if (structs.find(ident) == structs.end()) {
-            if (!parent) {
-                // return something so that we know that we should throw an error
+            if (!parent.has_value()) {
+                return std::nullopt;
             }
-            return parent->getTypeStruct(ident);
+            return parent.value()->getTypeStruct(ident);
         }
-        return std::move(structs.at(ident));
+        return structs.at(ident);
     }
+
+    void addDeclaration(Symbol name, TypePtr const& type) {
+        this->vars.insert({ name, type });
+    }
+
     // TODO: Vars & things in parent scope also present in child scope
-    std::unique_ptr<Scope> parent;
+    std::optional<std::shared_ptr<Scope>> parent;
 };
 
-typedef std::unique_ptr<Scope> ScopePtr;
+typedef std::shared_ptr<Scope> ScopePtr;
 

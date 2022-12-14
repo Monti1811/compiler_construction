@@ -23,6 +23,20 @@ void Declaration::print(std::ostream& stream) {
     stream << _declarator;
 }
 
+void Declaration::typecheck(ScopePtr& scope) {
+    if (this->_declarator->isAbstract()) {
+        return;
+    }
+    auto pair = this->toType();
+    scope->addDeclaration(pair.first, pair.second);
+}
+
+std::pair<Symbol, TypePtr> Declaration::toType() {
+    auto name = this->_declarator->getName();
+    auto type = this->_declarator->wrapType(this->_specifier->toType());
+    return std::make_pair(name, type);
+}
+
 void PrimitiveDeclarator::print(std::ostream& stream) {
     if (!isAbstract()) {
         stream << *_ident;
@@ -96,4 +110,13 @@ void StructSpecifier::print(std::ostream& stream) {
 
 void StructSpecifier::addComponent(Declaration declaration) {
     this->_components.push_back(std::move(declaration));
+}
+
+TypePtr StructSpecifier::toType() {
+    auto type = std::make_shared<StructType>();
+    for (auto& field : this->_components) {
+        auto pair = field.toType();
+        type->addField(pair.first, std::move(pair.second));
+    }
+    return type;
 }
