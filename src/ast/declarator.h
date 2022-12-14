@@ -118,7 +118,7 @@ struct FunctionDeclarator : public Declarator {
             auto pair = arg.toType();
             function_type->addArgument(pair.second);
         }
-        return function_type;
+        return std::make_shared<PointerType>(function_type);
     }
 };
 

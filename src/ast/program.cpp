@@ -11,7 +11,9 @@ void FunctionDefinition::print(std::ostream& stream) {
 }
 
 void FunctionDefinition::typecheck(ScopePtr& scope) {
-    // TODO: Add this function's signature to the scope given as an argument
+    // Add this function's signature to the scope given as an argument
+    auto function_type = this->_declaration.toType();
+    scope->addDeclaration(function_type.first, function_type.second);
 
     // TODO: New scope with function arguments
     this->_block.typecheck(scope);
