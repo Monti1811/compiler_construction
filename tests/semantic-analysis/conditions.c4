@@ -1,0 +1,10 @@
+int main() {
+    int condition;
+    condition = 5;
+    if (condition) {
+        condition = 6;
+    }
+    while (condition == 6) {
+        condition = condition + 1;
+    }
+}
