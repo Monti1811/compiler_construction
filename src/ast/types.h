@@ -53,7 +53,7 @@ struct PointerType: public Type {
 
     bool equals(TypePtr const& other) {
         if (other->kind == TypeKind::TY_POINTER) {
-            auto other_pointer = static_cast<PointerType*>(other.get());
+            auto other_pointer = std::static_pointer_cast<PointerType>(other);
             return this->inner->equals(other_pointer->inner);
         } else {
             return false;

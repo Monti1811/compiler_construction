@@ -106,7 +106,7 @@ struct IndexExpression: public Expression {
         if (this->_index->typecheck(scope)->kind != TypeKind::TY_INT) {
             errorloc(this->loc, "Index must have integer type");
         }
-        auto expr_pointer_type = static_cast<PointerType*>(expr_type.get());
+        auto expr_pointer_type = std::static_pointer_cast<PointerType>(expr_type);
         return std::make_shared<Type>(*expr_pointer_type->inner);
     }
     bool isLvalue() {
@@ -133,12 +133,12 @@ struct CallExpression: public Expression {
         if (expr_type->kind != TypeKind::TY_POINTER) {
             errorloc(this->_expression->loc, "Call epression needs to be called on a function pointer");
         }
-        auto pointer_type = static_cast<PointerType*>(expr_type.get());
+        auto pointer_type = std::static_pointer_cast<PointerType>(expr_type);
         auto& callee_type = pointer_type->inner;
         if (callee_type->kind != TypeKind::TY_FUNCTION) {
             errorloc(this->_expression->loc, "Cannot call a non-function");
         }
-        auto function_type = static_cast<FunctionType*>(callee_type.get());
+        auto function_type = std::static_pointer_cast<FunctionType>(callee_type);
         if (this->_arguments.size() != function_type->args.size()) {
             // TODO: Technically not quite correct, a function f() can accept any number of args
             errorloc(this->loc, "Invalid number of arguments");
@@ -174,7 +174,7 @@ struct DotExpression: public Expression {
         if (expr_type->kind != TypeKind::TY_STRUCT) {
             errorloc(this->loc, "Cannot access a field of a non-struct expression");
         }
-        auto struct_type = static_cast<StructType*>(expr_type.get());
+        auto struct_type = std::static_pointer_cast<StructType>(expr_type);
 
         auto ident = this->_ident->_ident;
         if (struct_type->fields.find(ident) == struct_type->fields.end()) {
@@ -205,12 +205,12 @@ struct ArrowExpression: public Expression {
         if (expr_type->kind != TypeKind::TY_POINTER) {
             errorloc(this->loc, "Cannot access non-pointers using the arrow operator");
         }
-        auto pointer_type = static_cast<PointerType*>(expr_type.get());
+        auto pointer_type = std::static_pointer_cast<PointerType>(expr_type);
 
         if (pointer_type->inner->kind != TypeKind::TY_STRUCT) {
             errorloc(this->loc, "Cannot index a non-struct expression");
         }
-        auto struct_type = static_cast<StructType*>(pointer_type->inner.get());
+        auto struct_type = std::static_pointer_cast<StructType>(pointer_type->inner);
 
         auto ident = this->_ident->_ident;
         if (struct_type->fields.find(ident) == struct_type->fields.end()) {
@@ -303,7 +303,7 @@ struct PointerExpression: public UnaryExpression {
         if (inner_type->kind != TypeKind::TY_POINTER) {
             errorloc(this->loc, "Cannot dereference a non-pointer");
         }
-        auto pointer_type = static_cast<PointerType*>(inner_type.get());
+        auto pointer_type = std::static_pointer_cast<PointerType>(inner_type);
         return pointer_type->inner;
     }
     bool isLvalue() { return true; }
