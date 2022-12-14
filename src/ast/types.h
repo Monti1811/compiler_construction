@@ -21,17 +21,7 @@ struct Type {
     Type(const TypeKind kind)
         : kind(kind) {};
 
-    static std::unique_ptr<Type> makeInt() {
-        return std::make_unique<Type>(TypeKind::TY_INT);
-    }
-    static std::unique_ptr<Type> makeVoid() {
-        return std::make_unique<Type>(TypeKind::TY_VOID);
-    }
-    static std::unique_ptr<Type> makeChar() {
-        return std::make_unique<Type>(TypeKind::TY_CHAR);
-    }
-
-    virtual bool equals(std::unique_ptr<Type>& other) {
+    virtual bool equals(std::shared_ptr<Type> const& other) {
         return this->kind == other->kind;
     }
 
@@ -49,18 +39,22 @@ struct Type {
     const TypeKind kind;
 };
 
-typedef std::unique_ptr<Type> TypePtr;
+typedef std::shared_ptr<Type> TypePtr;
+
+static TypePtr INT_TYPE = std::make_shared<Type>(TypeKind::TY_INT);
+static TypePtr VOID_TYPE = std::make_shared<Type>(TypeKind::TY_VOID);
+static TypePtr CHAR_TYPE = std::make_shared<Type>(TypeKind::TY_CHAR);
 
 struct PointerType: public Type {
     public:
     PointerType(TypePtr inner)
         : Type(TypeKind::TY_POINTER)
-        , inner(std::move(inner)) {};
+        , inner(inner) {};
 
-    bool equals(TypePtr& other) {
+    bool equals(TypePtr const& other) {
         if (other->kind == TypeKind::TY_POINTER) {
-            auto other_pointer = static_cast<PointerType>(std::move(other));
-            return this->inner->equals(other_pointer.inner);
+            auto other_pointer = static_cast<PointerType*>(other.get());
+            return this->inner->equals(other_pointer->inner);
         } else {
             return false;
         }
@@ -69,16 +63,18 @@ struct PointerType: public Type {
     TypePtr inner; 
 };
 
+static TypePtr STRING_TYPE = std::make_shared<PointerType>(CHAR_TYPE);
+
 struct StructType: public Type {
     public:
     StructType()
         : Type(TypeKind::TY_STRUCT) {};
 
-    void addField(Symbol name, TypePtr type) {
-        this->fields.insert({ name, std::move(type) });
+    void addField(Symbol name, TypePtr const& type) {
+        this->fields.insert({ name, type });
     }
 
-    bool equals(TypePtr&) {
+    bool equals(TypePtr const&) {
         // TODO?
         return false;
     }
@@ -88,15 +84,15 @@ struct StructType: public Type {
 
 struct FunctionType: public Type {
     public:
-    FunctionType(TypePtr return_type)
+    FunctionType(TypePtr const& return_type)
         : Type(TypeKind::TY_FUNCTION)
-        , return_type(std::move(return_type)) {};
+        , return_type(return_type) {};
     
-    void addArgument(TypePtr type) {
-        this->args.push_back(std::move(type));
+    void addArgument(TypePtr const& type) {
+        this->args.push_back(type);
     }
 
-    bool equals(TypePtr&) {
+    bool equals(TypePtr const&) {
         return false; // TODO
     }
 
@@ -116,7 +112,7 @@ struct Scope {
             }
             return parent->getTypeVar(ident);
         }
-        return std::move(vars.at(ident));
+        return vars.at(ident);
     }
 
     std::optional<StructType> getTypeStruct(Symbol ident) {
@@ -126,11 +122,11 @@ struct Scope {
             }
             return parent->getTypeStruct(ident);
         }
-        return std::move(structs.at(ident));
+        return structs.at(ident);
     }
 
-    void addDeclaration(Symbol name, TypePtr type) {
-        this->vars.insert({ name, std::move(type) });
+    void addDeclaration(Symbol name, TypePtr const& type) {
+        this->vars.insert({ name, type });
     }
 
     // TODO: Vars & things in parent scope also present in child scope

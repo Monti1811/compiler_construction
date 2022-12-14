@@ -29,7 +29,7 @@ struct Declarator {
     bool isAbstract();
 
     virtual Symbol getName() = 0;
-    virtual TypePtr wrapType(TypePtr) = 0;
+    virtual TypePtr wrapType(TypePtr const&) = 0;
 
     const Locatable loc;
     const DeclaratorKind kind;
@@ -93,7 +93,7 @@ struct PrimitiveDeclarator: public Declarator {
     Symbol getName() {
         return this->_ident;
     }
-    TypePtr wrapType(TypePtr type) {
+    TypePtr wrapType(TypePtr const& type) {
         return type;
     }
 };
@@ -112,11 +112,11 @@ struct FunctionDeclarator : public Declarator {
     Symbol getName() {
         return this->_name->getName();
     }
-    TypePtr wrapType(TypePtr type) {
-        auto function_type = std::make_unique<FunctionType>(std::move(type));
+    TypePtr wrapType(TypePtr const& type) {
+        auto function_type = std::make_shared<FunctionType>(type);
         for (auto& arg : this->_parameters) {
             auto pair = arg.toType();
-            function_type->addArgument(std::move(pair.second));
+            function_type->addArgument(pair.second);
         }
         return function_type;
     }
@@ -134,19 +134,18 @@ struct PointerDeclarator : public Declarator {
     Symbol getName() {
         return this->_inner->getName();
     }
-    TypePtr wrapType(TypePtr type) {
-        return std::make_unique<PointerType>(std::move(type));
+    TypePtr wrapType(TypePtr const& type) {
+        return std::make_shared<PointerType>(type);
     }
 };
 
 struct VoidSpecifier: public TypeSpecifier {
     public: 
     VoidSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
+
     void print(std::ostream& stream);
 
-    TypePtr toType() {
-        return Type::makeVoid();
-    }
+    TypePtr toType() { return VOID_TYPE; }
 };
 
 struct CharSpecifier: public TypeSpecifier {
@@ -154,9 +153,7 @@ struct CharSpecifier: public TypeSpecifier {
     CharSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
 
     void print(std::ostream& stream);
-    TypePtr toType() {
-        return Type::makeChar();
-    }
+    TypePtr toType() { return CHAR_TYPE; }
 };
 
 struct IntSpecifier: public TypeSpecifier {
@@ -164,9 +161,8 @@ struct IntSpecifier: public TypeSpecifier {
     IntSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
 
     void print(std::ostream& stream);
-    TypePtr toType() {
-        return Type::makeInt();
-    }
+
+    TypePtr toType() { return INT_TYPE; }
 };
 
 struct StructSpecifier: public TypeSpecifier {

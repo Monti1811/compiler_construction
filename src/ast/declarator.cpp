@@ -28,13 +28,13 @@ void Declaration::typecheck(ScopePtr& scope) {
         return;
     }
     auto pair = this->toType();
-    scope->addDeclaration(pair.first, std::move(pair.second));
+    scope->addDeclaration(pair.first, pair.second);
 }
 
 std::pair<Symbol, TypePtr> Declaration::toType() {
     auto name = this->_declarator->getName();
     auto type = this->_declarator->wrapType(this->_specifier->toType());
-    return std::make_pair(name, std::move(type));
+    return std::make_pair(name, type);
 }
 
 void PrimitiveDeclarator::print(std::ostream& stream) {
@@ -113,7 +113,7 @@ void StructSpecifier::addComponent(Declaration declaration) {
 }
 
 TypePtr StructSpecifier::toType() {
-    auto type = std::make_unique<StructType>();
+    auto type = std::make_shared<StructType>();
     for (auto& field : this->_components) {
         auto pair = field.toType();
         type->addField(pair.first, std::move(pair.second));
