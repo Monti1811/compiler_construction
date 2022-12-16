@@ -46,7 +46,7 @@ Declaration Parser::parseDeclaration(DeclKind declKind) {
         errorloc(decl->loc, "This declarator must be abstract");
     }
 
-    return Declaration(getLoc(), std::move(spec), std::move(decl));
+    return Declaration(loc, std::move(spec), std::move(decl));
 }
 
 DeclaratorPtr Parser::parseNonFunDeclarator(DeclKind declKind) {

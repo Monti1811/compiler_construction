@@ -103,10 +103,12 @@ struct FunctionType: public Type {
 struct Scope {
     Scope() : parent(std::nullopt) {};
     Scope(std::shared_ptr<Scope> parent)
-        : parent(parent) {};
+        : parent(parent)
+        , loop_counter(parent->loop_counter) {};
     Scope(std::shared_ptr<Scope> parent, std::unordered_set<Symbol> labels)
         : parent(parent)
-        , labels(labels) {};
+        , labels(labels)
+        , loop_counter(parent->loop_counter) {};
 
     // TODO: Remember to put function pointers in here as well
     std::unordered_map<Symbol, TypePtr> vars;
@@ -142,8 +144,9 @@ struct Scope {
         return true;
     }
 
-    void addDeclaration(Symbol name, TypePtr const& type) {
-        this->vars.insert({ name, type });
+    // Returns whether the variable was already defined
+    bool addDeclaration(Symbol name, TypePtr const& type) {
+        return !(this->vars.insert({ name, type }).second);
     }
 
     // Returns whether the struct was already defined

@@ -28,7 +28,10 @@ void Declaration::typecheck(ScopePtr& scope) {
     if (this->_declarator->isAbstract()) {
         return;
     }
-    scope->addDeclaration(pair.first, pair.second);
+    auto duplicate = scope->addDeclaration(pair.first, pair.second);
+    if (duplicate) {
+        errorloc(this->_declarator->loc, "Duplicate variable");
+    }
 }
 
 std::pair<Symbol, TypePtr> Declaration::toType(ScopePtr& scope) {
