@@ -1,1 +1,1 @@
-error:3:5: Declaration without declarator
+3:5: error: Declaration without declarator

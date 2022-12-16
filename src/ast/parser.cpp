@@ -536,7 +536,7 @@ StatementPtr Parser::parseStatement() {
 
         case TK_CONTINUE: {
             expect(TK_CONTINUE, "continue");
-            auto statement = std::make_unique<BreakStatement>(token, token.Text);
+            auto statement = std::make_unique<ContinueStatement>(token, token.Text);
             expect(TokenKind::TK_SEMICOLON, ";");
             return statement;
         }

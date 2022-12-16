@@ -135,6 +135,8 @@ struct Scope {
 
     // TODO: Vars & things in parent scope also present in child scope
     std::optional<std::shared_ptr<Scope>> parent;
+
+    int loop_counter = 0;
 };
 
 typedef std::shared_ptr<Scope> ScopePtr;

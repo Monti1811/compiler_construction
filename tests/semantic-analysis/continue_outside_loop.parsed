@@ -1,1 +1,1 @@
-error:5:5: Continue outside loop
+5:5: error: Invalid 'continue' outside of a loop

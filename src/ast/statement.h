@@ -177,7 +177,9 @@ struct WhileStatement: public Statement {
         if (!condition_type->isScalar()) {
             errorloc(this->loc, "Condition of a while statement must be scalar");
         }
+        scope->loop_counter++;
         this->_body->typecheck(scope);
+        scope->loop_counter--;
     }
 };
 
@@ -218,12 +220,24 @@ struct GotoStatement: public JumpStatement {
 struct ContinueStatement: public JumpStatement {
     ContinueStatement(Locatable loc, Symbol name)
         : JumpStatement(loc, name) {};
+    
+    void typecheck(ScopePtr& scope) {
+        if (scope->loop_counter == 0) {
+            errorloc(this->loc, "Invalid 'continue' outside of a loop");
+        }
+    }
 };
 
 // break; (in loops)
 struct BreakStatement: public JumpStatement {
     BreakStatement(Locatable loc, Symbol name)
         : JumpStatement(loc, name) {};
+
+    void typecheck(ScopePtr& scope) {
+        if (scope->loop_counter == 0) {
+            errorloc(this->loc, "Invalid 'break' outside of a loop");
+        }
+    }
 };
 
 // return;

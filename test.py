@@ -66,7 +66,7 @@ def compareResults(expected: "Tuple[list[str], list[str], int]", actual: "Tuple[
     result: list[str] = list()
 
     if success != expectedSuccess:
-        result.append(f"Incorrect exit code: Should be {int(expectedSuccess)}, is {int(success)}")
+        result.append(f"Incorrect exit code: Should be {expectedSuccess}, is {success}")
 
     stdoutDelta = difflib.unified_diff(expectedStdout, stdout, lineterm="", fromfile="expected stdout", tofile="actual stdout")
     if fullDiff and len(list(stdoutDelta)) > 0:
