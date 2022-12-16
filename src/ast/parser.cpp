@@ -395,42 +395,42 @@ ExpressionPtr Parser::parseBinaryExpression(int minPrec = 0, std::optional<Expre
         switch (token.Kind) {
             // binaryOp = *
             case TK_ASTERISK: {
-                auto multExpr = std::make_unique<MultiplyExpression>(getLoc(), std::move(left.value()), std::move(right));
+                auto multExpr = std::make_unique<MultiplyExpression>(token, std::move(left.value()), std::move(right));
                 return parseBinaryExpression(minPrec, std::move(multExpr));
             }
             // binaryOp = -
             case TK_MINUS: {
-                auto subExpr = std::make_unique<SubstractExpression>(getLoc(), std::move(left.value()), std::move(right));
+                auto subExpr = std::make_unique<SubstractExpression>(token, std::move(left.value()), std::move(right));
                 return parseBinaryExpression(minPrec, std::move(subExpr));
             }
             // binaryOp = +
             case TK_PLUS: {
-                auto addExpr = std::make_unique<AddExpression>(getLoc(), std::move(left.value()), std::move(right));
+                auto addExpr = std::make_unique<AddExpression>(token, std::move(left.value()), std::move(right));
                 return parseBinaryExpression(minPrec, std::move(addExpr));
             }
             // binaryOp = <
             case TK_LESS: {
-                auto lessThanExpr = std::make_unique<LessThanExpression>(getLoc(), std::move(left.value()), std::move(right));
+                auto lessThanExpr = std::make_unique<LessThanExpression>(token, std::move(left.value()), std::move(right));
                 return parseBinaryExpression(minPrec, std::move(lessThanExpr));
             }
             // binaryOp !=
             case TK_NOT_EQUAL: {
-                auto unequalExpr = std::make_unique<UnequalExpression>(getLoc(), std::move(left.value()), std::move(right));
+                auto unequalExpr = std::make_unique<UnequalExpression>(token, std::move(left.value()), std::move(right));
                 return parseBinaryExpression(minPrec, std::move(unequalExpr));
             }
             // binaryOp ==
             case TK_EQUAL_EQUAL: {
-                auto equalExpr = std::make_unique<EqualExpression>(getLoc(), std::move(left.value()), std::move(right));
+                auto equalExpr = std::make_unique<EqualExpression>(token, std::move(left.value()), std::move(right));
                 return parseBinaryExpression(minPrec, std::move(equalExpr));
             }
             // binaryOp &&
             case TK_AND_AND: {
-                auto logAndExpr = std::make_unique<AndExpression>(getLoc(), std::move(left.value()), std::move(right));
+                auto logAndExpr = std::make_unique<AndExpression>(token, std::move(left.value()), std::move(right));
                 return parseBinaryExpression(minPrec, std::move(logAndExpr));
             }
             // binaryOp ||
             case TK_PIPE_PIPE: {
-                auto logOrExpr = std::make_unique<OrExpression>(getLoc(), std::move(left.value()), std::move(right));
+                auto logOrExpr = std::make_unique<OrExpression>(token, std::move(left.value()), std::move(right));
                 return parseBinaryExpression(minPrec, std::move(logOrExpr));
             }
             default: 
@@ -458,11 +458,12 @@ ExpressionPtr Parser::parseConditionalExpression(std::optional<ExpressionPtr> le
 
 ExpressionPtr Parser::parseAssignmentExpression() {
     ExpressionPtr unaryExpr = parseUnaryExpression();
+    auto loc = getLoc();
     // check for =
     if (accept(TokenKind::TK_EQUAL)) {
         // accept = and start parsing AssignmentExpression
         ExpressionPtr right = parseAssignmentExpression();
-        return std::make_unique<AssignExpression>(getLoc(), std::move(unaryExpr), std::move(right));
+        return std::make_unique<AssignExpression>(loc, std::move(unaryExpr), std::move(right));
     }
     // we know it's not an assignment and therefore we keep parsing a cond expression
     // but with the knowledge that we have already parsed a unary expression

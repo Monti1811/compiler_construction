@@ -149,7 +149,7 @@ struct IfStatement: public Statement {
     void typecheck(ScopePtr& scope) {
         auto condition_type = this->_condition->typecheck(scope);
         if (!condition_type->isScalar()) {
-            errorloc(this->loc, "Condition of an if statement must be scalar");
+            errorloc(this->_condition->loc, "Condition of an if statement must be scalar");
         }
         this->_then_statement->typecheck(scope);
         if (this->_else_statement.has_value()) {
