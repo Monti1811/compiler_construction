@@ -571,11 +571,13 @@ StatementPtr Parser::parseStatement() {
             if (checkLookAhead(TK_COLON)) {
                 expect(TK_IDENTIFIER, "identifier");
                 expect(TK_COLON, ":");
-                StatementPtr stat = parseNonDeclStatement();
-                auto duplicate = this->_labels.insert(token.Text).second;
-                if (duplicate) {
+
+                auto new_label = this->_labels.insert(token.Text).second;
+                if (!new_label) {
                     errorloc(token, "Duplicate label");
                 }
+
+                StatementPtr stat = parseNonDeclStatement();
                 return std::make_unique<LabeledStatement>(token, token.Text, std::move(stat));
             }
             [[fallthrough]];
