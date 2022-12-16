@@ -104,6 +104,9 @@ struct Scope {
     Scope() : parent(std::nullopt) {};
     Scope(std::shared_ptr<Scope> parent)
         : parent(parent) {};
+    Scope(std::shared_ptr<Scope> parent, std::unordered_set<Symbol> labels)
+        : parent(parent)
+        , labels(labels) {};
 
     // TODO: Remember to put function pointers in here as well
     std::unordered_map<Symbol, TypePtr> vars;
@@ -129,12 +132,24 @@ struct Scope {
         return structs.at(ident);
     }
 
+    bool isLabelDefined(Symbol label) {
+        if (this->labels.find(label) == this->labels.end()) {
+            if (!parent.has_value()) {
+                return false;
+            }
+            return parent.value()->isLabelDefined(label);
+        }
+        return true;
+    }
+
     void addDeclaration(Symbol name, TypePtr const& type) {
         this->vars.insert({ name, type });
     }
 
     // TODO: Vars & things in parent scope also present in child scope
     std::optional<std::shared_ptr<Scope>> parent;
+
+    std::unordered_set<Symbol> labels;
 
     int loop_counter = 0;
 };

@@ -572,6 +572,10 @@ StatementPtr Parser::parseStatement() {
                 expect(TK_IDENTIFIER, "identifier");
                 expect(TK_COLON, ":");
                 StatementPtr stat = parseNonDeclStatement();
+                auto duplicate = this->_labels.insert(token.Text).second;
+                if (duplicate) {
+                    errorloc(token, "Duplicate label");
+                }
                 return std::make_unique<LabeledStatement>(token, token.Text, std::move(stat));
             }
             [[fallthrough]];
@@ -606,8 +610,9 @@ Program Parser::parseProgram() {
                 break;
             }
             case TokenKind::TK_LBRACE: {
+                this->_labels.clear();
                 auto block = parseBlockStatement();
-                auto function = FunctionDefinition(std::move(declaration), std::move(block));
+                auto function = FunctionDefinition(std::move(declaration), std::move(block), this->_labels);
                 program.addFunctionDefinition(std::move(function));
                 break;
             }

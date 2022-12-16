@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <optional>
+#include <unordered_set>
 
 #include "../lexer/lexer.h"
 #include "../lexer/token.h"
@@ -90,4 +91,6 @@ class Parser {
     /// valid non-abstract declarator.
     /// If `dKind` is `DeclKind::ANY`: do not verify abstractness.
     Declaration parseDeclaration(DeclKind declKind);
+
+    std::unordered_set<Symbol> _labels;
 };

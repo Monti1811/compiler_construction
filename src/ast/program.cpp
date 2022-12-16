@@ -22,7 +22,7 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     auto function_decl = static_cast<FunctionDeclarator*>(decl.get());
 
     // Create inner function scope and add function arguments
-    auto function_scope = std::make_shared<Scope>(scope);
+    auto function_scope = std::make_shared<Scope>(scope, this->_labels);
     for (auto& par_decl : function_decl->_parameters) {
         auto parameter = par_decl.toType();
         function_scope->addDeclaration(parameter.first, parameter.second);

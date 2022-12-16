@@ -208,11 +208,13 @@ struct GotoStatement: public JumpStatement {
 
     void print(std::ostream& stream);
 
-    void typecheck(ScopePtr&) {
-        if (_ident->length() == 0) {
+    void typecheck(ScopePtr& scope) {
+        if (this->_ident->length() == 0) {
             errorloc(this->loc, "Labels cannot be empty");
         }
-        // TODO: Check if _ident is in the function's labels
+        if (!scope->isLabelDefined(this->_ident)) {
+            errorloc(this->loc, "Missing label");
+        }
     }
 };
 
