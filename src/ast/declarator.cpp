@@ -24,16 +24,19 @@ void Declaration::print(std::ostream& stream) {
 }
 
 void Declaration::typecheck(ScopePtr& scope) {
+    auto pair = this->toType(scope);
     if (this->_declarator->isAbstract()) {
         return;
     }
-    auto pair = this->toType();
-    scope->addDeclaration(pair.first, pair.second);
+    auto duplicate = scope->addDeclaration(pair.first, pair.second);
+    if (duplicate) {
+        errorloc(this->_declarator->loc, "Duplicate variable");
+    }
 }
 
-std::pair<Symbol, TypePtr> Declaration::toType() {
+std::pair<Symbol, TypePtr> Declaration::toType(ScopePtr& scope) {
     auto name = this->_declarator->getName();
-    auto type = this->_declarator->wrapType(this->_specifier->toType());
+    auto type = this->_declarator->wrapType(this->_specifier->toType(scope), scope);
     return std::make_pair(name, type);
 }
 
@@ -112,11 +115,17 @@ void StructSpecifier::addComponent(Declaration declaration) {
     this->_components.push_back(std::move(declaration));
 }
 
-TypePtr StructSpecifier::toType() {
+TypePtr StructSpecifier::toType(ScopePtr& scope) {
     auto type = std::make_shared<StructType>();
     for (auto& field : this->_components) {
-        auto pair = field.toType();
+        auto pair = field.toType(scope);
         type->addField(pair.first, std::move(pair.second));
+    }
+    if (this->_tag.has_value()) {
+        auto duplicate = scope->addStruct(this->_tag.value(), *type);
+        if (duplicate && this->_components.size() > 0) {
+            errorloc(this->_loc, "Duplicate struct");
+        }
     }
     return type;
 }

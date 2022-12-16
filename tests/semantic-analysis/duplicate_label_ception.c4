@@ -1,7 +1,5 @@
 int main() {
     label:
-    return;
-
     label:
     return;
 }

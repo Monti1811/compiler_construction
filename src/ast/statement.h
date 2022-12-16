@@ -75,9 +75,9 @@ struct BlockStatement: public Statement {
     void print(std::ostream& stream);
 
     void typecheck(ScopePtr& scope) {
-        // TODO: Make new scope
+        auto block_scope = std::make_shared<Scope>(scope);
         for (auto& item : this->_items) {
-            item->typecheck(scope);
+            item->typecheck(block_scope);
         }
     }
 
@@ -149,7 +149,7 @@ struct IfStatement: public Statement {
     void typecheck(ScopePtr& scope) {
         auto condition_type = this->_condition->typecheck(scope);
         if (!condition_type->isScalar()) {
-            errorloc(this->loc, "Condition of an if statement must be scalar");
+            errorloc(this->_condition->loc, "Condition of an if statement must be scalar");
         }
         this->_then_statement->typecheck(scope);
         if (this->_else_statement.has_value()) {
@@ -177,7 +177,9 @@ struct WhileStatement: public Statement {
         if (!condition_type->isScalar()) {
             errorloc(this->loc, "Condition of a while statement must be scalar");
         }
+        scope->loop_counter++;
         this->_body->typecheck(scope);
+        scope->loop_counter--;
     }
 };
 
@@ -206,11 +208,13 @@ struct GotoStatement: public JumpStatement {
 
     void print(std::ostream& stream);
 
-    void typecheck(ScopePtr&) {
-        if (_ident->length() == 0) {
+    void typecheck(ScopePtr& scope) {
+        if (this->_ident->length() == 0) {
             errorloc(this->loc, "Labels cannot be empty");
         }
-        // TODO: Check if _ident is in the function's labels
+        if (!scope->isLabelDefined(this->_ident)) {
+            errorloc(this->loc, "Missing label");
+        }
     }
 };
 
@@ -218,12 +222,24 @@ struct GotoStatement: public JumpStatement {
 struct ContinueStatement: public JumpStatement {
     ContinueStatement(Locatable loc, Symbol name)
         : JumpStatement(loc, name) {};
+    
+    void typecheck(ScopePtr& scope) {
+        if (scope->loop_counter == 0) {
+            errorloc(this->loc, "Invalid 'continue' outside of a loop");
+        }
+    }
 };
 
 // break; (in loops)
 struct BreakStatement: public JumpStatement {
     BreakStatement(Locatable loc, Symbol name)
         : JumpStatement(loc, name) {};
+
+    void typecheck(ScopePtr& scope) {
+        if (scope->loop_counter == 0) {
+            errorloc(this->loc, "Invalid 'break' outside of a loop");
+        }
+    }
 };
 
 // return;

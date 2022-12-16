@@ -103,7 +103,12 @@ struct FunctionType: public Type {
 struct Scope {
     Scope() : parent(std::nullopt) {};
     Scope(std::shared_ptr<Scope> parent)
-        : parent(parent) {};
+        : parent(parent)
+        , loop_counter(parent->loop_counter) {};
+    Scope(std::shared_ptr<Scope> parent, std::unordered_set<Symbol> labels)
+        : parent(parent)
+        , labels(labels)
+        , loop_counter(parent->loop_counter) {};
 
     // TODO: Remember to put function pointers in here as well
     std::unordered_map<Symbol, TypePtr> vars;
@@ -129,12 +134,31 @@ struct Scope {
         return structs.at(ident);
     }
 
-    void addDeclaration(Symbol name, TypePtr const& type) {
-        this->vars.insert({ name, type });
+    bool isLabelDefined(Symbol label) {
+        if (this->labels.find(label) == this->labels.end()) {
+            if (!parent.has_value()) {
+                return false;
+            }
+            return parent.value()->isLabelDefined(label);
+        }
+        return true;
     }
 
-    // TODO: Vars & things in parent scope also present in child scope
+    // Returns whether the variable was already defined
+    bool addDeclaration(Symbol name, TypePtr const& type) {
+        return !(this->vars.insert({ name, type }).second);
+    }
+
+    // Returns whether the struct was already defined
+    bool addStruct(Symbol name, StructType type) {
+        return !(this->structs.insert({ name, type }).second);
+    }
+
     std::optional<std::shared_ptr<Scope>> parent;
+
+    std::unordered_set<Symbol> labels;
+
+    int loop_counter = 0;
 };
 
 typedef std::shared_ptr<Scope> ScopePtr;

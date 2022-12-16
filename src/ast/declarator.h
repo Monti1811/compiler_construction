@@ -29,7 +29,7 @@ struct Declarator {
     bool isAbstract();
 
     virtual Symbol getName() = 0;
-    virtual TypePtr wrapType(TypePtr const&) = 0;
+    virtual TypePtr wrapType(TypePtr const&, ScopePtr&) = 0;
 
     const Locatable loc;
     const DeclaratorKind kind;
@@ -48,9 +48,9 @@ struct TypeSpecifier {
     virtual void print(std::ostream& stream) = 0;
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<TypeSpecifier>& type);
 
-    virtual TypePtr toType() = 0;
+    virtual TypePtr toType(ScopePtr& scope) = 0;
 
-    private:
+    protected:
     const Locatable _loc;
 };
 
@@ -70,7 +70,7 @@ struct Declaration {
     friend std::ostream& operator<<(std::ostream& stream, Declaration& declaration);
 
     void typecheck(ScopePtr& scope);
-    std::pair<Symbol, TypePtr> toType();
+    std::pair<Symbol, TypePtr> toType(ScopePtr& scope);
 
     Locatable _loc;
     TypeSpecifierPtr _specifier;
@@ -93,7 +93,7 @@ struct PrimitiveDeclarator: public Declarator {
     Symbol getName() {
         return this->_ident;
     }
-    TypePtr wrapType(TypePtr const& type) {
+    TypePtr wrapType(TypePtr const& type, ScopePtr&) {
         return type;
     }
 };
@@ -112,10 +112,10 @@ struct FunctionDeclarator : public Declarator {
     Symbol getName() {
         return this->_name->getName();
     }
-    TypePtr wrapType(TypePtr const& type) {
+    TypePtr wrapType(TypePtr const& type, ScopePtr& scope) {
         auto function_type = std::make_shared<FunctionType>(type);
         for (auto& arg : this->_parameters) {
-            auto pair = arg.toType();
+            auto pair = arg.toType(scope);
             function_type->addArgument(pair.second);
         }
         return std::make_shared<PointerType>(function_type);
@@ -134,7 +134,7 @@ struct PointerDeclarator : public Declarator {
     Symbol getName() {
         return this->_inner->getName();
     }
-    TypePtr wrapType(TypePtr const& type) {
+    TypePtr wrapType(TypePtr const& type, ScopePtr&) {
         return std::make_shared<PointerType>(type);
     }
 };
@@ -145,7 +145,7 @@ struct VoidSpecifier: public TypeSpecifier {
 
     void print(std::ostream& stream);
 
-    TypePtr toType() { return VOID_TYPE; }
+    TypePtr toType(ScopePtr&) { return VOID_TYPE; }
 };
 
 struct CharSpecifier: public TypeSpecifier {
@@ -153,7 +153,7 @@ struct CharSpecifier: public TypeSpecifier {
     CharSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
 
     void print(std::ostream& stream);
-    TypePtr toType() { return CHAR_TYPE; }
+    TypePtr toType(ScopePtr&) { return CHAR_TYPE; }
 };
 
 struct IntSpecifier: public TypeSpecifier {
@@ -162,7 +162,7 @@ struct IntSpecifier: public TypeSpecifier {
 
     void print(std::ostream& stream);
 
-    TypePtr toType() { return INT_TYPE; }
+    TypePtr toType(ScopePtr&) { return INT_TYPE; }
 };
 
 struct StructSpecifier: public TypeSpecifier {
@@ -172,7 +172,7 @@ struct StructSpecifier: public TypeSpecifier {
     void print(std::ostream& stream);
 
     void addComponent(Declaration declaration);
-    TypePtr toType();
+    TypePtr toType(ScopePtr&);
 
     private:
     std::vector<Declaration> _components;

@@ -410,7 +410,7 @@ struct LessThanExpression: public BinaryExpression {
         auto right_type = this->_right->typecheck(scope);
 
         if (!left_type->equals(right_type)) {
-            errorloc(this->loc, "Both sides of a less than expression must have the same type");
+            errorloc(this->loc, "Cannot compare two values of different types");
         }
         return INT_TYPE;
     }
@@ -428,7 +428,7 @@ struct EqualExpression: public BinaryExpression {
         auto right_type = this->_right->typecheck(scope);
 
         if (!left_type->equals(right_type)) {
-            errorloc(this->loc, "Both sides of an equal expression must have the same type");
+            errorloc(this->loc, "Cannot compare two values of different types");
         }
         return INT_TYPE;
     }
@@ -446,7 +446,7 @@ struct UnequalExpression: public BinaryExpression {
         auto right_type = this->_right->typecheck(scope);
 
         if (!left_type->equals(right_type)) {
-            errorloc(this->loc, "Both sides of unequal expression must have the same type");
+            errorloc(this->loc, "Cannot compare two values of different types");
         }
         return INT_TYPE;
     }

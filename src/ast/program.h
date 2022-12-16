@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
 #include "declarator.h"
@@ -9,9 +10,10 @@
 
 struct FunctionDefinition {
     public:
-    FunctionDefinition(Declaration declaration, BlockStatement block)
+    FunctionDefinition(Declaration declaration, BlockStatement block, std::unordered_set<Symbol> labels)
         : _declaration(std::move(declaration))
-        , _block(std::move(block)) {};
+        , _block(std::move(block))
+        , _labels(labels) {};
 
     void print(std::ostream& stream);
     friend std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition);
@@ -21,6 +23,7 @@ struct FunctionDefinition {
     private:
     Declaration _declaration;
     BlockStatement _block;
+    std::unordered_set<Symbol> _labels;
 };
 
 struct Program {
