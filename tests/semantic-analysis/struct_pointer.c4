@@ -1,0 +1,11 @@
+int main() {
+    struct Struct {
+        int a;
+    } instance;
+    struct Struct (*ref);
+
+    instance.a = 42;
+
+    int b;
+    b = ref->a;
+}

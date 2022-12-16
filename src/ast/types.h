@@ -146,7 +146,11 @@ struct Scope {
         this->vars.insert({ name, type });
     }
 
-    // TODO: Vars & things in parent scope also present in child scope
+    // Returns whether the struct was already defined
+    bool addStruct(Symbol name, StructType type) {
+        return !(this->structs.insert({ name, type }).second);
+    }
+
     std::optional<std::shared_ptr<Scope>> parent;
 
     std::unordered_set<Symbol> labels;

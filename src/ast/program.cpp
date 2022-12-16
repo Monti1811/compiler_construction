@@ -12,7 +12,7 @@ void FunctionDefinition::print(std::ostream& stream) {
 
 void FunctionDefinition::typecheck(ScopePtr& scope) {
     // Add this function's signature to the scope given as an argument
-    auto function = this->_declaration.toType();
+    auto function = this->_declaration.toType(scope);
     scope->addDeclaration(function.first, function.second);
 
     auto& decl = this->_declaration._declarator;
@@ -24,7 +24,7 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     // Create inner function scope and add function arguments
     auto function_scope = std::make_shared<Scope>(scope, this->_labels);
     for (auto& par_decl : function_decl->_parameters) {
-        auto parameter = par_decl.toType();
+        auto parameter = par_decl.toType(function_scope);
         function_scope->addDeclaration(parameter.first, parameter.second);
     }
     this->_block.typecheck(function_scope);
