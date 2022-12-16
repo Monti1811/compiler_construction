@@ -13,7 +13,10 @@ void FunctionDefinition::print(std::ostream& stream) {
 void FunctionDefinition::typecheck(ScopePtr& scope) {
     // Add this function's signature to the scope given as an argument
     auto function = this->_declaration.toType(scope);
-    scope->addDeclaration(function.first, function.second);
+    auto duplicate = scope->addDeclaration(function.first, function.second);
+    if (duplicate) {
+        errorloc(this->_declaration._loc, "Duplicate function");
+    }
 
     auto& decl = this->_declaration._declarator;
     if (decl->kind != DeclaratorKind::FUNCTION) {
@@ -82,7 +85,6 @@ void Program::typecheck() {
 
     for (bool is_decl : this->_is_declaration) {
         if (is_decl) {
-            // TODO: Typecheck declaration
             if (decl_iter == this->_declarations.end()) {
                 error("Internal error: Tried to read non-existent declaration");
             }
