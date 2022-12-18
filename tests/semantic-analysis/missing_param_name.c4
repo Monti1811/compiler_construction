@@ -1,0 +1,9 @@
+int f(int x, int) {
+	return 1;
+}
+
+//Function Defintion:
+/* If the declarator includes a parameter type list, the declaration of each parameter shall
+  include an identifier, except for the special case of a parameter list consisting of a single
+  parameter of type void, in which case there shall not be an identifier. No declaration list
+  shall follow*/

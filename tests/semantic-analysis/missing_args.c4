@@ -1,0 +1,9 @@
+int f(int x) {
+	return x;
+}
+
+int main(void) {
+	int y;
+	y = f();
+	return y;
+}

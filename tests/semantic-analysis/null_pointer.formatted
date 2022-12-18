@@ -1,0 +1,11 @@
+int (f(int x))
+{
+	int (*p);
+	(p = 0);
+	(p = (p + 1));
+	if (p == 0) {
+		x = (x) ? p : 0;
+		x = (x) ? p : np;
+	}
+	return (*p);
+}

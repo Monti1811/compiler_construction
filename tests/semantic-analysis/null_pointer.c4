@@ -1,0 +1,12 @@
+int f(int x) {
+	void *np;
+	int *p;
+	p = 0;
+	np = p;
+	if (p == 0) {
+		x = (x) ? p : 0;
+		x = (x) ? p : np;
+	}
+	p = p + 1;
+	return *p;
+}
