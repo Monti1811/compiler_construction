@@ -36,3 +36,8 @@ label3:
 	}
 	return x;
 }
+
+void (g())
+{
+	return;
+}
