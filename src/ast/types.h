@@ -71,8 +71,8 @@ struct StructType: public Type {
     StructType()
         : Type(TypeKind::TY_STRUCT) {};
 
-    void addField(Symbol name, TypePtr const& type) {
-        this->fields.insert({ name, type });
+    bool addField(Symbol name, TypePtr const& type) {
+        return !this->fields.insert({ name, type }).second;
     }
 
     bool equals(TypePtr const&) {

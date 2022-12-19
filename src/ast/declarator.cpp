@@ -119,7 +119,9 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
     auto type = std::make_shared<StructType>();
     for (auto& field : this->_components) {
         auto pair = field.toType(scope);
-        type->addField(pair.first, std::move(pair.second));
+        if (type->addField(pair.first, std::move(pair.second))) {
+            errorloc(field._loc, "duplicate field");
+        }
     }
     if (this->_tag.has_value()) {
         auto duplicate = scope->addStruct(this->_tag.value(), *type);
