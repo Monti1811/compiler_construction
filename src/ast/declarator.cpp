@@ -119,13 +119,37 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
     auto type = std::make_shared<StructType>();
     for (auto& field : this->_components) {
         auto pair = field.toType(scope);
-        type->addField(pair.first, std::move(pair.second));
+        // check wether field is a struct
+        if (pair.second->kind == TY_STRUCT) {
+            // check if struct is not instantiated
+            if (!field._declarator->getName()) {
+                auto anonymous_struct = std::static_pointer_cast<StructType>(pair.second);
+                if (!anonymous_struct->isAnonymous()) {
+                    continue;
+                }
+                for (auto& struct_field : anonymous_struct->fields) {
+                    // TODO: loc not quite correct
+                    if (type->addField(struct_field.first, std::move(struct_field.second))) {
+                        errorloc(field._loc, "duplicate field");
+                    }
+                }
+                continue;
+            }
+        }
+        if (field._declarator->isAbstract()) {
+            errorloc(field._loc, "abstract field in a struct");
+        }
+        if (type->addField(pair.first, std::move(pair.second))) {
+            errorloc(field._loc, "duplicate field");
+        }
     }
     if (this->_tag.has_value()) {
         auto duplicate = scope->addStruct(this->_tag.value(), *type);
         if (duplicate && this->_components.size() > 0) {
             errorloc(this->_loc, "Duplicate struct");
         }
+    } else {
+        type->setAnonymous(true);
     }
     return type;
 }

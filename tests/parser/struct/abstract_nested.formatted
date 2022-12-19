@@ -4,5 +4,5 @@ struct s
 	{
 		int i;
 	};
-	int;
+	int x;
 };

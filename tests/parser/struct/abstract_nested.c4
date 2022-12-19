@@ -1,4 +1,4 @@
 struct s {
     struct { int i; };
-    int;
+    int x;
 };

@@ -4,6 +4,7 @@
 #include <optional>
 #include <unordered_map>
 #include <vector>
+#include <iostream>
 
 #include "../util/symbol_internalizer.h"
 
@@ -70,8 +71,8 @@ struct StructType: public Type {
     StructType()
         : Type(TypeKind::TY_STRUCT) {};
 
-    void addField(Symbol name, TypePtr const& type) {
-        this->fields.insert({ name, type });
+    bool addField(Symbol name, TypePtr const& type) {
+        return !this->fields.insert({ name, type }).second;
     }
 
     bool equals(TypePtr const&) {
@@ -79,7 +80,16 @@ struct StructType: public Type {
         return false;
     }
 
+    void setAnonymous(bool anon) {
+        anonymous = anon;
+    }
+
+    bool isAnonymous() {
+        return anonymous;
+    }
+
     std::unordered_map<Symbol, TypePtr> fields;
+    bool anonymous;
 };
 
 struct FunctionType: public Type {
@@ -104,10 +114,12 @@ struct Scope {
     Scope() : parent(std::nullopt) {};
     Scope(std::shared_ptr<Scope> parent)
         : parent(parent)
+        , functionReturnType(parent->functionReturnType)
         , loop_counter(parent->loop_counter) {};
     Scope(std::shared_ptr<Scope> parent, std::unordered_set<Symbol> labels)
         : parent(parent)
         , labels(labels)
+        , functionReturnType(parent->functionReturnType)
         , loop_counter(parent->loop_counter) {};
 
     // TODO: Remember to put function pointers in here as well
@@ -134,6 +146,10 @@ struct Scope {
         return structs.at(ident);
     }
 
+    std::optional<TypePtr> getFunctionReturnType() {
+        return functionReturnType;
+    }
+
     bool isLabelDefined(Symbol label) {
         if (this->labels.find(label) == this->labels.end()) {
             if (!parent.has_value()) {
@@ -154,9 +170,17 @@ struct Scope {
         return !(this->structs.insert({ name, type }).second);
     }
 
+    // adds the function return type
+    void addFunctionReturnType(TypePtr returnType) {
+        this->functionReturnType = returnType;
+    }
+
     std::optional<std::shared_ptr<Scope>> parent;
 
     std::unordered_set<Symbol> labels;
+    
+    // used to typecheck a return-statement
+    std::optional<TypePtr> functionReturnType;
 
     int loop_counter = 0;
 };

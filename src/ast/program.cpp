@@ -28,8 +28,11 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     auto function_scope = std::make_shared<Scope>(scope, this->_labels);
     for (auto& par_decl : function_decl->_parameters) {
         auto parameter = par_decl.toType(function_scope);
-        function_scope->addDeclaration(parameter.first, parameter.second);
+        if (function_scope->addDeclaration(parameter.first, parameter.second)) {
+            errorloc(par_decl._loc, "parameter names have to be unique");
+        }
     }
+    function_scope->addFunctionReturnType(function.second);
     this->_block.typecheck(function_scope);
 }
 

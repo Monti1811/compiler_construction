@@ -45,5 +45,4 @@ label3:
 	}
 	
 	return x;
-	return;
 }
