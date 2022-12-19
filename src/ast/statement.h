@@ -258,9 +258,29 @@ struct ReturnStatement: public JumpStatement {
 
     void print(std::ostream& stream);
 
-    void typecheck(ScopePtr&) {
-        // TODO: Check that expression matches return type of current function
-        // Also if current function has return type void, expr must not be set
+    void typecheck(ScopePtr& scope) {
+        std::optional<TypePtr> opt = scope->getFunctionReturnType();
+        if (!opt.has_value()) {
+            errorloc(this->loc, "Return Statement in a non-function block");
+        }
+        auto functionReturnType = std::static_pointer_cast<PointerType>(opt.value())->inner;
+        functionReturnType = std::static_pointer_cast<FunctionType>(functionReturnType)->return_type;
+        if (functionReturnType->kind == TypeKind::TY_VOID) {
+            if (_expr.has_value()) {
+                errorloc(_expr.value()->loc, "return statement must be empty if return type is void");
+            }
+            return;
+        } 
+        if (!_expr.has_value()) {
+            errorloc(this->loc, "expected a return expression but got none");
+        }
+        auto exprType = _expr.value()->typecheck(scope);
+        if (!exprType->equals(functionReturnType)) {
+            if ( (exprType->kind == TY_CHAR && functionReturnType->kind == TY_INT) || (exprType->kind == TY_INT && functionReturnType->kind == TY_CHAR) ) {
+                return;
+            }
+            errorloc(_expr.value()->loc, "return type and type of return expr did not match");
+        }
     }
 };
 

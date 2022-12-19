@@ -4,6 +4,7 @@
 #include <optional>
 #include <unordered_map>
 #include <vector>
+#include <iostream>
 
 #include "../util/symbol_internalizer.h"
 
@@ -104,10 +105,12 @@ struct Scope {
     Scope() : parent(std::nullopt) {};
     Scope(std::shared_ptr<Scope> parent)
         : parent(parent)
+        , functionReturnType(parent->functionReturnType)
         , loop_counter(parent->loop_counter) {};
     Scope(std::shared_ptr<Scope> parent, std::unordered_set<Symbol> labels)
         : parent(parent)
         , labels(labels)
+        , functionReturnType(parent->functionReturnType)
         , loop_counter(parent->loop_counter) {};
 
     // TODO: Remember to put function pointers in here as well
@@ -134,6 +137,10 @@ struct Scope {
         return structs.at(ident);
     }
 
+    std::optional<TypePtr> getFunctionReturnType() {
+        return functionReturnType;
+    }
+
     bool isLabelDefined(Symbol label) {
         if (this->labels.find(label) == this->labels.end()) {
             if (!parent.has_value()) {
@@ -154,9 +161,17 @@ struct Scope {
         return !(this->structs.insert({ name, type }).second);
     }
 
+    // adds the function return type
+    void addFunctionReturnType(TypePtr returnType) {
+        this->functionReturnType = returnType;
+    }
+
     std::optional<std::shared_ptr<Scope>> parent;
 
     std::unordered_set<Symbol> labels;
+    
+    // used to typecheck a return-statement
+    std::optional<TypePtr> functionReturnType;
 
     int loop_counter = 0;
 };
