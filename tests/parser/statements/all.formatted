@@ -35,5 +35,4 @@ label3:
 		break;
 	}
 	return x;
-	return;
 }
