@@ -80,7 +80,16 @@ struct StructType: public Type {
         return false;
     }
 
+    void setAnonymous(bool anon) {
+        anonymous = anon;
+    }
+
+    bool isAnonymous() {
+        return anonymous;
+    }
+
     std::unordered_map<Symbol, TypePtr> fields;
+    bool anonymous;
 };
 
 struct FunctionType: public Type {

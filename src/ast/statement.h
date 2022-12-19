@@ -276,9 +276,11 @@ struct ReturnStatement: public JumpStatement {
         }
         auto exprType = _expr.value()->typecheck(scope);
         if (!exprType->equals(functionReturnType)) {
-            if ( (exprType->kind == TY_CHAR && functionReturnType->kind == TY_INT) || (exprType->kind == TY_INT && functionReturnType->kind == TY_CHAR) ) {
+            // NOTE: Due to the restricted language subset, type compatibility degenerates to equality
+            /* if ( (exprType->kind == TY_CHAR && functionReturnType->kind == TY_INT) 
+            || (exprType->kind == TY_INT && functionReturnType->kind == TY_CHAR) ) {
                 return;
-            }
+            } */
             errorloc(_expr.value()->loc, "return type and type of return expr did not match");
         }
     }

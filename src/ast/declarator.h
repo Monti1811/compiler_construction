@@ -80,11 +80,13 @@ struct Declaration {
 struct PrimitiveDeclarator: public Declarator {
     PrimitiveDeclarator(Locatable loc, Symbol ident)
         : Declarator(loc, false, DeclaratorKind::PRIMITIVE)
-        , _ident(ident) {};
+        , _ident(ident)
+        , abstract(false) {};
 
     PrimitiveDeclarator(Locatable loc)
         : Declarator(loc, true, DeclaratorKind::PRIMITIVE)
-        , _ident(nullptr) {};
+        , _ident(nullptr)
+        , abstract(true) {};
 
     Symbol _ident;
 
@@ -96,6 +98,11 @@ struct PrimitiveDeclarator: public Declarator {
     TypePtr wrapType(TypePtr const& type, ScopePtr&) {
         return type;
     }
+    bool isAbstract() {
+        return abstract;
+    }
+
+    bool abstract;
 };
 
 struct FunctionDeclarator : public Declarator {
@@ -173,6 +180,9 @@ struct StructSpecifier: public TypeSpecifier {
 
     void addComponent(Declaration declaration);
     TypePtr toType(ScopePtr&);
+    bool isAnonymous() {
+        return !_tag.has_value();
+    }
 
     private:
     std::vector<Declaration> _components;
