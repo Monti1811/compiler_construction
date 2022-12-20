@@ -110,10 +110,12 @@ TypePtr CallExpression::typecheck(ScopePtr& scope) {
         }
         auto function_type = std::static_pointer_cast<FunctionType>(callee_type);
         if (this->_arguments.size() != function_type->args.size()) {
-            // TODO: Technically not quite correct, a function f() can accept any number of args
-            errorloc(this->loc, "Invalid number of arguments");
+            // a function f() can accept any number of args
+            if (function_type->args.size() != 0) {
+                errorloc(this->loc, "Invalid number of arguments");
+            }
         }
-        for (size_t i = 0; i < this->_arguments.size(); i++) {
+        for (size_t i = 0; i < function_type->args.size(); i++) {
             auto arg_type = this->_arguments[i]->typecheck(scope);
             if (!arg_type->equals(function_type->args[i])) {
                 errorloc(this->_arguments[i]->loc, "Incorrect argument type");

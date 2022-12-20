@@ -138,13 +138,13 @@ struct Scope {
             }
             return parent.value()->getTypeVar(ident);
         }
-        TypePtr ret = vars.at(ident);
+        /* TypePtr ret = vars.at(ident);
         if (ret->kind == TY_STRUCT) {
             auto struct_type = std::static_pointer_cast<StructType>(ret);
             auto tag = struct_type->_tag;
             auto full_struct_type = getTypeStruct(tag);
             return full_struct_type;
-        }
+        } */
         return vars.at(ident);
     }
 
@@ -174,6 +174,17 @@ struct Scope {
 
     // Returns whether the variable was already defined
     bool addDeclaration(Symbol name, TypePtr const& type) {
+        if (type->kind == TY_STRUCT) {
+            auto struct_type = std::static_pointer_cast<StructType>(type);
+            auto tag = struct_type->_tag;
+            auto full_struct_type = getTypeStruct(tag);
+            if (full_struct_type.has_value()) {
+                return !(this->vars.insert({ name, full_struct_type.value() }).second);
+            }
+            // struct var cannot be defined with this struct type
+            // gives duplicate error
+            return true;
+        }
         return !(this->vars.insert({ name, type }).second);
     }
 

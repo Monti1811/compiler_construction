@@ -27,6 +27,9 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     // Create inner function scope and add function arguments
     auto function_scope = std::make_shared<Scope>(scope, this->_labels);
     for (auto& par_decl : function_decl->_parameters) {
+        if (par_decl._declarator->isAbstract()) {
+            errorloc(par_decl._loc, "parameter names have to be declared in a function with function block");
+        }
         auto parameter = par_decl.toType(function_scope);
         if (function_scope->addDeclaration(parameter.first, parameter.second)) {
             errorloc(par_decl._loc, "parameter names have to be unique");
