@@ -144,7 +144,11 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
         }
     }
     if (this->_tag.has_value()) {
-        auto duplicate = scope->addStruct(this->_tag.value(), *type);
+        type->setTag(this->_tag.value());
+        // check wether it's just a variable with struct type
+        // TODO: know from the start
+        if (type->fields.size() == 0) return type;
+        auto duplicate = scope->addStruct(this->_tag.value(), type);
         if (duplicate && this->_components.size() > 0) {
             errorloc(this->_loc, "Duplicate struct");
         }
