@@ -26,13 +26,30 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
 
     // Create inner function scope and add function arguments
     auto function_scope = std::make_shared<Scope>(scope, this->_labels);
-    for (auto& par_decl : function_decl->_parameters) {
-        if (par_decl._declarator->isAbstract()) {
-            errorloc(par_decl._loc, "parameter names have to be declared in a function with function block");
+    if (function_decl->_parameters.size() >= 1) {
+        auto& first_par_decl = function_decl->_parameters.at(0);
+        auto first_parameter = first_par_decl.toType(function_scope);
+        if (first_par_decl._declarator->isAbstract()) {
+            if (first_parameter.second->kind != TY_VOID) {
+                errorloc(first_par_decl._loc, "parameter names have to be declared in a function with function block");
+            } else {
+                if (function_decl->_parameters.size() > 1) {
+                    errorloc(function_decl->_parameters.at(1)._declarator->loc, "void must be the only parameter");
+                }
+            }
         }
-        auto parameter = par_decl.toType(function_scope);
-        if (function_scope->addDeclaration(parameter.first, parameter.second)) {
-            errorloc(par_decl._loc, "parameter names have to be unique");
+        if (function_scope->addDeclaration(first_parameter.first, first_parameter.second)) {
+            errorloc(first_par_decl._loc, "parameter names have to be unique");
+        }
+        for (size_t i = 1; i < function_decl->_parameters.size(); i++) {
+            auto& par_decl = function_decl->_parameters.at(i);
+            if (par_decl._declarator->isAbstract()) {
+                errorloc(par_decl._loc, "parameter names have to be declared in a function with function block");
+            }
+            auto parameter = par_decl.toType(function_scope);
+            if (function_scope->addDeclaration(parameter.first, parameter.second)) {
+                errorloc(par_decl._loc, "parameter names have to be unique");
+            }
         }
     }
     function_scope->addFunctionReturnType(function.second);

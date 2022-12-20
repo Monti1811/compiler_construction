@@ -180,10 +180,8 @@ struct Scope {
             auto full_struct_type = getTypeStruct(tag);
             if (full_struct_type.has_value()) {
                 return !(this->vars.insert({ name, full_struct_type.value() }).second);
-            }
-            // struct var cannot be defined with this struct type
-            // gives duplicate error
-            return true;
+            } 
+            return !(this->vars.insert({ name, struct_type }).second);
         }
         return !(this->vars.insert({ name, type }).second);
     }

@@ -112,6 +112,10 @@ TypePtr CallExpression::typecheck(ScopePtr& scope) {
         if (this->_arguments.size() != function_type->args.size()) {
             // a function f() can accept any number of args
             if (function_type->args.size() != 0) {
+                // if function is defined as f(void), f() is correct call nothing else
+                if (this->_arguments.size() == 0 && function_type->args.at(0)->kind == TY_VOID) {
+                    return function_type->return_type;
+                }
                 errorloc(this->loc, "Invalid number of arguments");
             }
         }
