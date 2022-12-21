@@ -608,6 +608,12 @@ Program Parser::parseProgram() {
         switch (peekToken().Kind) {
             case TokenKind::TK_SEMICOLON: {
                 expect(TK_SEMICOLON, ";");
+                // abstract function
+                if (declaration._declarator->kind == FUNCTION) {
+                    auto function = FunctionDefinition(std::move(declaration), std::nullopt, this->_labels);
+                    program.addFunctionDefinition(std::move(function));
+                    break;
+                }
                 program.addDeclaration(std::move(declaration));
                 break;
             }

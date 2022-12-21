@@ -10,7 +10,7 @@
 
 struct FunctionDefinition {
     public:
-    FunctionDefinition(Declaration declaration, BlockStatement block, std::unordered_set<Symbol> labels)
+    FunctionDefinition(Declaration declaration, std::optional<BlockStatement> block, std::unordered_set<Symbol> labels)
         : _declaration(std::move(declaration))
         , _block(std::move(block))
         , _labels(labels) {};
@@ -19,10 +19,13 @@ struct FunctionDefinition {
     friend std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition);
 
     void typecheck(ScopePtr& scope);
+    bool isAbstract() {
+        return !_block.has_value();
+    }
 
     private:
     Declaration _declaration;
-    BlockStatement _block;
+    std::optional<BlockStatement> _block;
     std::unordered_set<Symbol> _labels;
 };
 

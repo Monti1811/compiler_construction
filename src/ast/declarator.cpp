@@ -25,6 +25,7 @@ void Declaration::print(std::ostream& stream) {
 
 void Declaration::typecheck(ScopePtr& scope) {
     auto pair = this->toType(scope);
+    std::cout << "type checking declaration : " << *(this->_declarator->getName()) << "\n";
     if (this->_declarator->isAbstract()) {
         return;
     }
@@ -69,23 +70,6 @@ void FunctionDeclarator::print(std::ostream& stream) {
 }
 
 void FunctionDeclarator::addParameter(Declaration param) {
-    // filter void params, maybe structs as well
-    auto param_kind = param._specifier->getKind();
-    if (this->_parameters.size() == 0) {
-        // reject void, if decl isn't abstract
-        if (param_kind == TY_VOID && !param._declarator->isAbstract()) {
-            errorloc(param._loc, "param void must be abstract");
-        }
-    } else {
-        // reject any void
-        if (param_kind == TY_VOID) {
-            errorloc(param._loc, "param must not be of type void");
-        }
-        // reject any param if first param is void
-        if (this->_parameters.at(0)._specifier->getKind() == TY_VOID) {
-            errorloc(param._loc, "void must be the only the parameter");
-        }
-    }
     this->_parameters.push_back(std::move(param));
 }
 
