@@ -280,8 +280,5 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
             errorloc(this->loc, "Cannot assign to rvalue");
         }
         // TODO: more type checking
-        if (!left_type->equals(right_type)) {
-            errorloc(this->loc, "types of assign expression must be equal");
-        }
         return left_type;
     }
