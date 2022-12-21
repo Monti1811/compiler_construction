@@ -25,7 +25,6 @@ void Declaration::print(std::ostream& stream) {
 
 void Declaration::typecheck(ScopePtr& scope) {
     auto pair = this->toType(scope);
-    std::cout << "type checking declaration : " << *(this->_declarator->getName()) << "\n";
     if (this->_declarator->isAbstract()) {
         return;
     }
