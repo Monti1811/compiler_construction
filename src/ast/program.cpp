@@ -6,7 +6,11 @@ std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition) {
 }
 
 void FunctionDefinition::print(std::ostream& stream) {
-    stream << this->_declaration << '\n';
+    stream << this->_declaration;
+    if (this->isAbstract()) {
+        stream << ';';
+    }
+    stream << '\n';
     if (!this->isAbstract()) {
         this->_block.value().print(stream);
     }
