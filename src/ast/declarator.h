@@ -49,7 +49,6 @@ struct TypeSpecifier {
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<TypeSpecifier>& type);
 
     virtual TypePtr toType(ScopePtr& scope) = 0;
-    virtual TypeKind getKind() = 0;
 
     protected:
     const Locatable _loc;
@@ -154,7 +153,6 @@ struct VoidSpecifier: public TypeSpecifier {
     void print(std::ostream& stream);
 
     TypePtr toType(ScopePtr&) { return VOID_TYPE; }
-    TypeKind getKind() { return TY_VOID; }
 };
 
 struct CharSpecifier: public TypeSpecifier {
@@ -163,7 +161,6 @@ struct CharSpecifier: public TypeSpecifier {
 
     void print(std::ostream& stream);
     TypePtr toType(ScopePtr&) { return CHAR_TYPE; }
-    TypeKind getKind() { return TY_CHAR; }
 };
 
 struct IntSpecifier: public TypeSpecifier {
@@ -173,7 +170,6 @@ struct IntSpecifier: public TypeSpecifier {
     void print(std::ostream& stream);
 
     TypePtr toType(ScopePtr&) { return INT_TYPE; }
-    TypeKind getKind() { return TY_INT; }
 };
 
 struct StructSpecifier: public TypeSpecifier {
@@ -184,7 +180,6 @@ struct StructSpecifier: public TypeSpecifier {
 
     void addComponent(Declaration declaration);
     TypePtr toType(ScopePtr&);
-    TypeKind getKind() { return TY_STRUCT; }
     bool isAnonymous() {
         return !_tag.has_value();
     }
