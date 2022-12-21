@@ -9,6 +9,7 @@ void FunctionDefinition::print(std::ostream& stream) {
     stream << this->_declaration;
     if (this->isAbstract()) {
         stream << ';';
+        return;
     }
     stream << '\n';
     if (!this->isAbstract()) {
