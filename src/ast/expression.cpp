@@ -157,7 +157,7 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
 
         auto ident = this->_ident->_ident;
         if (struct_type->fields.find(ident) == struct_type->fields.end()) {
-            errorloc(this->loc, "Field does not exist on this struct");
+            errorloc(this->loc, "Field " + *ident + " does not exist on this struct");
         }
 
         return struct_type->fields.at(ident);

@@ -184,15 +184,6 @@ struct Scope {
 
     // Returns whether the variable was already defined
     bool addDeclaration(Symbol name, TypePtr const& type) {
-        if (type->kind == TY_STRUCT) {
-            auto struct_type = std::static_pointer_cast<StructType>(type);
-            auto tag = struct_type->_tag;
-            auto full_struct_type = getTypeStruct(tag);
-            if (full_struct_type.has_value()) {
-                return !(this->vars.insert({ name, full_struct_type.value() }).second);
-            } 
-            return !(this->vars.insert({ name, struct_type }).second);
-        }
         return !(this->vars.insert({ name, type }).second);
     }
 
