@@ -191,16 +191,16 @@ TypePtr PointerExpression::typecheck(ScopePtr& scope) {
 
 TypePtr NegationExpression::typecheck(ScopePtr& scope) {
         auto inner_type = this->_inner->typecheck(scope);
-        if (inner_type->kind != TypeKind::TY_INT) {
-            errorloc(this->loc, "type to be negated has to be int");
+        if (!inner_type->isArithmetic()) {
+            errorloc(this->loc, "type to be negated has to be arithmetic");
         }
         return INT_TYPE;
     }
 
 TypePtr LogicalNegationExpression::typecheck(ScopePtr& scope) {
         auto inner_type = _inner->typecheck(scope);
-        if (inner_type->kind != TypeKind::TY_INT) {
-            errorloc(this->loc, "type to be logcially negated has to be int");
+        if (!inner_type->isScalar()) {
+            errorloc(this->loc, "type to be logcially negated has to be scalar");
         }
         return INT_TYPE;
     }
@@ -208,12 +208,10 @@ TypePtr LogicalNegationExpression::typecheck(ScopePtr& scope) {
 TypePtr BinaryExpression::typecheck(ScopePtr& scope) {
         auto left_type = _left->typecheck(scope);
         auto right_type = _right->typecheck(scope);
-        // TODO: Check for arithmetic types, not just int
-        if (left_type->kind != TypeKind::TY_INT) {
-            errorloc(this->loc, "left side of a binary expression must be of type int");
-        } 
-        if (right_type->kind != TypeKind::TY_INT) {
-            errorloc(this->loc, "right side of a binary expression must be of type int");
+
+        if (!left_type->isArithmetic() || !right_type->isArithmetic()) 
+        {
+            errorloc(this->loc, "both sides of an arithmetic binary expression must be of arithemic type");
         }
         return INT_TYPE;
     }
@@ -276,9 +274,13 @@ TypePtr TernaryExpression::typecheck(ScopePtr& scope) {
     }
 
 TypePtr AssignExpression::typecheck(ScopePtr& scope) {
+        auto right_type = this->_right->typecheck(scope);
         auto left_type = this->_left->typecheck(scope);
         if (!this->_left->isLvalue()) {
             errorloc(this->loc, "Cannot assign to rvalue");
+        }
+        if (!left_type->equals(right_type)) {
+            errorloc(this->loc, "types of assign expression must be equal");
         }
         return left_type;
     }

@@ -37,6 +37,16 @@ struct Type {
         }
     }
 
+    bool isArithmetic() {
+        switch(this->kind) {
+            case TypeKind::TY_INT:
+            case TypeKind::TY_CHAR:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     const TypeKind kind;
 };
 
