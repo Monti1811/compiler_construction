@@ -110,10 +110,16 @@ TypePtr CallExpression::typecheck(ScopePtr& scope) {
         }
         auto function_type = std::static_pointer_cast<FunctionType>(callee_type);
         if (this->_arguments.size() != function_type->args.size()) {
-            // TODO: Technically not quite correct, a function f() can accept any number of args
-            errorloc(this->loc, "Invalid number of arguments");
+            // a function f() can accept any number of args
+            if (function_type->args.size() != 0) {
+                // if function is defined as f(void), f() is correct call nothing else
+                if (this->_arguments.size() == 0 && function_type->args.at(0)->kind == TY_VOID) {
+                    return function_type->return_type;
+                }
+                errorloc(this->loc, "Invalid number of arguments");
+            }
         }
-        for (size_t i = 0; i < this->_arguments.size(); i++) {
+        for (size_t i = 0; i < function_type->args.size(); i++) {
             auto arg_type = this->_arguments[i]->typecheck(scope);
             if (!arg_type->equals(function_type->args[i])) {
                 errorloc(this->_arguments[i]->loc, "Incorrect argument type");
@@ -151,7 +157,7 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
 
         auto ident = this->_ident->_ident;
         if (struct_type->fields.find(ident) == struct_type->fields.end()) {
-            errorloc(this->loc, "Field does not exist on this struct");
+            errorloc(this->loc, "Field " + *ident + " does not exist on this struct");
         }
 
         return struct_type->fields.at(ident);
@@ -185,16 +191,16 @@ TypePtr PointerExpression::typecheck(ScopePtr& scope) {
 
 TypePtr NegationExpression::typecheck(ScopePtr& scope) {
         auto inner_type = this->_inner->typecheck(scope);
-        if (inner_type->kind != TypeKind::TY_INT) {
-            errorloc(this->loc, "type to be negated has to be int");
+        if (!inner_type->isArithmetic()) {
+            errorloc(this->loc, "type to be negated has to be arithmetic");
         }
         return INT_TYPE;
     }
 
 TypePtr LogicalNegationExpression::typecheck(ScopePtr& scope) {
         auto inner_type = _inner->typecheck(scope);
-        if (inner_type->kind != TypeKind::TY_INT) {
-            errorloc(this->loc, "type to be logcially negated has to be int");
+        if (!inner_type->isScalar()) {
+            errorloc(this->loc, "type to be logcially negated has to be scalar");
         }
         return INT_TYPE;
     }
@@ -202,12 +208,10 @@ TypePtr LogicalNegationExpression::typecheck(ScopePtr& scope) {
 TypePtr BinaryExpression::typecheck(ScopePtr& scope) {
         auto left_type = _left->typecheck(scope);
         auto right_type = _right->typecheck(scope);
-        // TODO: Check for arithmetic types, not just int
-        if (left_type->kind != TypeKind::TY_INT) {
-            errorloc(this->loc, "left side of a binary expression must be of type int");
-        } 
-        if (right_type->kind != TypeKind::TY_INT) {
-            errorloc(this->loc, "right side of a binary expression must be of type int");
+
+        if (!left_type->isArithmetic() || !right_type->isArithmetic()) 
+        {
+            errorloc(this->loc, "both sides of an arithmetic binary expression must be of arithemic type");
         }
         return INT_TYPE;
     }
@@ -270,9 +274,11 @@ TypePtr TernaryExpression::typecheck(ScopePtr& scope) {
     }
 
 TypePtr AssignExpression::typecheck(ScopePtr& scope) {
+        auto right_type = this->_right->typecheck(scope);
         auto left_type = this->_left->typecheck(scope);
         if (!this->_left->isLvalue()) {
             errorloc(this->loc, "Cannot assign to rvalue");
         }
+        // TODO: more type checking
         return left_type;
     }

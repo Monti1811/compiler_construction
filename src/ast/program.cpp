@@ -6,8 +6,15 @@ std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition) {
 }
 
 void FunctionDefinition::print(std::ostream& stream) {
-    stream << this->_declaration << '\n';
-    this->_block.print(stream);
+    stream << this->_declaration;
+    if (this->isAbstract()) {
+        stream << ';';
+        return;
+    }
+    stream << '\n';
+    if (!this->isAbstract()) {
+        this->_block.value().print(stream);
+    }
 }
 
 void FunctionDefinition::typecheck(ScopePtr& scope) {
@@ -24,16 +31,68 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     }
     auto function_decl = static_cast<FunctionDeclarator*>(decl.get());
 
+    if (this->isAbstract()) {
+        // filter void params, maybe structs as well
+        bool first_param_void = false;
+        bool first_loop_iter = true;
+        // first param: reject void, if decl isn't abstract (maybe not necessary)
+        // reject any param if first param is void and reject any void
+        for (auto& field : function_decl->_parameters) {
+            auto param = field.toType(scope);
+            if (first_loop_iter) {
+                first_loop_iter = false;
+                if (param.second->kind == TY_VOID) {
+                    first_param_void = true;
+                }
+            } else {
+                if (first_param_void) {
+                    errorloc(field._loc, "there must not be additional params if first param is void");
+                }
+                if (param.second->kind == TY_VOID) {
+                    errorloc(field._loc, "second or greater param must not be void");
+                }
+            }
+        }
+        return;
+    }
+
     // Create inner function scope and add function arguments
     auto function_scope = std::make_shared<Scope>(scope, this->_labels);
-    for (auto& par_decl : function_decl->_parameters) {
-        auto parameter = par_decl.toType(function_scope);
-        if (function_scope->addDeclaration(parameter.first, parameter.second)) {
-            errorloc(par_decl._loc, "parameter names have to be unique");
+
+    bool first_param_void = false;
+    bool first_loop_iter = true;
+
+    for (auto& field : function_decl->_parameters) {
+        auto param = field.toType(scope);
+
+        if (first_loop_iter) {
+            first_loop_iter = false;
+            // specials case if first param is of type void, else proceed normally
+            if (param.second->kind == TY_VOID) {
+                if (!field._declarator->isAbstract()) {
+                    errorloc(field._loc, "param void must be abstract");
+                }
+                first_param_void = true;
+                continue;
+            }
+        }
+
+        if (first_param_void && !first_loop_iter) {
+            errorloc(field._loc, "if first param is void there must not be additional params");
+        }
+        if (field._declarator->isAbstract()) {
+            errorloc(field._loc, "param must not be abstract");
+        }
+        if (param.second->kind == TY_VOID) {
+            errorloc(field._loc, "second or greater param must not be of type void");
+        }
+        if (function_scope->addDeclaration(param.first, param.second)) {
+            errorloc(field._loc, "parameter names have to be unique");
         }
     }
+
     function_scope->addFunctionReturnType(function.second);
-    this->_block.typecheck(function_scope);
+    this->_block.value().typecheck(function_scope);
 }
 
 void Program::addDeclaration(Declaration declaration) {

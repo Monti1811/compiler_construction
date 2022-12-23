@@ -144,7 +144,17 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
         }
     }
     if (this->_tag.has_value()) {
-        auto duplicate = scope->addStruct(this->_tag.value(), *type);
+        type->setTag(this->_tag.value());
+        // check wether it's just wether it is abstract
+        // TODO: know from the start
+        if (type->fields.size() == 0) {
+            auto full_struct_type = scope->getTypeStruct(this->_tag.value());
+            if (full_struct_type.has_value()) {
+                type = full_struct_type.value();
+            }
+            return type;
+        }
+        auto duplicate = scope->addStruct(this->_tag.value(), type);
         if (duplicate && this->_components.size() > 0) {
             errorloc(this->_loc, "Duplicate struct");
         }

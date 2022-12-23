@@ -37,6 +37,16 @@ struct Type {
         }
     }
 
+    bool isArithmetic() {
+        switch(this->kind) {
+            case TypeKind::TY_INT:
+            case TypeKind::TY_CHAR:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     const TypeKind kind;
 };
 
@@ -88,8 +98,13 @@ struct StructType: public Type {
         return anonymous;
     }
 
+    void setTag(Symbol tag) {
+        this->_tag = tag;
+    }
+
     std::unordered_map<Symbol, TypePtr> fields;
     bool anonymous;
+    Symbol _tag;
 };
 
 struct FunctionType: public Type {
@@ -124,7 +139,7 @@ struct Scope {
 
     // TODO: Remember to put function pointers in here as well
     std::unordered_map<Symbol, TypePtr> vars;
-    std::unordered_map<Symbol, StructType> structs;
+    std::unordered_map<Symbol, std::shared_ptr<StructType>> structs;
 
     std::optional<TypePtr> getTypeVar(Symbol ident) {
         if (vars.find(ident) == vars.end()) {
@@ -133,10 +148,17 @@ struct Scope {
             }
             return parent.value()->getTypeVar(ident);
         }
+        /* TypePtr ret = vars.at(ident);
+        if (ret->kind == TY_STRUCT) {
+            auto struct_type = std::static_pointer_cast<StructType>(ret);
+            auto tag = struct_type->_tag;
+            auto full_struct_type = getTypeStruct(tag);
+            return full_struct_type;
+        } */
         return vars.at(ident);
     }
 
-    std::optional<StructType> getTypeStruct(Symbol ident) {
+    std::optional<std::shared_ptr<StructType>> getTypeStruct(Symbol ident) {
         if (structs.find(ident) == structs.end()) {
             if (!parent.has_value()) {
                 return std::nullopt;
@@ -166,7 +188,7 @@ struct Scope {
     }
 
     // Returns whether the struct was already defined
-    bool addStruct(Symbol name, StructType type) {
+    bool addStruct(Symbol name, std::shared_ptr<StructType> type) {
         return !(this->structs.insert({ name, type }).second);
     }
 
