@@ -47,7 +47,7 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
             // specials case if first param is of type void, else proceed normally
             if (param.second->kind == TY_VOID) {
                 if (!field._declarator->isAbstract()) {
-                    errorloc(field._loc, "param void must be abstract");
+                    errorloc(this->_declaration._loc, "param void must be abstract");
                 }
                 first_param_void = true;
                 continue;
@@ -55,19 +55,19 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
         }
 
         if (first_param_void && !first_loop_iter) {
-            errorloc(field._loc, "if first param is void there must not be additional params");
+            errorloc(this->_declaration._loc, "if first param is void there must not be additional params");
         }
         if (param.second->kind == TY_VOID) {
-            errorloc(field._loc, "second or greater param must not be of type void");
+            errorloc(this->_declaration._loc, "second or greater param must not be of type void");
         }
         if (!this->isAbstract()) {
             if (field._declarator->isAbstract()) {
-                errorloc(field._loc, "param must not be abstract");
+                errorloc(this->_declaration._loc, "param must not be abstract");
             }
         }
         if (!field._declarator->isAbstract()) {
             if (function_scope->addDeclaration(param.first, param.second)) {
-            errorloc(field._loc, "parameter must to be unique");
+            errorloc(this->_declaration._loc, "parameter must to be unique");
             }
         }
     }
