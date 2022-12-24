@@ -201,7 +201,9 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
                 args.push_back(std::move(arg));
             }
             expect(TK_RPAREN, ")");
-            auto newPostfixExpr = std::make_unique<CallExpression>(getLoc(), std::move(postfixExpression.value()), std::move(args));
+            // wrong error location for wrong_num_args test
+            // change loc to name
+            auto newPostfixExpr = std::make_unique<CallExpression>(token, std::move(postfixExpression.value()), std::move(args));
             return parsePostfixExpression(std::move(newPostfixExpr));
         }
         // .id
