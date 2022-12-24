@@ -175,8 +175,12 @@ TypePtr SizeofTypeExpression::typecheck(ScopePtr& scope) {
 
 TypePtr ReferenceExpression::typecheck(ScopePtr& scope) {
         // TODO: Additional checks
+        /* if (!this->_inner->isLvalue()) {
+            errorloc(this->loc, "Cannot reference a non-lvalue");
+        } */
 
         auto inner_type = this->_inner->typecheck(scope);
+        // if (inner_type->kind == TY_FUNCTION) 
         return std::make_shared<PointerType>(inner_type);
     }
 

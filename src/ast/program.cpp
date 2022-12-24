@@ -31,37 +31,14 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     }
     auto function_decl = static_cast<FunctionDeclarator*>(decl.get());
 
-    if (this->isAbstract()) {
-        // filter void params, maybe structs as well
-        bool first_param_void = false;
-        bool first_loop_iter = true;
-        // first param: reject void, if decl isn't abstract (maybe not necessary)
-        // reject any param if first param is void and reject any void
-        for (auto& field : function_decl->_parameters) {
-            auto param = field.toType(scope);
-            if (first_loop_iter) {
-                first_loop_iter = false;
-                if (param.second->kind == TY_VOID) {
-                    first_param_void = true;
-                }
-            } else {
-                if (first_param_void) {
-                    errorloc(field._loc, "there must not be additional params if first param is void");
-                }
-                if (param.second->kind == TY_VOID) {
-                    errorloc(field._loc, "second or greater param must not be void");
-                }
-            }
-        }
-        return;
-    }
-
     // Create inner function scope and add function arguments
     auto function_scope = std::make_shared<Scope>(scope, this->_labels);
 
     bool first_param_void = false;
     bool first_loop_iter = true;
 
+    // combine typechecking fields of abstract and non-abstract functions
+    // saves code and doesn't make it more complicated
     for (auto& field : function_decl->_parameters) {
         auto param = field.toType(scope);
 
@@ -80,15 +57,24 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
         if (first_param_void && !first_loop_iter) {
             errorloc(field._loc, "if first param is void there must not be additional params");
         }
-        if (field._declarator->isAbstract()) {
-            errorloc(field._loc, "param must not be abstract");
-        }
         if (param.second->kind == TY_VOID) {
             errorloc(field._loc, "second or greater param must not be of type void");
         }
-        if (function_scope->addDeclaration(param.first, param.second)) {
-            errorloc(field._loc, "parameter names have to be unique");
+        if (!this->isAbstract()) {
+            if (field._declarator->isAbstract()) {
+                errorloc(field._loc, "param must not be abstract");
+            }
         }
+        if (!field._declarator->isAbstract()) {
+            if (function_scope->addDeclaration(param.first, param.second)) {
+            errorloc(field._loc, "parameter must to be unique");
+            }
+        }
+    }
+
+    // if the function is abstract we don't type check its block, because there is none
+    if (this->isAbstract()) {
+        return;
     }
 
     function_scope->addFunctionReturnType(function.second);
