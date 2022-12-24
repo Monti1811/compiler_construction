@@ -1,1 +1,1 @@
-1:1: error: Parameter identifier missing
+1:1: error: param must not be abstract

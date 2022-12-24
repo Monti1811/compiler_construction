@@ -1,1 +1,1 @@
-2:5: error: Variable was not defined
+2:10: error: Variable x is not defined

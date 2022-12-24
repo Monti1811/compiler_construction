@@ -1,7 +1,7 @@
 int main(int abc) {
-    return;
+    return abc;
 }
 
 int main(int abc) {
-    return;
+    return abc;
 }
