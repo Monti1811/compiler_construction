@@ -267,7 +267,9 @@ struct ReturnStatement: public JumpStatement {
         functionReturnType = std::static_pointer_cast<FunctionType>(functionReturnType)->return_type;
         if (functionReturnType->kind == TypeKind::TY_VOID) {
             if (_expr.has_value()) {
-                errorloc(_expr.value()->loc, "return statement must be empty if return type is void");
+                // wrong error location in tests 
+                // maybe this will fix it
+                errorloc(this->loc, "return statement must be empty if return type is void");
             }
             return;
         } 

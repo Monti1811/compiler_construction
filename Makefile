@@ -1,6 +1,6 @@
 BUILDDIR ?= build
 CFG      ?= debug
-NAME     ?= c4
+NAME_A   ?= c4
 SRCDIR   ?= src
 
 all:
@@ -11,7 +11,7 @@ all:
 Q ?= @
 
 BINDIR := $(BUILDDIR)/$(CFG)
-BIN    := $(BINDIR)/$(NAME)
+BIN    := $(BINDIR)/$(NAME_A)
 SRC    := $(sort $(shell find $(SRCDIR) -name '*.cpp'))
 OBJ    := $(SRC:$(SRCDIR)/%.cpp=$(BINDIR)/%.o)
 DEP    := $(OBJ:%.o=%.d)

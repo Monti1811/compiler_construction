@@ -1,1 +1,1 @@
-2:5: error: Wrong return type
+2:2: error: expected a return expression but got none
