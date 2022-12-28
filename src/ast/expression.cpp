@@ -20,6 +20,10 @@ void IntConstantExpression::print(std::ostream& stream) {
     stream << this->_value;
 }
 
+void NullPtrExpression::print(std::ostream& stream) {
+    stream << this->_value;
+} 
+
 void CharConstantExpression::print(std::ostream& stream) {
     stream << this->_value;
 }
@@ -86,13 +90,15 @@ TypePtr CharConstantExpression::typecheck(ScopePtr&) { return CHAR_TYPE; }
 
 TypePtr StringLiteralExpression::typecheck(ScopePtr&) { return STRING_TYPE; }
 
+TypePtr NullPtrExpression::typecheck(ScopePtr&) { return NULLPTR_TYPE; }
+
 TypePtr IndexExpression::typecheck(ScopePtr& scope) {
         auto expr_type = this->_expression->typecheck(scope);
         if (expr_type->kind != TypeKind::TY_POINTER) {
             errorloc(this->loc, "Indexed expression must have pointer type");
         }
-        if (this->_index->typecheck(scope)->kind != TypeKind::TY_INT) {
-            errorloc(this->loc, "Index must have integer type");
+        if (!this->_index->typecheck(scope)->isArithmetic()) {
+            errorloc(this->loc, "Index must have arithmetic type");
         }
         auto expr_pointer_type = std::static_pointer_cast<PointerType>(expr_type);
         return std::make_shared<Type>(*expr_pointer_type->inner);
@@ -219,6 +225,36 @@ TypePtr BinaryExpression::typecheck(ScopePtr& scope) {
         }
         return INT_TYPE;
     }
+
+TypePtr AddExpression::typecheck(ScopePtr& scope) {
+    auto left_type = _left->typecheck(scope);
+    auto right_type = _right->typecheck(scope);
+
+    if ( 
+        (left_type->isArithmetic() && right_type->isArithmetic())
+        || (left_type->kind == TY_POINTER && right_type->isArithmetic())
+        || (left_type->isArithmetic() && right_type->kind == TY_POINTER)
+        ) {
+        return INT_TYPE;
+    }
+
+    errorloc(this->loc, "either operands must have arithmetic type or one must have pointer type and the other integer type");
+}
+
+TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
+    auto left_type = _left->typecheck(scope);
+    auto right_type = _right->typecheck(scope);
+
+    if ( 
+        (left_type->isArithmetic() && right_type->isArithmetic())
+        || (left_type->kind == TY_POINTER && right_type->kind == TY_POINTER)
+        || (left_type->kind == TY_POINTER && right_type->isArithmetic()) 
+        ) {
+        return INT_TYPE;
+    }
+
+    errorloc(this->loc, "either operands must have arithetmic type or both must have pointer type or left operand must have pointer type and right arithetmic type");
+}
 
 TypePtr LessThanExpression::typecheck(ScopePtr& scope) {
         auto left_type = this->_left->typecheck(scope);

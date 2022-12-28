@@ -12,6 +12,7 @@ enum TypeKind {
     TY_INT,
     TY_VOID,
     TY_CHAR,
+    TY_NULLPTR,
     TY_POINTER,
     TY_STRUCT,
     TY_FUNCTION,
@@ -23,13 +24,24 @@ struct Type {
         : kind(kind) {};
 
     virtual bool equals(std::shared_ptr<Type> const& other) {
-        return this->kind == other->kind;
+        if (this->kind != other->kind) {
+            if (
+                (this->kind == TY_NULLPTR && other->kind == TY_INT) || (this->kind == TY_INT && other->kind == TY_NULLPTR)
+                || (this->kind == TY_NULLPTR && other->kind == TY_POINTER) || (this->kind == TY_POINTER && other->kind == TY_NULLPTR)
+                ) 
+            {
+                return true;
+            }
+            return false;
+        }
+        return true;
     }
 
     bool isScalar() {
         switch (this->kind) {
             case TypeKind::TY_INT:
             case TypeKind::TY_CHAR:
+            case TypeKind::TY_NULLPTR:
             case TypeKind::TY_POINTER:
                 return true;
             default:
@@ -41,6 +53,7 @@ struct Type {
         switch(this->kind) {
             case TypeKind::TY_INT:
             case TypeKind::TY_CHAR:
+            case TypeKind::TY_NULLPTR:
                 return true;
             default:
                 return false;
@@ -55,6 +68,7 @@ typedef std::shared_ptr<Type> TypePtr;
 static TypePtr INT_TYPE = std::make_shared<Type>(TypeKind::TY_INT);
 static TypePtr VOID_TYPE = std::make_shared<Type>(TypeKind::TY_VOID);
 static TypePtr CHAR_TYPE = std::make_shared<Type>(TypeKind::TY_CHAR);
+static TypePtr NULLPTR_TYPE = std::make_shared<Type>(TypeKind::TY_NULLPTR);
 
 struct PointerType: public Type {
     public:
@@ -63,8 +77,15 @@ struct PointerType: public Type {
         , inner(inner) {};
 
     bool equals(TypePtr const& other) {
+        // return true when other or this pointer is a nullptr
+        if (other->kind == TypeKind::TY_NULLPTR || inner->kind == TypeKind::TY_VOID) {
+            return true;
+        }
         if (other->kind == TypeKind::TY_POINTER) {
             auto other_pointer = std::static_pointer_cast<PointerType>(other);
+            if (other_pointer->inner->kind == TY_VOID) {
+                return true;
+            }
             return this->inner->equals(other_pointer->inner);
         } else {
             return false;
@@ -148,13 +169,6 @@ struct Scope {
             }
             return parent.value()->getTypeVar(ident);
         }
-        /* TypePtr ret = vars.at(ident);
-        if (ret->kind == TY_STRUCT) {
-            auto struct_type = std::static_pointer_cast<StructType>(ret);
-            auto tag = struct_type->_tag;
-            auto full_struct_type = getTypeStruct(tag);
-            return full_struct_type;
-        } */
         return vars.at(ident);
     }
 
