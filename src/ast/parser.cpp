@@ -135,7 +135,7 @@ ExpressionPtr Parser::parsePrimaryExpression() {
         case TokenKind::TK_ZERO_CONSTANT: 
         {
             expect(TokenKind::TK_ZERO_CONSTANT, "zero constant");
-            auto expr = std::make_unique<IntConstantExpression>(getLoc(), sym);
+            auto expr = std::make_unique<NullPtrExpression>(getLoc(), sym);
             return expr;
         }
         case TokenKind::TK_DECIMAL_CONSTANT: 

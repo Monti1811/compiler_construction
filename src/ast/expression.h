@@ -56,6 +56,20 @@ struct IntConstantExpression: public Expression {
     unsigned long long _value;
 };
 
+struct NullPtrExpression: public Expression {
+    public:
+    NullPtrExpression(Locatable loc, Symbol value)
+        : Expression(loc)
+        , _value(std::stoull(*value)) {};
+
+    TypePtr typecheck(ScopePtr&);
+    bool isLvalue() { return false; }
+
+    void print(std::ostream& stream);
+
+    unsigned long long _value;
+};
+
 struct CharConstantExpression: public Expression {
     public:
     CharConstantExpression(Locatable loc, Symbol value)
@@ -278,6 +292,7 @@ struct AddExpression: public BinaryExpression {
     public:
     AddExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "+") {};
+    TypePtr typecheck(ScopePtr& scope);
 };
 
 struct SubstractExpression: public BinaryExpression {
@@ -286,6 +301,7 @@ struct SubstractExpression: public BinaryExpression {
     public:
     SubstractExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "-") {};
+    TypePtr typecheck(ScopePtr& scope);
 };
 
 struct LessThanExpression: public BinaryExpression {
