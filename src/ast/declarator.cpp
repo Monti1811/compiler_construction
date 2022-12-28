@@ -121,31 +121,41 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
         auto pair = field.toType(scope);
         // check wether field is a struct
         if (pair.second->kind == TY_STRUCT) {
-            // check if struct is not instantiated
+            // add fields of anonymous struct to struct
+            auto casted_struct = std::static_pointer_cast<StructType>(pair.second);
             if (!field._declarator->getName()) {
-                auto anonymous_struct = std::static_pointer_cast<StructType>(pair.second);
-                if (!anonymous_struct->isAnonymous()) {
+                if (!casted_struct->isAnonymous()) {
                     continue;
                 }
-                for (auto& struct_field : anonymous_struct->fields) {
+                for (auto& casted_struct_field : casted_struct->fields) {
                     // TODO: loc not quite correct
-                    if (type->addField(struct_field.first, std::move(struct_field.second))) {
+                    if (type->addField(casted_struct_field.first, std::move(casted_struct_field.second))) {
                         errorloc(field._loc, "duplicate field");
                     }
                 }
                 continue;
+            } else {
+                if (this->_tag.has_value()) {
+                    std::string tag(*this->_tag.value());
+                    std::string tag_casted_struct(*casted_struct->_tag);
+                    if (strcmp(tag.c_str(), tag_casted_struct.c_str()) == 0) {
+                        errorloc(field._loc, "struct must not contain instance of itself");
+                    }
+                }
             }
         }
+
         if (field._declarator->isAbstract()) {
             errorloc(field._loc, "abstract field in a struct");
-        }
+        } 
+        
         if (type->addField(pair.first, std::move(pair.second))) {
             errorloc(field._loc, "duplicate field");
         }
     }
     if (this->_tag.has_value()) {
         type->setTag(this->_tag.value());
-        // check wether it's just wether it is abstract
+        // check wether it is abstract
         // TODO: know from the start
         if (type->fields.size() == 0) {
             auto full_struct_type = scope->getTypeStruct(this->_tag.value());
