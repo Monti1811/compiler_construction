@@ -1,0 +1,4 @@
+// declarator of the function is a PointerDeclarator to a FunctionDeclarator
+int* foo() {
+    return 0;
+}
