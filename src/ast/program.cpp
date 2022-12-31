@@ -78,7 +78,7 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     }
 
     function_scope->addFunctionReturnType(function.second);
-    this->_block.value().typecheck(function_scope);
+    this->_block.value().typecheckInner(function_scope);
 }
 
 void Program::addDeclaration(Declaration declaration) {
