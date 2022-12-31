@@ -141,8 +141,9 @@ struct PointerDeclarator : public Declarator {
     Symbol getName() {
         return this->_inner->getName();
     }
-    TypePtr wrapType(TypePtr const& type, ScopePtr&) {
-        return std::make_shared<PointerType>(type);
+    TypePtr wrapType(TypePtr const& type, ScopePtr& scope) {
+        auto inner_type = this->_inner->wrapType(type, scope);
+        return std::make_shared<PointerType>(inner_type);
     }
 };
 

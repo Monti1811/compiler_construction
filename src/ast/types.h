@@ -60,6 +60,10 @@ struct Type {
         }
     }
 
+    // Just for debugging purposes
+    friend std::ostream& operator<<(std::ostream& stream, const std::shared_ptr<Type>& type);
+    void print(std::ostream& stream);
+
     const TypeKind kind;
 };
 
