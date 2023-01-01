@@ -67,7 +67,7 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
         }
         if (!field._declarator->isAbstract()) {
             if (function_scope->addDeclaration(param.first, param.second)) {
-            errorloc(this->_declaration._loc, "parameter must to be unique");
+                errorloc(this->_declaration._loc, "parameter names have to be unique");
             }
         }
     }
@@ -78,7 +78,7 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     }
 
     function_scope->addFunctionReturnType(function.second);
-    this->_block.value().typecheck(function_scope);
+    this->_block.value().typecheckInner(function_scope);
 }
 
 void Program::addDeclaration(Declaration declaration) {

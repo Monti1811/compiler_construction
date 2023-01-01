@@ -45,6 +45,17 @@ void BlockStatement::print(std::ostream& stream) {
     stream << '\n' << ident << '}';
 }
 
+void BlockStatement::typecheck(ScopePtr& scope) {
+    auto block_scope = std::make_shared<Scope>(scope);
+    this->typecheckInner(block_scope);
+}
+
+void BlockStatement::typecheckInner(ScopePtr& inner_scope) {
+    for (auto& item : this->_items) {
+        item->typecheck(inner_scope);
+    }
+}
+
 void EmptyStatement::print(std::ostream& stream) {
     stream << ';';
 }

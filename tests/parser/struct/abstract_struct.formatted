@@ -2,7 +2,7 @@ struct s
 {
 	struct
 	{
-		int i;
+		int a;
 	};
-	int x;
+	int b;
 };

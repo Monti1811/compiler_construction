@@ -4,6 +4,7 @@ int main() {
     } instance;
     struct Struct (*ref);
 
+    ref = &instance;
     instance.a = 42;
 
     int b;

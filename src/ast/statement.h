@@ -74,12 +74,8 @@ struct BlockStatement: public Statement {
 
     void print(std::ostream& stream);
 
-    void typecheck(ScopePtr& scope) {
-        auto block_scope = std::make_shared<Scope>(scope);
-        for (auto& item : this->_items) {
-            item->typecheck(block_scope);
-        }
-    }
+    void typecheck(ScopePtr& scope);
+    void typecheckInner(ScopePtr& inner_scope);
 
     private:
     std::vector<StatementPtr> _items;

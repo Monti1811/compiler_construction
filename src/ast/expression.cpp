@@ -169,12 +169,12 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
         return struct_type->fields.at(ident);
     }
 
-TypePtr SizeofExpression::typecheck(ScopePtr& scope) {
+TypePtr SizeofExpression::typecheck(ScopePtr&) {
         // TODO: Additional checks
         return INT_TYPE;
     }
 
-TypePtr SizeofTypeExpression::typecheck(ScopePtr& scope) {
+TypePtr SizeofTypeExpression::typecheck(ScopePtr&) {
         // TODO: Additional checks
         return INT_TYPE;
     }
@@ -238,7 +238,7 @@ TypePtr AddExpression::typecheck(ScopePtr& scope) {
         return INT_TYPE;
     }
 
-    errorloc(this->loc, "either operands must have arithmetic type or one must have pointer type and the other integer type");
+    errorloc(this->loc, "Illegal addition operation");
 }
 
 TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
@@ -247,13 +247,13 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
 
     if ( 
         (left_type->isArithmetic() && right_type->isArithmetic())
-        || (left_type->kind == TY_POINTER && right_type->kind == TY_POINTER)
+        || (left_type->kind == TY_POINTER && right_type->kind == TY_POINTER && left_type->equals(right_type))
         || (left_type->kind == TY_POINTER && right_type->isArithmetic()) 
         ) {
         return INT_TYPE;
     }
 
-    errorloc(this->loc, "either operands must have arithetmic type or both must have pointer type or left operand must have pointer type and right arithetmic type");
+    errorloc(this->loc, "Illegal substraction operation");
 }
 
 TypePtr LessThanExpression::typecheck(ScopePtr& scope) {
