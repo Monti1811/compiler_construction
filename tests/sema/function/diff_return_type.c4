@@ -1,0 +1,5 @@
+int test(int x);
+
+char test(int x) {
+	return 'a';
+}
