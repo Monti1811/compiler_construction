@@ -20,7 +20,12 @@ void FunctionDefinition::print(std::ostream& stream) {
 void FunctionDefinition::typecheck(ScopePtr& scope) {
     // Add this function's signature to the scope given as an argument
     auto function = this->_declaration.toType(scope);
-    auto duplicate = scope->addDeclaration(function.first, function.second);
+    bool duplicate;
+    if (this->isAbstract()) {
+        duplicate = scope->addDeclaration(function.first, function.second);
+    } else {
+        duplicate = scope->addFunctionDeclaration(function.first, function.second);
+    }
     if (duplicate) {
         errorloc(this->_declaration._loc, "Duplicate function");
     }

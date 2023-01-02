@@ -164,6 +164,7 @@ struct Scope {
 
     // TODO: Remember to put function pointers in here as well
     std::unordered_map<Symbol, TypePtr> vars;
+    std::unordered_map<Symbol, TypePtr> concrete_fndef;
     std::unordered_map<Symbol, std::shared_ptr<StructType>> structs;
 
     std::optional<TypePtr> getTypeVar(Symbol ident) {
@@ -203,6 +204,17 @@ struct Scope {
     // Returns whether the variable was already defined
     bool addDeclaration(Symbol name, TypePtr const& type) {
         return !(this->vars.insert({ name, type }).second);
+    }
+    
+    // Returns whether the function was already defined
+    bool addFunctionDeclaration(Symbol name, TypePtr const& type) {
+        bool success = this->concrete_fndef.insert({ name, type }).second;
+        if (success) {
+            if (!(this->vars.count(name) > 0)) {
+                this->vars.insert({ name, type });
+            }
+        }
+        return !success;
     }
 
     // Returns whether the struct was already defined
