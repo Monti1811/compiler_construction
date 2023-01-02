@@ -129,31 +129,31 @@ ExpressionPtr Parser::parsePrimaryExpression() {
         case TokenKind::TK_IDENTIFIER: 
         {
             expect(TokenKind::TK_IDENTIFIER, "identifier");
-            auto expr = std::make_unique<IdentExpression>(getLoc(), sym);
+            auto expr = std::make_unique<IdentExpression>(token, sym);
             return expr;
         }
         case TokenKind::TK_ZERO_CONSTANT: 
         {
             expect(TokenKind::TK_ZERO_CONSTANT, "zero constant");
-            auto expr = std::make_unique<NullPtrExpression>(getLoc(), sym);
+            auto expr = std::make_unique<NullPtrExpression>(token, sym);
             return expr;
         }
         case TokenKind::TK_DECIMAL_CONSTANT: 
         {
             expect(TokenKind::TK_DECIMAL_CONSTANT, "decimal constant");
-            auto expr = std::make_unique<IntConstantExpression>(getLoc(), sym);
+            auto expr = std::make_unique<IntConstantExpression>(token, sym);
             return expr;
         }
         case TokenKind::TK_CHARACTER_CONSTANT:
         {
             expect(TokenKind::TK_CHARACTER_CONSTANT, "char constant");
-            auto expr = std::make_unique<CharConstantExpression>(getLoc(), sym);
+            auto expr = std::make_unique<CharConstantExpression>(token, sym);
             return expr;
         }
         case TokenKind::TK_STRING_LITERAL: 
         {
             expect(TokenKind::TK_STRING_LITERAL, "string literal");
-            auto expr = std::make_unique<StringLiteralExpression>(getLoc(), sym);
+            auto expr = std::make_unique<StringLiteralExpression>(token, sym);
             return expr;
         }
         case TokenKind::TK_LPAREN: 

@@ -37,6 +37,13 @@ struct Type {
         return true;
     }
 
+    virtual bool strong_equals(std::shared_ptr<Type> const& other) {
+        if (this->kind != other->kind) {
+            return false;
+        }
+        return true;
+    }
+
     bool isScalar() {
         switch (this->kind) {
             case TypeKind::TY_INT:
@@ -96,6 +103,14 @@ struct PointerType: public Type {
         }
     }
 
+    bool strong_equals(TypePtr const& other) {
+        if (other->kind != TypeKind::TY_POINTER) {
+            return false;
+        }
+        auto other_pointer = std::static_pointer_cast<PointerType>(other);
+        return this->inner->strong_equals(other_pointer->inner);
+    }
+
     TypePtr inner; 
 };
 
@@ -112,6 +127,11 @@ struct StructType: public Type {
 
     bool equals(TypePtr const&) {
         // TODO?
+        return false;
+    }
+
+    bool strong_equals(TypePtr const&) {
+        // TODO
         return false;
     }
 
@@ -142,8 +162,30 @@ struct FunctionType: public Type {
         this->args.push_back(type);
     }
 
-    bool equals(TypePtr const&) {
-        return false; // TODO
+    bool equals(TypePtr const& other) {
+        if (other->kind != TypeKind::TY_FUNCTION) {
+            return false;
+        }
+        auto other_functiontype = std::static_pointer_cast<FunctionType>(other);
+        if (!(this->return_type->strong_equals(other_functiontype->return_type))) {
+            return false;
+        }
+
+        if (this->args.size() != other_functiontype->args.size()) {
+            return false;
+        }
+        for (long long unsigned int i = 0; i < this->args.size(); i++) {
+            auto arg1 = this->args[i];
+            auto arg2 = other_functiontype->args[i];
+            if (!(arg1->strong_equals(arg2))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool strong_equals(TypePtr const& other) {
+        return this->equals(other);
     }
 
     TypePtr return_type;
@@ -164,6 +206,7 @@ struct Scope {
 
     // TODO: Remember to put function pointers in here as well
     std::unordered_map<Symbol, TypePtr> vars;
+    std::unordered_map<Symbol, TypePtr> concrete_fndef;
     std::unordered_map<Symbol, std::shared_ptr<StructType>> structs;
 
     std::optional<TypePtr> getTypeVar(Symbol ident) {
@@ -203,6 +246,18 @@ struct Scope {
     // Returns whether the variable was already defined
     bool addDeclaration(Symbol name, TypePtr const& type) {
         return !(this->vars.insert({ name, type }).second);
+    }
+    
+    // Returns whether the function was already defined
+    bool addFunctionDeclaration(Symbol name, TypePtr const& type) {
+        auto def_type = this->vars.find(name);
+        // Check if types are the same
+        if (def_type != this->vars.end() && !(def_type->second->equals(type))) {
+            return true;
+        }
+        bool success = this->concrete_fndef.insert({ name, type }).second;
+        this->vars.insert({ name, type });
+        return !success;
     }
 
     // Returns whether the struct was already defined

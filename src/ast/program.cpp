@@ -20,7 +20,12 @@ void FunctionDefinition::print(std::ostream& stream) {
 void FunctionDefinition::typecheck(ScopePtr& scope) {
     // Add this function's signature to the scope given as an argument
     auto function = this->_declaration.toType(scope);
-    auto duplicate = scope->addDeclaration(function.first, function.second);
+    bool duplicate;
+    if (this->isAbstract()) {
+        duplicate = scope->addDeclaration(function.first, function.second);
+    } else {
+        duplicate = scope->addFunctionDeclaration(function.first, function.second);
+    }
     if (duplicate) {
         errorloc(this->_declaration._loc, "Duplicate function");
     }
@@ -67,7 +72,7 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
         }
         if (!field._declarator->isAbstract()) {
             if (function_scope->addDeclaration(param.first, param.second)) {
-                errorloc(this->_declaration._loc, "parameter names have to be unique");
+                errorloc(this->_declaration._declarator->loc, "parameter names have to be unique");
             }
         }
     }
