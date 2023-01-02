@@ -208,12 +208,13 @@ struct Scope {
     
     // Returns whether the function was already defined
     bool addFunctionDeclaration(Symbol name, TypePtr const& type) {
-        bool success = this->concrete_fndef.insert({ name, type }).second;
-        if (success) {
-            if (!(this->vars.count(name) > 0)) {
-                this->vars.insert({ name, type });
-            }
+        auto def_type = this->vars.find(name);
+        if (def_type != this->vars.end() 
+            && def_type->second->equals(type)) {
+                return false;
         }
+        bool success = this->concrete_fndef.insert({ name, type }).second;
+        this->vars.insert({ name, type });
         return !success;
     }
 
