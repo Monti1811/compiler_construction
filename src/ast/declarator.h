@@ -16,6 +16,13 @@ enum DeclaratorKind {
     POINTER
 };
 
+enum SpecifierKind {
+    VOID,
+    INT,
+    CHAR,
+    STRUCT
+};
+
 struct Declarator {
     public:
     Declarator(const Locatable loc, const bool abstract, const DeclaratorKind kind)
@@ -42,7 +49,7 @@ typedef std::unique_ptr<Declarator> DeclaratorPtr;
 
 struct TypeSpecifier {
     public:
-    TypeSpecifier(const Locatable loc) : _loc(loc) {};
+    TypeSpecifier(const Locatable loc, const SpecifierKind kind) : _loc(loc), _kind(kind) {};
     virtual ~TypeSpecifier() = default;
 
     virtual void print(std::ostream& stream) = 0;
@@ -50,8 +57,12 @@ struct TypeSpecifier {
 
     virtual TypePtr toType(ScopePtr& scope) = 0;
 
+
     protected:
     const Locatable _loc;
+
+    public:
+    SpecifierKind _kind;
 };
 
 typedef std::unique_ptr<TypeSpecifier> TypeSpecifierPtr;
@@ -149,7 +160,7 @@ struct PointerDeclarator : public Declarator {
 
 struct VoidSpecifier: public TypeSpecifier {
     public: 
-    VoidSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
+    VoidSpecifier(const Locatable loc) : TypeSpecifier(loc, SpecifierKind::VOID) {};
 
     void print(std::ostream& stream);
 
@@ -158,7 +169,7 @@ struct VoidSpecifier: public TypeSpecifier {
 
 struct CharSpecifier: public TypeSpecifier {
     public: 
-    CharSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
+    CharSpecifier(const Locatable loc) : TypeSpecifier(loc, SpecifierKind::CHAR) {};
 
     void print(std::ostream& stream);
     TypePtr toType(ScopePtr&) { return CHAR_TYPE; }
@@ -166,7 +177,7 @@ struct CharSpecifier: public TypeSpecifier {
 
 struct IntSpecifier: public TypeSpecifier {
     public: 
-    IntSpecifier(const Locatable loc) : TypeSpecifier(loc) {};
+    IntSpecifier(const Locatable loc) : TypeSpecifier(loc, SpecifierKind::INT) {};
 
     void print(std::ostream& stream);
 
@@ -175,7 +186,8 @@ struct IntSpecifier: public TypeSpecifier {
 
 struct StructSpecifier: public TypeSpecifier {
     public:
-    StructSpecifier(const Locatable loc, std::optional<Symbol> tag) : TypeSpecifier(loc), _tag(tag) {};
+    StructSpecifier(const Locatable loc, std::optional<Symbol> tag) : 
+        TypeSpecifier(loc, SpecifierKind::STRUCT), _tag(tag) {};
 
     void print(std::ostream& stream);
 
