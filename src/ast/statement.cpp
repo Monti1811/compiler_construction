@@ -149,3 +149,19 @@ void IdentManager::printCurrIdentation(std::ostream& stream) {
     for (int i = 0; i < this->currIdent; i++)
         stream << '\t';
 }
+
+// Helper function to extract the type of a pointer function
+
+TypePtr constructReturnType(TypePtr& type) {
+    if (type->kind == TypeKind::TY_FUNCTION) {
+        auto functiontype = std::static_pointer_cast<FunctionType>(type);
+        return functiontype->return_type;
+    }
+    else if (type->kind == TypeKind::TY_POINTER) {
+        auto pointer_inner = std::static_pointer_cast<PointerType>(type)->inner;
+        auto returntype = constructReturnType(pointer_inner);
+        return std::make_shared<PointerType>(returntype);
+    } else {
+        return nullptr;
+    }
+}

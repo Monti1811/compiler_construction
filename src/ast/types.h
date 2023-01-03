@@ -26,8 +26,10 @@ struct Type {
     virtual bool equals(std::shared_ptr<Type> const& other) {
         if (this->kind != other->kind) {
             if (
-                (this->kind == TY_NULLPTR && other->kind == TY_INT) || (this->kind == TY_INT && other->kind == TY_NULLPTR)
-                || (this->kind == TY_NULLPTR && other->kind == TY_POINTER) || (this->kind == TY_POINTER && other->kind == TY_NULLPTR)
+                (this->kind == TY_NULLPTR && other->kind == TY_INT) 
+                || (this->kind == TY_INT && other->kind == TY_NULLPTR)
+                || (this->kind == TY_NULLPTR && other->kind == TY_POINTER) 
+                || (this->kind == TY_POINTER && other->kind == TY_NULLPTR)
                 ) 
             {
                 return true;

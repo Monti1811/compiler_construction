@@ -242,6 +242,9 @@ struct BreakStatement: public JumpStatement {
     }
 };
 
+// Helper function to extract the return type of a pointer function
+TypePtr constructReturnType(TypePtr&);
+
 // return;
 // return 1;
 struct ReturnStatement: public JumpStatement {
@@ -260,11 +263,19 @@ struct ReturnStatement: public JumpStatement {
 
     void typecheck(ScopePtr& scope) {
         std::optional<TypePtr> opt = scope->getFunctionReturnType();
+        auto test = static_cast<PointerType*>(opt.value().get());
+        auto test2 = static_cast<TypePtr>(test->inner);
+        auto test3 = static_cast<PointerType*>(test2.get());
         if (!opt.has_value()) {
             errorloc(this->loc, "Return Statement in a non-function block");
         }
         auto functionReturnType = std::static_pointer_cast<PointerType>(opt.value())->inner;
-        functionReturnType = std::static_pointer_cast<FunctionType>(functionReturnType)->return_type;
+        if (functionReturnType->kind == TypeKind::TY_POINTER) {
+            functionReturnType = constructReturnType(functionReturnType);
+
+        } else {
+            functionReturnType = std::static_pointer_cast<FunctionType>(functionReturnType)->return_type;
+        }
         if (functionReturnType->kind == TypeKind::TY_VOID) {
             if (_expr.has_value()) {
                 // wrong error location in tests 
