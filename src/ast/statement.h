@@ -103,6 +103,10 @@ struct DeclarationStatement: public Statement {
     void print(std::ostream& stream);
 
     void typecheck(ScopePtr& scope) {
+        if (this->_declaration._specifier->_kind != SpecifierKind::STRUCT 
+                && this->_declaration._declarator->isAbstract()) {
+            errorloc(this->_declaration._loc, "Declaration without declarator");
+        }
         this->_declaration.typecheck(scope);
     }
 };
@@ -238,6 +242,9 @@ struct BreakStatement: public JumpStatement {
     }
 };
 
+// Helper function to extract the return type of a pointer function
+TypePtr constructReturnType(TypePtr&);
+
 // return;
 // return 1;
 struct ReturnStatement: public JumpStatement {
@@ -260,7 +267,12 @@ struct ReturnStatement: public JumpStatement {
             errorloc(this->loc, "Return Statement in a non-function block");
         }
         auto functionReturnType = std::static_pointer_cast<PointerType>(opt.value())->inner;
-        functionReturnType = std::static_pointer_cast<FunctionType>(functionReturnType)->return_type;
+        if (functionReturnType->kind == TypeKind::TY_POINTER) {
+            functionReturnType = constructReturnType(functionReturnType);
+
+        } else {
+            functionReturnType = std::static_pointer_cast<FunctionType>(functionReturnType)->return_type;
+        }
         if (functionReturnType->kind == TypeKind::TY_VOID) {
             if (_expr.has_value()) {
                 // wrong error location in tests 
@@ -279,7 +291,7 @@ struct ReturnStatement: public JumpStatement {
             || (exprType->kind == TY_INT && functionReturnType->kind == TY_CHAR) ) {
                 return;
             } */
-            errorloc(_expr.value()->loc, "return type and type of return expr did not match");
+            errorloc(this->loc, "return type and type of return expr did not match");
         }
     }
 };

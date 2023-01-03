@@ -26,8 +26,10 @@ struct Type {
     virtual bool equals(std::shared_ptr<Type> const& other) {
         if (this->kind != other->kind) {
             if (
-                (this->kind == TY_NULLPTR && other->kind == TY_INT) || (this->kind == TY_INT && other->kind == TY_NULLPTR)
-                || (this->kind == TY_NULLPTR && other->kind == TY_POINTER) || (this->kind == TY_POINTER && other->kind == TY_NULLPTR)
+                (this->kind == TY_NULLPTR && other->kind == TY_INT) 
+                || (this->kind == TY_INT && other->kind == TY_NULLPTR)
+                || (this->kind == TY_NULLPTR && other->kind == TY_POINTER) 
+                || (this->kind == TY_POINTER && other->kind == TY_NULLPTR)
                 ) 
             {
                 return true;
@@ -125,14 +127,21 @@ struct StructType: public Type {
         return !this->fields.insert({ name, type }).second;
     }
 
-    bool equals(TypePtr const&) {
-        // TODO?
-        return false;
+    bool equals(TypePtr const& other) {
+        if (other->kind != TypeKind::TY_STRUCT) {
+            return false;
+        }
+        auto other_structtype = std::static_pointer_cast<StructType>(other);
+        // TODO: Not sure if it is enough to check only for the name 
+        // or if fields should also be checked
+        if (other_structtype->_tag != this->_tag) {
+            return false;
+        }
+        return true;
     }
 
-    bool strong_equals(TypePtr const&) {
-        // TODO
-        return false;
+    bool strong_equals(TypePtr const& other) {
+        return this->equals(other);
     }
 
     void setAnonymous(bool anon) {

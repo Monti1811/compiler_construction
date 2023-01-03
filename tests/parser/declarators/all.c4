@@ -1,3 +1,5 @@
+int test(int, int*, int**);
+
 int main() {
     int f(int a, char b);
     int g(int, char);
@@ -9,9 +11,6 @@ int main() {
 
     int* a;
     int** b;
-    int*;
-    int**;
 
     int c;
-    int;
 }

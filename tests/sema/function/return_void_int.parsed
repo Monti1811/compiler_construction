@@ -1,1 +1,1 @@
-2:8: error: expected a return expression but got none
+2:2: error: expected a return expression but got none
