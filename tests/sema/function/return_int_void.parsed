@@ -1,1 +1,1 @@
-2:9: error: return statement must be empty if return type is void
+2:2: error: return statement must be empty if return type is void

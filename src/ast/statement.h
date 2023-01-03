@@ -279,7 +279,7 @@ struct ReturnStatement: public JumpStatement {
             || (exprType->kind == TY_INT && functionReturnType->kind == TY_CHAR) ) {
                 return;
             } */
-            errorloc(_expr.value()->loc, "return type and type of return expr did not match");
+            errorloc(this->loc, "return type and type of return expr did not match");
         }
     }
 };
