@@ -162,6 +162,6 @@ TypePtr constructReturnType(TypePtr& type) {
         auto returntype = constructReturnType(pointer_inner);
         return std::make_shared<PointerType>(returntype);
     } else {
-        return nullptr;
+        error("return type can either be a pointer or functiontype");
     }
 }

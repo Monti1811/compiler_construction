@@ -263,9 +263,6 @@ struct ReturnStatement: public JumpStatement {
 
     void typecheck(ScopePtr& scope) {
         std::optional<TypePtr> opt = scope->getFunctionReturnType();
-        auto test = static_cast<PointerType*>(opt.value().get());
-        auto test2 = static_cast<TypePtr>(test->inner);
-        auto test3 = static_cast<PointerType*>(test2.get());
         if (!opt.has_value()) {
             errorloc(this->loc, "Return Statement in a non-function block");
         }
