@@ -17,6 +17,17 @@ void FunctionDefinition::print(std::ostream& stream) {
     }
 }
 
+DeclaratorPtr& getFunctionType(DeclaratorPtr& decl) {
+    if (decl->kind == DeclaratorKind::POINTER) {
+        auto casted_pointer = static_cast<PointerDeclarator*>(decl.get());
+        return getFunctionType(casted_pointer->_inner);
+    } else if (decl->kind == DeclaratorKind::FUNCTION) {
+        return decl;
+    } else {
+        error("Internal error: Expected function definition to have a function declarator");
+    }
+}
+
 void FunctionDefinition::typecheck(ScopePtr& scope) {
     // Add this function's signature to the scope given as an argument
     auto function = this->_declaration.toType(scope);
@@ -30,10 +41,7 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
         errorloc(this->_declaration._loc, "Duplicate function");
     }
 
-    auto& decl = this->_declaration._declarator;
-    if (decl->kind != DeclaratorKind::FUNCTION) {
-        error("Internal error: Expected function definition to have a function declarator");
-    }
+    auto& decl = getFunctionType(this->_declaration._declarator);
     auto function_decl = static_cast<FunctionDeclarator*>(decl.get());
 
     // Create inner function scope and add function arguments
@@ -52,7 +60,7 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
             // specials case if first param is of type void, else proceed normally
             if (param.second->kind == TY_VOID) {
                 if (!field._declarator->isAbstract()) {
-                    errorloc(this->_declaration._loc, "param void must be abstract");
+                    errorloc(this->_declaration._declarator->loc, "param void must be abstract");
                 }
                 first_param_void = true;
                 continue;
@@ -60,14 +68,14 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
         }
 
         if (first_param_void && !first_loop_iter) {
-            errorloc(this->_declaration._loc, "if first param is void there must not be additional params");
+            errorloc(this->_declaration._declarator->loc, "if first param is void there must not be additional params");
         }
         if (param.second->kind == TY_VOID) {
-            errorloc(this->_declaration._loc, "second or greater param must not be of type void");
+            errorloc(this->_declaration._declarator->loc, "second or greater param must not be of type void");
         }
         if (!this->isAbstract()) {
             if (field._declarator->isAbstract()) {
-                errorloc(this->_declaration._loc, "param must not be abstract");
+                errorloc(this->_declaration._declarator->loc, "param must not be abstract");
             }
         }
         if (!field._declarator->isAbstract()) {
