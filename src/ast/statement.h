@@ -103,6 +103,9 @@ struct DeclarationStatement: public Statement {
     void print(std::ostream& stream);
 
     void typecheck(ScopePtr& scope) {
+        if (this->_declaration._declarator->isAbstract()) {
+            errorloc(this->_declaration._loc, "Declaration without declarator");
+        }
         this->_declaration.typecheck(scope);
     }
 };
