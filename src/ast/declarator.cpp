@@ -127,7 +127,7 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
                 if (!casted_struct->isAnonymous()) {
                     continue;
                 }
-                for (auto& casted_struct_field : casted_struct->fields) {
+                for (auto& casted_struct_field : casted_struct->_fields) {
                     // TODO: loc not quite correct
                     if (type->addField(casted_struct_field.first, std::move(casted_struct_field.second))) {
                         errorloc(field._loc, "duplicate field");
@@ -145,10 +145,6 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
             }
         }
 
-        if (field._declarator->isAbstract()) {
-            errorloc(field._loc, "abstract field in a struct");
-        } 
-        
         if (type->addField(pair.first, std::move(pair.second))) {
             errorloc(field._loc, "duplicate field");
         }
@@ -157,12 +153,19 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
         type->setTag(this->_tag.value());
         // check wether it is abstract
         // TODO: know from the start
-        if (type->fields.size() == 0) {
+        // TODO: Distinguish between
+        // struct X {};
+        // and
+        // struct X;
+        if (type->_fields.size() == 0) {
             auto full_struct_type = scope->getTypeStruct(this->_tag.value());
             if (full_struct_type.has_value()) {
                 type = full_struct_type.value();
             }
             return type;
+        }
+        if (!type->hasNamedFields()) {
+            errorloc(this->_loc, "Struct does not have any named fields");
         }
         auto duplicate = scope->addStruct(this->_tag.value(), type);
         if (duplicate && this->_components.size() > 0) {

@@ -123,8 +123,14 @@ struct StructType: public Type {
     StructType()
         : Type(TypeKind::TY_STRUCT) {};
 
+    // Returns true if field was already defined, false otherwise.
     bool addField(Symbol name, TypePtr const& type) {
-        return !this->fields.insert({ name, type }).second;
+        if (name && !this->_field_names.insert({ name, this->_fields.size() }).second) {
+            return true;
+        }
+
+        this->_fields.push_back({ name, type });
+        return false;
     }
 
     bool equals(TypePtr const& other) {
@@ -156,7 +162,29 @@ struct StructType: public Type {
         this->_tag = tag;
     }
 
-    std::unordered_map<Symbol, TypePtr> fields;
+    std::optional<TypePtr> typeOfField(Symbol& ident) {
+        if (this->_field_names.find(ident) == this->_field_names.end()) {
+            return std::nullopt;
+        }
+        return this->_fields.at(this->_field_names.at(ident)).second;
+    }
+
+    // Returns true if there's a duplicate field; false otherwise.
+    bool addStruct(StructType& other_struct_type) {
+        for (auto field : other_struct_type._fields) {
+            if (this->addField(field.first, field.second)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    bool hasNamedFields() {
+        return !this->_field_names.empty();
+    }
+
+    std::vector<std::pair<Symbol, TypePtr>> _fields;
+    std::unordered_map<Symbol, size_t> _field_names;
     bool anonymous;
     Symbol _tag;
 };

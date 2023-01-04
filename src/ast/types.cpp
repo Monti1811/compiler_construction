@@ -33,8 +33,14 @@ void Type::print(std::ostream& stream) {
         case TypeKind::TY_STRUCT: {
             auto struct_type = static_cast<StructType*>(this);
             stream << "struct { ";
-            for (auto& field : struct_type->fields) {
-                stream << field.second << " " << field.first << "; ";
+            for (auto& field : struct_type->_fields) {
+                stream << field.second << " ";
+                if (field.first) {
+                    stream << field.first;
+                } else {
+                    stream << "<anon>";
+                }
+                stream << "; ";
             }
             stream << "}";
             return;

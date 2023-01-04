@@ -1,0 +1,16 @@
+struct A {
+    struct {
+        int;
+    };
+    int;
+};
+
+// 6.7.0.2:
+// A declaration other than a static_assert declaration shall declare at least a declarator
+// (other than the parameters of a function or the members of a structure or union), a tag, or
+// the members of an enumeration.
+
+// 6.7.2.1.8:
+// If the struct-declaration-list does not contain any
+// named members, either directly or via an anonymous structure or anonymous union, the
+// behavior is undefined.

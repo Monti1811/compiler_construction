@@ -142,11 +142,12 @@ TypePtr DotExpression::typecheck(ScopePtr& scope) {
         auto struct_type = std::static_pointer_cast<StructType>(expr_type);
 
         auto ident = this->_ident->_ident;
-        if (struct_type->fields.find(ident) == struct_type->fields.end()) {
-            errorloc(this->loc, "Field does not exist on this struct");
-        }
+        auto field_type = struct_type->typeOfField(ident);
 
-        return struct_type->fields.at(ident);
+        if (!field_type.has_value()) {
+            errorloc(this->loc, "Field " + *ident + " does not exist on this struct");
+        }
+        return field_type.value();
     }
 
 TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
@@ -162,11 +163,12 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
         auto struct_type = std::static_pointer_cast<StructType>(pointer_type->inner);
 
         auto ident = this->_ident->_ident;
-        if (struct_type->fields.find(ident) == struct_type->fields.end()) {
+        auto field_type = struct_type->typeOfField(ident);
+
+        if (!field_type.has_value()) {
             errorloc(this->loc, "Field " + *ident + " does not exist on this struct");
         }
-
-        return struct_type->fields.at(ident);
+        return field_type.value();
     }
 
 TypePtr SizeofExpression::typecheck(ScopePtr&) {
