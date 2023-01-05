@@ -169,8 +169,19 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
         return struct_type->fields.at(ident);
     }
 
-TypePtr SizeofExpression::typecheck(ScopePtr&) {
+TypePtr SizeofExpression::typecheck(ScopePtr& scope) {
         // TODO: Additional checks
+        auto inner_type = this->_inner->typecheck(scope);
+
+        if (inner_type->kind == TY_FUNCTION) {
+            errorloc(this->_inner->loc, "inner of a sizeof expression must not have function type");
+        }
+        if (inner_type->kind == TY_STRUCT) {
+            auto struct_type = std::static_pointer_cast<StructType>(inner_type);
+            if (struct_type->fields.size() == 0) {
+                errorloc(this->_inner->loc, "inner of sizeof expression must not have incomplete type");
+            }
+        }
         return INT_TYPE;
     }
 
@@ -247,9 +258,24 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
 
     if ( 
         (left_type->isArithmetic() && right_type->isArithmetic())
-        || (left_type->kind == TY_POINTER && right_type->kind == TY_POINTER && left_type->equals(right_type))
-        || (left_type->kind == TY_POINTER && right_type->isArithmetic()) 
+        || (left_type->kind == TY_POINTER && right_type->kind == TY_POINTER && left_type->equals(right_type)) 
         ) {
+        return INT_TYPE;
+    }
+    // left side must be complete object type
+    if (left_type->kind == TY_POINTER && right_type->isArithmetic()) {
+        auto pointer_type = std::static_pointer_cast<PointerType>(left_type);
+        // not an object type
+        if (!pointer_type->inner->isObjectType()) {
+            errorloc(this->loc, "Illegal substraction operation");
+        }
+        if (pointer_type->inner->kind == TY_STRUCT) {
+            // not a complete object
+            auto struct_type = std::static_pointer_cast<StructType>(pointer_type->inner);
+            if (struct_type->fields.size() == 0) {
+                 errorloc(this->loc, "Illegal substraction operation");
+            }
+        }
         return INT_TYPE;
     }
 

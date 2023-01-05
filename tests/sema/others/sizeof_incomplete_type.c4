@@ -1,0 +1,6 @@
+struct X test_struct;
+
+int main() {
+    sizeof(test_struct);
+    return 0;
+}
