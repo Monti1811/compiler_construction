@@ -1,0 +1,9 @@
+int func() {
+    return 5;
+}
+
+int main() {
+    int x;
+    x = func(42, 123, 'x', &x);
+    return x;
+}

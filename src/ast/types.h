@@ -18,6 +18,8 @@ enum TypeKind {
     TY_FUNCTION,
 };
 
+struct FunctionType;
+
 struct Type {
     public:
     Type(const TypeKind kind)
@@ -68,6 +70,9 @@ struct Type {
                 return false;
         }
     }
+
+    // If this is a function pointer, extract the function type
+    std::optional<std::shared_ptr<FunctionType>> getFunctionType();
 
     // Just for debugging purposes
     friend std::ostream& operator<<(std::ostream& stream, const std::shared_ptr<Type>& type);
@@ -189,32 +194,86 @@ struct StructType: public Type {
     Symbol _tag;
 };
 
+// This type describes a function without any parameters specified.
 struct FunctionType: public Type {
     public:
-    FunctionType(TypePtr const& return_type)
+    FunctionType(TypePtr const& return_type, bool has_params = false)
         : Type(TypeKind::TY_FUNCTION)
-        , return_type(return_type) {};
+        , return_type(return_type)
+        , has_params(has_params) {};
     
-    void addArgument(TypePtr const& type) {
-        this->args.push_back(type);
+    bool equals(TypePtr const& other) {
+        if (other->kind != TypeKind::TY_FUNCTION) {
+            return false;
+        }
+        auto other_function_type = std::static_pointer_cast<FunctionType>(other);
+        if (!(this->return_type->strong_equals(other_function_type->return_type))) {
+            return false;
+        }
+        return true;
+    }
+
+    bool strong_equals(TypePtr const& other) {
+        return this->equals(other);
+    }
+
+    // Returns whether this function type is valid for a function definition.
+    bool isValidForDefinition() {
+        // TODO: Check return type
+        // The return type of a function shall be void or a complete object type other than array type.
+
+        return true;
+    }
+
+    TypePtr return_type;
+    bool has_params;
+};
+
+struct FunctionParam {
+    public:
+    FunctionParam(Symbol name, TypePtr type)
+        : name(name)
+        , type(type) {};
+    
+    FunctionParam(std::pair<Symbol, TypePtr> pair)
+        : FunctionParam(pair.first, pair.second) {};
+
+    Symbol name;
+    TypePtr type;
+};
+
+// This type describes a function that has params specified.
+struct ParamFunctionType: FunctionType {
+    ParamFunctionType(TypePtr const& return_type)
+        : FunctionType(return_type, true) {};
+
+    void addParameter(FunctionParam const& param) {
+        this->params.push_back(param);
     }
 
     bool equals(TypePtr const& other) {
         if (other->kind != TypeKind::TY_FUNCTION) {
             return false;
         }
-        auto other_functiontype = std::static_pointer_cast<FunctionType>(other);
-        if (!(this->return_type->strong_equals(other_functiontype->return_type))) {
+        auto other_function_type = std::static_pointer_cast<FunctionType>(other);
+        if (!(this->return_type->strong_equals(other_function_type->return_type))) {
             return false;
         }
 
-        if (this->args.size() != other_functiontype->args.size()) {
+        if (!other_function_type->has_params) {
+            return true;
+        }
+
+        auto other_param_function_type = std::static_pointer_cast<ParamFunctionType>(other);
+
+        if (this->params.size() != other_param_function_type->params.size()) {
             return false;
         }
-        for (long long unsigned int i = 0; i < this->args.size(); i++) {
-            auto arg1 = this->args[i];
-            auto arg2 = other_functiontype->args[i];
-            if (!(arg1->strong_equals(arg2))) {
+
+        for (size_t i = 0; i < this->params.size(); i++) {
+            auto param1 = this->params[i];
+            auto param2 = other_param_function_type->params[i];
+            if (!(param1.type->strong_equals(param2.type))) {
                 return false;
             }
         }
@@ -225,8 +284,24 @@ struct FunctionType: public Type {
         return this->equals(other);
     }
 
-    TypePtr return_type;
-    std::vector<TypePtr> args;
+    bool isValidForDefinition() {
+        if (this->params.size() == 1) {
+            auto first_param = this->params.at(0);
+            if (first_param.type->kind == TypeKind::TY_VOID && first_param.name == nullptr) {
+                return true;
+            }
+            return first_param.name != nullptr;
+        }
+        
+        for (auto& param : this->params) {
+            // Abstract declarators or void parameters are not legal in function definitions
+            if (param.name == nullptr || param.type->kind == TypeKind::TY_VOID) {
+                return false;
+            }
+        }
+    }
+
+    std::vector<FunctionParam> params;
 };
 
 struct Scope {
@@ -241,9 +316,8 @@ struct Scope {
         , functionReturnType(parent->functionReturnType)
         , loop_counter(parent->loop_counter) {};
 
-    // TODO: Remember to put function pointers in here as well
     std::unordered_map<Symbol, TypePtr> vars;
-    std::unordered_map<Symbol, TypePtr> concrete_fndef;
+    std::unordered_set<Symbol> defined_functions;
     std::unordered_map<Symbol, std::shared_ptr<StructType>> structs;
 
     std::optional<TypePtr> getTypeVar(Symbol ident) {
@@ -287,14 +361,16 @@ struct Scope {
     
     // Returns whether the function was already defined
     bool addFunctionDeclaration(Symbol name, TypePtr const& type) {
-        auto def_type = this->vars.find(name);
-        // Check if types are the same
-        if (def_type != this->vars.end() && !(def_type->second->equals(type))) {
+        auto decl_type = this->vars.find(name);
+        // If function was already declared, check if types are the same
+        if (decl_type != this->vars.end() && !(decl_type->second->equals(type))) {
             return true;
         }
-        bool success = this->concrete_fndef.insert({ name, type }).second;
+        // Add the function declaration to the scope's variables
         this->vars.insert({ name, type });
-        return !success;
+        // Mark this function as defined - if it was already before, return true.
+        bool function_newly_defined = this->defined_functions.insert(name).second;
+        return !function_newly_defined;
     }
 
     // Returns whether the struct was already defined
@@ -303,7 +379,7 @@ struct Scope {
     }
 
     // adds the function return type
-    void addFunctionReturnType(TypePtr returnType) {
+    void setFunctionReturnType(TypePtr returnType) {
         this->functionReturnType = returnType;
     }
 

@@ -106,31 +106,35 @@ TypePtr IndexExpression::typecheck(ScopePtr& scope) {
 
 TypePtr CallExpression::typecheck(ScopePtr& scope) {
         auto expr_type = this->_expression->typecheck(scope);
-        if (expr_type->kind != TypeKind::TY_POINTER) {
+        auto function_type_opt = expr_type->getFunctionType();
+        if (!function_type_opt.has_value()) {
             errorloc(this->_expression->loc, "Call epression needs to be called on a function pointer");
         }
-        auto pointer_type = std::static_pointer_cast<PointerType>(expr_type);
-        auto& callee_type = pointer_type->inner;
-        if (callee_type->kind != TypeKind::TY_FUNCTION) {
-            errorloc(this->_expression->loc, "Cannot call a non-function");
-        }
-        auto function_type = std::static_pointer_cast<FunctionType>(callee_type);
-        if (this->_arguments.size() != function_type->args.size()) {
-            // a function f() can accept any number of args
-            if (function_type->args.size() != 0) {
-                // if function is defined as f(void), f() is correct call nothing else
-                if (this->_arguments.size() == 0 && function_type->args.at(0)->kind == TY_VOID) {
-                    return function_type->return_type;
-                }
-                errorloc(this->loc, "Invalid number of arguments");
+        auto function_type = function_type_opt.value();
+
+        // A function without specified parameters can be called with any arguments
+        if (!function_type->has_params) {
+            for (auto& arg : this->_arguments) {
+                arg->typecheck(scope);
             }
+
+            return function_type->return_type;
         }
-        for (size_t i = 0; i < function_type->args.size(); i++) {
+
+        auto param_function_type = std::static_pointer_cast<ParamFunctionType>(function_type);
+        auto params = param_function_type->params;
+
+        if (this->_arguments.size() != params.size()) {
+            errorloc(this->loc, "Incorrect number of arguments");
+        }
+
+        for (size_t i = 0; i < params.size(); i++) {
             auto arg_type = this->_arguments[i]->typecheck(scope);
-            if (!arg_type->equals(function_type->args[i])) {
+            if (!arg_type->equals(params[i].type)) {
                 errorloc(this->_arguments[i]->loc, "Incorrect argument type");
             }
         }
+
         return function_type->return_type;
     }
 

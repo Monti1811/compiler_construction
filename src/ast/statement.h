@@ -242,9 +242,6 @@ struct BreakStatement: public JumpStatement {
     }
 };
 
-// Helper function to extract the return type of a pointer function
-TypePtr constructReturnType(TypePtr&);
-
 // return;
 // return 1;
 struct ReturnStatement: public JumpStatement {
@@ -262,35 +259,26 @@ struct ReturnStatement: public JumpStatement {
     void print(std::ostream& stream);
 
     void typecheck(ScopePtr& scope) {
-        std::optional<TypePtr> opt = scope->getFunctionReturnType();
-        if (!opt.has_value()) {
+        auto return_type_opt = scope->getFunctionReturnType();
+        if (!return_type_opt.has_value()) {
             errorloc(this->loc, "Return Statement in a non-function block");
         }
-        auto functionReturnType = std::static_pointer_cast<PointerType>(opt.value())->inner;
-        if (functionReturnType->kind == TypeKind::TY_POINTER) {
-            functionReturnType = constructReturnType(functionReturnType);
 
-        } else {
-            functionReturnType = std::static_pointer_cast<FunctionType>(functionReturnType)->return_type;
-        }
-        if (functionReturnType->kind == TypeKind::TY_VOID) {
+        auto return_type = return_type_opt.value();
+
+        if (return_type->kind == TypeKind::TY_VOID) {
             if (_expr.has_value()) {
-                // wrong error location in tests 
-                // maybe this will fix it
                 errorloc(this->loc, "return statement must be empty if return type is void");
             }
             return;
         } 
+
         if (!_expr.has_value()) {
             errorloc(this->loc, "expected a return expression but got none");
         }
-        auto exprType = _expr.value()->typecheck(scope);
-        if (!exprType->equals(functionReturnType)) {
-            // NOTE: Due to the restricted language subset, type compatibility degenerates to equality
-            /* if ( (exprType->kind == TY_CHAR && functionReturnType->kind == TY_INT) 
-            || (exprType->kind == TY_INT && functionReturnType->kind == TY_CHAR) ) {
-                return;
-            } */
+
+        auto expr_type = _expr.value()->typecheck(scope);
+        if (!expr_type->equals(return_type)) {
             errorloc(this->loc, "return type and type of return expr did not match");
         }
     }

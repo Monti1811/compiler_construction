@@ -130,13 +130,41 @@ struct FunctionDeclarator : public Declarator {
     Symbol getName() {
         return this->_name->getName();
     }
+
     TypePtr wrapType(TypePtr const& type, ScopePtr& scope) {
-        auto function_type = std::make_shared<FunctionType>(type);
-        for (auto& arg : this->_parameters) {
-            auto pair = arg.toType(scope);
-            function_type->addArgument(pair.second);
+        auto functionPointer = [](TypePtr func_type) {
+            return std::make_shared<PointerType>(func_type);
+        };
+
+        if (this->_parameters.empty()) {
+            auto function_type = std::make_shared<FunctionType>(type);
+            return functionPointer(function_type);
         }
-        return std::make_shared<PointerType>(function_type);
+
+        auto function_type = std::make_shared<ParamFunctionType>(type);
+
+        if (this->_parameters.size() == 1) {
+            auto param_decl = this->_parameters[0].toType(scope);
+            Symbol param_name = param_decl.first;
+            TypePtr param_type = param_decl.second;
+
+            if (param_type->kind == TypeKind::TY_VOID) {
+                if (param_name != nullptr) {
+                    errorloc(this->loc, "void function parameter must be abstract");
+                }
+                return functionPointer(function_type);
+            }
+        }
+
+        for (auto& param_decl : this->_parameters) {
+            auto param = FunctionParam(param_decl.toType(scope));
+            if (param.type->kind == TypeKind::TY_VOID) {
+                errorloc(this->loc, "function parameters cannot be void, unless void is the only parameter");
+            }
+            function_type->addParameter(param);
+        }
+
+        return functionPointer(function_type);
     }
 };
 
@@ -153,8 +181,8 @@ struct PointerDeclarator : public Declarator {
         return this->_inner->getName();
     }
     TypePtr wrapType(TypePtr const& type, ScopePtr& scope) {
-        auto inner_type = this->_inner->wrapType(type, scope);
-        return std::make_shared<PointerType>(inner_type);
+        auto wrapped = std::make_shared<PointerType>(type);
+        return this->_inner->wrapType(wrapped, scope);
     }
 };
 

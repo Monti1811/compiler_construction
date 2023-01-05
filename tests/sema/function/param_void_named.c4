@@ -1,0 +1,3 @@
+void func(void evil_param) {
+    return;
+}
