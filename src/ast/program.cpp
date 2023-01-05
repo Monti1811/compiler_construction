@@ -32,6 +32,9 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     auto function_scope = std::make_shared<Scope>(scope, this->_labels);
     function_scope->setFunctionReturnType(function_type->return_type);
 
+    // TODO: Check return type
+    // 6.9.1.3: The return type of a function shall be void or a complete object type other than array type.
+
     if (function_type->has_params) {
         auto param_function = std::static_pointer_cast<ParamFunctionType>(function_type);
 

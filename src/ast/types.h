@@ -206,23 +206,13 @@ struct FunctionType: public Type {
         if (other->kind != TypeKind::TY_FUNCTION) {
             return false;
         }
-        auto other_function_type = std::static_pointer_cast<FunctionType>(other);
-        if (!(this->return_type->strong_equals(other_function_type->return_type))) {
-            return false;
-        }
-        return true;
+
+        auto other_type = std::static_pointer_cast<FunctionType>(other);
+        return this->return_type->strong_equals(other_type->return_type);
     }
 
     bool strong_equals(TypePtr const& other) {
         return this->equals(other);
-    }
-
-    // Returns whether this function type is valid for a function definition.
-    bool isValidForDefinition() {
-        // TODO: Check return type
-        // The return type of a function shall be void or a complete object type other than array type.
-
-        return true;
     }
 
     TypePtr return_type;
@@ -252,27 +242,19 @@ struct ParamFunctionType: FunctionType {
     }
 
     bool equals(TypePtr const& other) {
-        if (other->kind != TypeKind::TY_FUNCTION) {
-            return false;
-        }
-        auto other_function_type = std::static_pointer_cast<FunctionType>(other);
-        if (!(this->return_type->strong_equals(other_function_type->return_type))) {
+        if (!FunctionType::equals(other)) {
             return false;
         }
 
-        if (!other_function_type->has_params) {
-            return true;
-        }
+        auto other_type = std::static_pointer_cast<ParamFunctionType>(other);
 
-        auto other_param_function_type = std::static_pointer_cast<ParamFunctionType>(other);
-
-        if (this->params.size() != other_param_function_type->params.size()) {
+        if (this->params.size() != other_type->params.size()) {
             return false;
         }
 
         for (size_t i = 0; i < this->params.size(); i++) {
             auto param1 = this->params[i];
-            auto param2 = other_param_function_type->params[i];
+            auto param2 = other_type->params[i];
             if (!(param1.type->strong_equals(param2.type))) {
                 return false;
             }
@@ -282,23 +264,6 @@ struct ParamFunctionType: FunctionType {
 
     bool strong_equals(TypePtr const& other) {
         return this->equals(other);
-    }
-
-    bool isValidForDefinition() {
-        if (this->params.size() == 1) {
-            auto first_param = this->params.at(0);
-            if (first_param.type->kind == TypeKind::TY_VOID && first_param.name == nullptr) {
-                return true;
-            }
-            return first_param.name != nullptr;
-        }
-        
-        for (auto& param : this->params) {
-            // Abstract declarators or void parameters are not legal in function definitions
-            if (param.name == nullptr || param.type->kind == TypeKind::TY_VOID) {
-                return false;
-            }
-        }
     }
 
     std::vector<FunctionParam> params;
