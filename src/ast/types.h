@@ -69,6 +69,17 @@ struct Type {
         }
     }
 
+    bool isObjectType() {
+        switch (this->kind)
+        {
+        case TypeKind::TY_FUNCTION:
+        case TypeKind::TY_VOID:
+            return false;
+        default:
+            return true;
+        }
+    }
+
     // Just for debugging purposes
     friend std::ostream& operator<<(std::ostream& stream, const std::shared_ptr<Type>& type);
     void print(std::ostream& stream);
