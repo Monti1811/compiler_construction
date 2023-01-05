@@ -2,8 +2,8 @@ int f(int x, int y) {
     int *p;
     int *p2;
 
-    p - p2;
-    p - 1;
+    x = p - p2;
+    p = p - 1;
     42 - p;
 
     return x;

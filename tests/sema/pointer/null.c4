@@ -7,6 +7,6 @@ int f(int x) {
 		(x) ? p : 0;
 		(x) ? p : np;
 	}
-	p + 1;
+	p = p + 1;
 	return *p;
 }

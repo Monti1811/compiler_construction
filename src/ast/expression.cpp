@@ -170,7 +170,6 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
     }
 
 TypePtr SizeofExpression::typecheck(ScopePtr& scope) {
-        // TODO: Additional checks
         auto inner_type = this->_inner->typecheck(scope);
 
         if (inner_type->kind == TY_FUNCTION) {
@@ -242,12 +241,14 @@ TypePtr AddExpression::typecheck(ScopePtr& scope) {
     auto left_type = _left->typecheck(scope);
     auto right_type = _right->typecheck(scope);
 
-    if ( 
-        (left_type->isArithmetic() && right_type->isArithmetic())
-        || (left_type->kind == TY_POINTER && right_type->isArithmetic())
-        || (left_type->isArithmetic() && right_type->kind == TY_POINTER)
-        ) {
+    if (left_type->isArithmetic() && right_type->isArithmetic()) {
         return INT_TYPE;
+    }
+    if (left_type->kind == TY_POINTER && right_type->isArithmetic()) {
+        return left_type;
+    }
+    if (left_type->isArithmetic() && right_type->kind == TY_POINTER) {
+        return right_type;
     }
 
     errorloc(this->loc, "Illegal addition operation");
@@ -257,10 +258,22 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
     auto left_type = _left->typecheck(scope);
     auto right_type = _right->typecheck(scope);
 
-    if ( 
-        (left_type->isArithmetic() && right_type->isArithmetic())
-        || (left_type->kind == TY_POINTER && right_type->kind == TY_POINTER && left_type->equals(right_type)) 
-        ) {
+    if (left_type->isArithmetic() && right_type->isArithmetic()) {
+        return INT_TYPE;
+    }
+    if (left_type->kind == TY_POINTER && right_type->kind == TY_POINTER && left_type->equals(right_type)) {
+        auto left_pointer = std::static_pointer_cast<PointerType>(left_type);
+        auto right_pointer = std::static_pointer_cast<PointerType>(right_type);
+        if ( !(left_pointer->inner->isObjectType() && right_pointer->inner->isObjectType()) ) {
+            errorloc(this->loc, "both pointers have to point to object types");
+        }
+        if (left_pointer->inner->kind == TY_STRUCT && right_pointer->inner->kind == TY_STRUCT) {
+            auto left_struct = std::static_pointer_cast<StructType>(left_pointer->inner);
+            auto right_struct = std::static_pointer_cast<StructType>(right_pointer->inner);
+            if (left_struct->fields.size() == 0 || right_struct->fields.size() == 0) {
+                errorloc(this->loc, "both pointers have to point to object complete types");
+            }
+        }
         return INT_TYPE;
     }
     // left side must be complete object type
@@ -277,7 +290,7 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
                  errorloc(this->loc, "Illegal substraction operation");
             }
         }
-        return INT_TYPE;
+        return left_type;
     }
 
     errorloc(this->loc, "Illegal substraction operation");
