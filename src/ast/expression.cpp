@@ -345,6 +345,36 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
         if (!this->_left->isLvalue()) {
             errorloc(this->loc, "Cannot assign to rvalue");
         }
-        // TODO: more type checking
-        return left_type;
+        
+        if (left_type->isArithmetic() && right_type->isArithmetic()) {
+            return left_type;
+        }
+        if (left_type->kind == TY_STRUCT && right_type->kind == TY_STRUCT) {
+            if (left_type->equals(right_type)) {
+                return left_type;
+            }
+            errorloc(this->loc, "left and right struct of an assign expression must be of compatible type");
+        }
+        if (left_type->kind == TY_POINTER && right_type->kind == TY_POINTER) {
+            if (left_type->equals(right_type)) {
+                return left_type;
+            }
+        }
+        if (left_type->kind == TY_POINTER) {
+            if (right_type->kind == TY_NULLPTR) {
+                return left_type;
+            }
+            if (right_type->kind == TY_POINTER) {
+                auto left_pointer = std::static_pointer_cast<PointerType>(left_type);
+                auto right_pointer = std::static_pointer_cast<PointerType>(right_type);
+                if (
+                    (left_pointer->inner->isObjectType() && right_pointer->inner->kind == TY_VOID)
+                    || 
+                    (left_pointer->inner->kind == TY_VOID && right_pointer->inner->isObjectType())
+                    ) {
+                        return left_type;
+                    }
+            }
+        }
+        errorloc(this->loc, "wrong assign");
     }
