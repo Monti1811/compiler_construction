@@ -191,14 +191,15 @@ TypePtr SizeofTypeExpression::typecheck(ScopePtr&) {
     }
 
 TypePtr ReferenceExpression::typecheck(ScopePtr& scope) {
-        // TODO: Additional checks
-        /* if (!this->_inner->isLvalue()) {
-            errorloc(this->loc, "Cannot reference a non-lvalue");
-        } */
-
         auto inner_type = this->_inner->typecheck(scope);
-        // if (inner_type->kind == TY_FUNCTION) 
-        return std::make_shared<PointerType>(inner_type);
+        auto pointer_type = std::static_pointer_cast<PointerType>(inner_type);
+        // indexExpression and pointerExpression are defined as l-values
+        if (this->_inner->isLvalue()) {
+            return std::make_shared<PointerType>(inner_type);
+        } 
+        // function designator allowed as well
+        // function designator will be typchecked as a pointertype to a functiontype
+        errorloc(this->loc, "expression to be referenced must be an l-value");
     }
 
 TypePtr PointerExpression::typecheck(ScopePtr& scope) {
