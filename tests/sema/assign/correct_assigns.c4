@@ -1,0 +1,11 @@
+int main() {
+    int* p;
+    int* l;
+    l = p;
+    p = 0;
+    void* v;
+    l = v;
+    int a;
+    char b;
+    a = b;
+}

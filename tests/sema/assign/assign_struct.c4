@@ -1,0 +1,13 @@
+struct X {
+    int x;
+} test_struct_X;
+
+struct Y {
+    char* y;
+} test_struct_Y;
+
+int main() {
+    struct X a;
+    a = test_struct_X;
+    a = test_struct_Y;
+}

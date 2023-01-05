@@ -6,7 +6,7 @@ label2:
 		int z;
 	}
 
-	void a;
+	int a;
 	char *string; 
 	string = "test";
 

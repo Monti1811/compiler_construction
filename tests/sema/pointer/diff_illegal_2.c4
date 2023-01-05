@@ -1,0 +1,6 @@
+struct X *test_struct;
+
+int main() {
+    test_struct - 5;
+    return 0;
+}

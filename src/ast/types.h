@@ -71,6 +71,17 @@ struct Type {
         }
     }
 
+    bool isObjectType() {
+        switch (this->kind)
+        {
+        case TypeKind::TY_FUNCTION:
+        case TypeKind::TY_VOID:
+            return false;
+        default:
+            return true;
+        }
+    }
+
     // If this is a function pointer, extract the function type
     std::optional<std::shared_ptr<FunctionType>> getFunctionType();
 
