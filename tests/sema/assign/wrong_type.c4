@@ -1,5 +1,0 @@
-int main() {
-    int* p;
-    p = 42;
-    return 0;
-}

@@ -183,7 +183,7 @@ TypePtr SizeofExpression::typecheck(ScopePtr& scope) {
         }
         if (inner_type->kind == TY_STRUCT) {
             auto struct_type = std::static_pointer_cast<StructType>(inner_type);
-            if (struct_type->fields.size() == 0) {
+            if (struct_type->_fields.size() == 0) {
                 errorloc(this->_inner->loc, "inner of sizeof expression must not have incomplete type");
             }
         }
@@ -276,7 +276,7 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
         if (left_pointer->inner->kind == TY_STRUCT && right_pointer->inner->kind == TY_STRUCT) {
             auto left_struct = std::static_pointer_cast<StructType>(left_pointer->inner);
             auto right_struct = std::static_pointer_cast<StructType>(right_pointer->inner);
-            if (left_struct->fields.size() == 0 || right_struct->fields.size() == 0) {
+            if (left_struct->_fields.size() == 0 || right_struct->_fields.size() == 0) {
                 errorloc(this->loc, "both pointers have to point to object complete types");
             }
         }
@@ -292,7 +292,7 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
         if (pointer_type->inner->kind == TY_STRUCT) {
             // not a complete object
             auto struct_type = std::static_pointer_cast<StructType>(pointer_type->inner);
-            if (struct_type->fields.size() == 0) {
+            if (struct_type->_fields.size() == 0) {
                  errorloc(this->loc, "Illegal substraction operation");
             }
         }
