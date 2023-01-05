@@ -1,0 +1,9 @@
+// Very safe program with no undefined behaviour whatsoever
+
+int f(int* input) {
+    return *input;
+}
+
+int main() {
+    return f(0);
+}

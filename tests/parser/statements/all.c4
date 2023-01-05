@@ -8,10 +8,10 @@ label2:
 
 	void a;
 	char *string; 
-	a = 5*10;
 	string = "test";
 
 	int x;
+	x = 5*10;
 
 	if (x) {
         return 0;
