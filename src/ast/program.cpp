@@ -25,7 +25,7 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     // Add this function's signature to the scope given as an argument
     bool duplicate = scope->addFunctionDeclaration(function_name, function_def_type);
     if (duplicate) {
-        errorloc(this->_declaration._loc, "Duplicate function");
+        errorloc(this->_declaration._declarator->loc, "Duplicate function");
     }
 
     // Create inner function scope and add function arguments

@@ -1,0 +1,7 @@
+int function(void) {
+    return 42;
+}
+
+int function(void) {
+    return 123;
+}
