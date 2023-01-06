@@ -2,6 +2,10 @@ struct S {
     int a;
 };
 
+struct X {
+	int b;
+};
+
 struct X main(void) {
 	int y;
 	y = 2;
