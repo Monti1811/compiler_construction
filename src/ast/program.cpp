@@ -47,13 +47,6 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     this->_block.typecheckInner(function_scope);
 }
 
-void FunctionDefinition::checkDefinition(ScopePtr& scope) {
-    Symbol name = this->_declaration._declarator->getName();
-    if (scope->concrete_fndef.find(name) == scope->concrete_fndef.end()) {
-        errorloc(this->_declaration._loc, "Function " + *name + " was not defined");
-    }
-}
-
 void Program::addDeclaration(Declaration declaration) {
     this->_declarations.push_back(std::move(declaration));
     this->_is_declaration.push_back(true);
@@ -119,21 +112,4 @@ void Program::typecheck() {
             func_iter++;
         }
     }
-
-    // Check if all functions have been defined 
-    decl_iter = this->_declarations.begin();
-    func_iter = this->_functions.begin();
-
-    for (bool is_decl : this->_is_declaration) {
-        if (is_decl) {
-            decl_iter.base()->checkDefinition(scope);
-            decl_iter++;
-        } else {
-            func_iter.base()->checkDefinition(scope);
-            func_iter++;
-        }
-    }
-
-
-    
 }

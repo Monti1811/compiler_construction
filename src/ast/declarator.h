@@ -38,6 +38,7 @@ struct Declarator {
 
     virtual std::optional<Symbol> getName() = 0;
     virtual TypePtr wrapType(TypePtr const&, ScopePtr&) = 0;
+    virtual bool isFunction() = 0;
 
     const Locatable loc;
     const DeclaratorKind kind;
@@ -57,7 +58,6 @@ struct TypeSpecifier {
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<TypeSpecifier>& type);
 
     virtual TypePtr toType(ScopePtr& scope) = 0;
-
 
     protected:
     const Locatable _loc;
@@ -83,7 +83,6 @@ struct Declaration {
 
     void typecheck(ScopePtr& scope);
     TypeDecl toType(ScopePtr& scope);
-    void checkDefinition(ScopePtr& scope);
 
     Locatable _loc;
     TypeSpecifierPtr _specifier;
@@ -109,6 +108,10 @@ struct PrimitiveDeclarator: public Declarator {
     }
     bool isAbstract() {
         return !this->_ident.has_value();
+    }
+
+    bool isFunction() {
+        return false;
     }
 
     std::optional<Symbol> _ident;
@@ -163,6 +166,10 @@ struct FunctionDeclarator : public Declarator {
 
         return functionPointer(function_type);
     }
+
+    bool isFunction() {
+        return true;
+    }
 };
 
 struct PointerDeclarator : public Declarator {
@@ -180,6 +187,10 @@ struct PointerDeclarator : public Declarator {
     TypePtr wrapType(TypePtr const& type, ScopePtr& scope) {
         auto wrapped = std::make_shared<PointerType>(type);
         return this->_inner->wrapType(wrapped, scope);
+    }
+
+    bool isFunction() {
+        return this->_inner->isFunction();
     }
 };
 

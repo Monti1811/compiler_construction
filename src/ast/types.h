@@ -354,7 +354,7 @@ struct Scope {
 
         return !(this->vars.insert({ decl.name.value(), decl.type }).second);
     }
-    
+
     // Returns whether the function was already defined
     bool addFunctionDeclaration(TypeDecl& decl) {
         if (decl.isAbstract()) {
@@ -362,16 +362,22 @@ struct Scope {
         }
         auto name = decl.name.value();
 
+        // If function was already declared:
+        // assert that the declared type is the same as the one for this definition
         auto decl_type = this->vars.find(name);
-        // If function was already declared, check if types are the same
         if (decl_type != this->vars.end() && !(decl_type->second->equals(decl.type))) {
             return true;
         }
+
         // Add the function declaration to the scope's variables
         this->vars.insert({ name, decl.type });
         // Mark this function as defined - if it was already before, return true.
         bool function_newly_defined = this->defined_functions.insert(name).second;
         return !function_newly_defined;
+    }
+
+    bool isStructDefined(Symbol& name) {
+        return this->structs.find(name) != this->structs.end() && this->structs.at(name)->isComplete();
     }
 
     // Returns whether the struct was already defined
@@ -386,9 +392,7 @@ struct Scope {
         }
         auto name = type->tag.value();
 
-        auto scope_struct = this->structs.find(name);
-
-        if (scope_struct != this->structs.end() && scope_struct->second->isComplete()) {
+        if (this->isStructDefined(name)) {
             // The struct has already been completed in this scope
             return true;
         }

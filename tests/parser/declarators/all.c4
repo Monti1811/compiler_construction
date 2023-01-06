@@ -1,9 +1,5 @@
 int test(int, int*, int**);
 
-int test(int a, int* b, int** c) {
-	return 1;
-}
-
 int main() {
     int f(int a, char b);
     int g(int, char);
