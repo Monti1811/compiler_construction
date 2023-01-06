@@ -1,0 +1,12 @@
+struct A {
+    struct B {
+        int c;
+    } b;
+    int d;
+};
+
+int main(void) {
+    struct A a;
+    a.b.c = 123;
+    a.d = 42;
+}

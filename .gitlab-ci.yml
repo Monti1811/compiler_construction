@@ -17,4 +17,4 @@ build:
 test:
   stage: test
   script:
-    - python3 test.py --ci --verbose lexer parser
+    - python3 test.py --ci --verbose lexer parser sema

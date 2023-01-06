@@ -6,99 +6,48 @@ std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition) {
 }
 
 void FunctionDefinition::print(std::ostream& stream) {
-    stream << this->_declaration;
-    if (this->isAbstract()) {
-        stream << ';';
-        return;
-    }
-    stream << '\n';
-    if (!this->isAbstract()) {
-        this->_block.value().print(stream);
-    }
-}
-
-DeclaratorPtr& getFunctionType(DeclaratorPtr& decl) {
-    if (decl->kind == DeclaratorKind::POINTER) {
-        auto casted_pointer = static_cast<PointerDeclarator*>(decl.get());
-        return getFunctionType(casted_pointer->_inner);
-    } else if (decl->kind == DeclaratorKind::FUNCTION) {
-        return decl;
-    } else {
-        error("Internal error: Expected function definition to have a function declarator");
-    }
+    stream << this->_declaration << '\n';
+    this->_block.print(stream);
 }
 
 void FunctionDefinition::typecheck(ScopePtr& scope) {
-    // Add this function's signature to the scope given as an argument
     auto function = this->_declaration.toType(scope);
-    bool duplicate;
-    if (this->isAbstract()) {
-        duplicate = scope->addDeclaration(function.first, function.second);
-    } else {
-        duplicate = scope->addFunctionDeclaration(function.first, function.second);
-    }
-    if (duplicate) {
-        errorloc(this->_declaration._loc, "Duplicate function");
-    }
 
-    auto& decl = getFunctionType(this->_declaration._declarator);
-    auto function_decl = static_cast<FunctionDeclarator*>(decl.get());
+    auto function_type_opt = function.type->getFunctionType();
+    if (!function_type_opt.has_value()) {
+        errorloc(this->_declaration._loc, "Internal error: Expected function definition to be a function pointer");
+    }
+    auto function_type = function_type_opt.value();
+
+    // Add this function's signature to the scope given as an argument
+    if (scope->addFunctionDeclaration(function)) {
+        errorloc(this->_declaration._declarator->loc, "Duplicate function");
+    }
 
     // Create inner function scope and add function arguments
     auto function_scope = std::make_shared<Scope>(scope, this->_labels);
+    function_scope->setFunctionReturnType(function_type->return_type);
 
-    bool first_param_void = false;
-    bool first_loop_iter = true;
+    // 6.9.1.3: The return type of a function shall be void or a complete object type other than array type.
+    auto return_type = function_type->return_type;
+    if (return_type->kind != TypeKind::TY_VOID && !(return_type->isObjectType() && return_type->isComplete())) {
+        errorloc(this->_declaration._declarator->loc, "Function return type must be void or a complete object type");
+    }
 
-    // combine typechecking fields of abstract and non-abstract functions
-    // saves code and doesn't make it more complicated
-    for (auto& field : function_decl->_parameters) {
-        auto param = field.toType(scope);
+    if (function_type->has_params) {
+        auto param_function = std::static_pointer_cast<ParamFunctionType>(function_type);
 
-        if (first_loop_iter) {
-            first_loop_iter = false;
-            // specials case if first param is of type void, else proceed normally
-            if (param.second->kind == TY_VOID) {
-                if (!field._declarator->isAbstract()) {
-                    errorloc(this->_declaration._declarator->loc, "param void must be abstract");
-                }
-                first_param_void = true;
-                continue;
+        for (auto& param : param_function->params) {
+            if (param.isAbstract()) {
+                errorloc(this->_declaration._declarator->loc, "parameters must not be abstract");
             }
-        }
-
-        if (first_param_void && !first_loop_iter) {
-            errorloc(this->_declaration._declarator->loc, "if first param is void there must not be additional params");
-        }
-        if (param.second->kind == TY_VOID) {
-            errorloc(this->_declaration._declarator->loc, "second or greater param must not be of type void");
-        }
-        if (!this->isAbstract()) {
-            if (field._declarator->isAbstract()) {
-                errorloc(this->_declaration._declarator->loc, "param must not be abstract");
-            }
-        }
-        if (!field._declarator->isAbstract()) {
-            if (function_scope->addDeclaration(param.first, param.second)) {
+            if (function_scope->addDeclaration(param)) {
                 errorloc(this->_declaration._declarator->loc, "parameter names have to be unique");
             }
         }
     }
 
-    // if the function is abstract we don't type check its block, because there is none
-    if (this->isAbstract()) {
-        return;
-    }
-
-    function_scope->addFunctionReturnType(function.second);
-    this->_block.value().typecheckInner(function_scope);
-}
-
-void FunctionDefinition::checkDefinition(ScopePtr& scope) {
-    Symbol name = this->_declaration._declarator->getName();
-    if (scope->concrete_fndef.find(name) == scope->concrete_fndef.end()) {
-        errorloc(this->_declaration._loc, "Function " + *name + " was not defined");
-    }
+    this->_block.typecheckInner(function_scope);
 }
 
 void Program::addDeclaration(Declaration declaration) {
@@ -166,21 +115,4 @@ void Program::typecheck() {
             func_iter++;
         }
     }
-
-    // Check if all functions have been defined 
-    decl_iter = this->_declarations.begin();
-    func_iter = this->_functions.begin();
-
-    for (bool is_decl : this->_is_declaration) {
-        if (is_decl) {
-            decl_iter.base()->checkDefinition(scope);
-            decl_iter++;
-        } else {
-            func_iter.base()->checkDefinition(scope);
-            func_iter++;
-        }
-    }
-
-
-    
 }

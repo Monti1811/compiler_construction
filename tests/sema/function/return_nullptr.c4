@@ -1,5 +1,0 @@
-int* foo() {
-	return 0;
-}
-
-// declarator of the function is a PointerDeclarator to a FunctionDeclarator

@@ -77,7 +77,7 @@ void TernaryExpression::print(std::ostream& stream) {
 // typecheck functions
 
 TypePtr IdentExpression::typecheck(ScopePtr& scope) {
-        auto type = scope->getTypeVar(this->_ident);
+        auto type = scope->getVarType(this->_ident);
         if (!type.has_value()) {
             errorloc(this->loc, "Variable ", *this->_ident, " is not defined");
         }
@@ -106,31 +106,35 @@ TypePtr IndexExpression::typecheck(ScopePtr& scope) {
 
 TypePtr CallExpression::typecheck(ScopePtr& scope) {
         auto expr_type = this->_expression->typecheck(scope);
-        if (expr_type->kind != TypeKind::TY_POINTER) {
+        auto function_type_opt = expr_type->getFunctionType();
+        if (!function_type_opt.has_value()) {
             errorloc(this->_expression->loc, "Call epression needs to be called on a function pointer");
         }
-        auto pointer_type = std::static_pointer_cast<PointerType>(expr_type);
-        auto& callee_type = pointer_type->inner;
-        if (callee_type->kind != TypeKind::TY_FUNCTION) {
-            errorloc(this->_expression->loc, "Cannot call a non-function");
-        }
-        auto function_type = std::static_pointer_cast<FunctionType>(callee_type);
-        if (this->_arguments.size() != function_type->args.size()) {
-            // a function f() can accept any number of args
-            if (function_type->args.size() != 0) {
-                // if function is defined as f(void), f() is correct call nothing else
-                if (this->_arguments.size() == 0 && function_type->args.at(0)->kind == TY_VOID) {
-                    return function_type->return_type;
-                }
-                errorloc(this->loc, "Invalid number of arguments");
+        auto function_type = function_type_opt.value();
+
+        // A function without specified parameters can be called with any arguments
+        if (!function_type->has_params) {
+            for (auto& arg : this->_arguments) {
+                arg->typecheck(scope);
             }
+
+            return function_type->return_type;
         }
-        for (size_t i = 0; i < function_type->args.size(); i++) {
+
+        auto param_function_type = std::static_pointer_cast<ParamFunctionType>(function_type);
+        auto params = param_function_type->params;
+
+        if (this->_arguments.size() != params.size()) {
+            errorloc(this->loc, "Incorrect number of arguments");
+        }
+
+        for (size_t i = 0; i < params.size(); i++) {
             auto arg_type = this->_arguments[i]->typecheck(scope);
-            if (!arg_type->equals(function_type->args[i])) {
+            if (!arg_type->equals(params[i].type)) {
                 errorloc(this->_arguments[i]->loc, "Incorrect argument type");
             }
         }
+
         return function_type->return_type;
     }
 
@@ -139,14 +143,18 @@ TypePtr DotExpression::typecheck(ScopePtr& scope) {
         if (expr_type->kind != TypeKind::TY_STRUCT) {
             errorloc(this->loc, "Cannot access a field of a non-struct expression");
         }
-        auto struct_type = std::static_pointer_cast<StructType>(expr_type);
+        if (!expr_type->isComplete()) {
+            errorloc(this->loc, "Cannot access a field of an incomplete type");
+        }
+        auto struct_type = std::static_pointer_cast<CompleteStructType>(expr_type);
 
         auto ident = this->_ident->_ident;
-        if (struct_type->fields.find(ident) == struct_type->fields.end()) {
-            errorloc(this->loc, "Field does not exist on this struct");
-        }
+        auto field_type = struct_type->typeOfField(ident);
 
-        return struct_type->fields.at(ident);
+        if (!field_type.has_value()) {
+            errorloc(this->loc, "Field " + *ident + " does not exist on this struct");
+        }
+        return field_type.value();
     }
 
 TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
@@ -157,16 +165,20 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
         auto pointer_type = std::static_pointer_cast<PointerType>(expr_type);
 
         if (pointer_type->inner->kind != TypeKind::TY_STRUCT) {
-            errorloc(this->loc, "Cannot index a non-struct expression");
+            errorloc(this->loc, "Cannot access a field of a non-struct expression");
         }
-        auto struct_type = std::static_pointer_cast<StructType>(pointer_type->inner);
+        if (!pointer_type->inner->isComplete()) {
+            errorloc(this->loc, "Cannot access a field of an incomplete type");
+        }
+        auto struct_type = std::static_pointer_cast<CompleteStructType>(pointer_type->inner);
 
         auto ident = this->_ident->_ident;
-        if (struct_type->fields.find(ident) == struct_type->fields.end()) {
+        auto field_type = struct_type->typeOfField(ident);
+
+        if (!field_type.has_value()) {
             errorloc(this->loc, "Field " + *ident + " does not exist on this struct");
         }
-
-        return struct_type->fields.at(ident);
+        return field_type.value();
     }
 
 TypePtr SizeofExpression::typecheck(ScopePtr& scope) {
@@ -177,7 +189,7 @@ TypePtr SizeofExpression::typecheck(ScopePtr& scope) {
         }
         if (inner_type->kind == TY_STRUCT) {
             auto struct_type = std::static_pointer_cast<StructType>(inner_type);
-            if (struct_type->fields.size() == 0) {
+            if (!struct_type->isComplete()) {
                 errorloc(this->_inner->loc, "inner of sizeof expression must not have incomplete type");
             }
         }
@@ -270,7 +282,7 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
         if (left_pointer->inner->kind == TY_STRUCT && right_pointer->inner->kind == TY_STRUCT) {
             auto left_struct = std::static_pointer_cast<StructType>(left_pointer->inner);
             auto right_struct = std::static_pointer_cast<StructType>(right_pointer->inner);
-            if (left_struct->fields.size() == 0 || right_struct->fields.size() == 0) {
+            if (!left_struct->isComplete() || !right_struct->isComplete()) {
                 errorloc(this->loc, "both pointers have to point to object complete types");
             }
         }
@@ -286,7 +298,7 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
         if (pointer_type->inner->kind == TY_STRUCT) {
             // not a complete object
             auto struct_type = std::static_pointer_cast<StructType>(pointer_type->inner);
-            if (struct_type->fields.size() == 0) {
+            if (!struct_type->isComplete()) {
                  errorloc(this->loc, "Illegal substraction operation");
             }
         }

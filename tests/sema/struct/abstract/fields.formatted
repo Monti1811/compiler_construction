@@ -1,0 +1,9 @@
+struct s
+{
+	struct
+	{
+		int a;
+	};
+	int;
+	int (*(*));
+};

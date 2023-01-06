@@ -20,16 +20,17 @@ Declaration Parser::parseDeclaration(DeclKind declKind) {
                      *peekToken().Text, "'");
         }
 
-        auto structSpec = std::make_unique<StructSpecifier>(loc, tag);
+        auto struct_spec = std::make_unique<StructSpecifier>(loc, tag);
 
         if (accept(TK_LBRACE)) {
+            struct_spec->makeComplete();
             do {  // parse struct member declarations
                 auto declaration = parseDeclaration(DeclKind::CONCRETE);
-                structSpec->addComponent(std::move(declaration));
+                struct_spec->addComponent(std::move(declaration));
                 expect(TK_SEMICOLON, ";");
             } while (!accept(TK_RBRACE));
         }
-        spec = std::move(structSpec);
+        spec = std::move(struct_spec);
 
     } else {
         errorloc(loc, "Expected type specifier but got `", *peekToken().Text,
@@ -210,20 +211,20 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
         case TokenKind::TK_DOT:
         {
             expect(TK_DOT, ".");
-            Token token = peekToken();
+            Token ident_token = peekToken();
             expect(TK_IDENTIFIER, "Identifier"); // expect id
-            auto ident = std::make_unique<IdentExpression>(getLoc(), token.Text);
-            auto newPostfixExpr = std::make_unique<DotExpression>(getLoc(), std::move(postfixExpression.value()), std::move(ident));
+            auto ident = std::make_unique<IdentExpression>(getLoc(), ident_token.Text);
+            auto newPostfixExpr = std::make_unique<DotExpression>(token, std::move(postfixExpression.value()), std::move(ident));
             return parsePostfixExpression(std::move(newPostfixExpr));
         }
         // -> id
         case TokenKind::TK_ARROW:
         {
             expect(TK_ARROW, "->");
-            Token token = peekToken();
+            Token ident_token = peekToken();
             expect(TK_IDENTIFIER, "Identifier"); // expect id
-            auto ident = std::make_unique<IdentExpression>(getLoc(), token.Text);
-            auto newPostfixExpr = std::make_unique<ArrowExpression>(getLoc(), std::move(postfixExpression.value()), std::move(ident));
+            auto ident = std::make_unique<IdentExpression>(getLoc(), ident_token.Text);
+            auto newPostfixExpr = std::make_unique<ArrowExpression>(token, std::move(postfixExpression.value()), std::move(ident));
             return parsePostfixExpression(std::move(newPostfixExpr));
         }
         // no postfix found
@@ -610,12 +611,7 @@ Program Parser::parseProgram() {
         switch (peekToken().Kind) {
             case TokenKind::TK_SEMICOLON: {
                 expect(TK_SEMICOLON, ";");
-                // abstract function
-                if (declaration._declarator->kind == FUNCTION) {
-                    auto function = FunctionDefinition(std::move(declaration), std::nullopt, this->_labels);
-                    program.addFunctionDefinition(std::move(function));
-                    break;
-                }
+                // adds any declaration to the program (including abstract function declarations)
                 program.addDeclaration(std::move(declaration));
                 break;
             }

@@ -1,1 +1,1 @@
-4:1: error: Duplicate struct
+4:1: error: Cannot redefine already defined struct
