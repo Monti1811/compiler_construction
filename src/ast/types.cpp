@@ -47,17 +47,24 @@ void Type::print(std::ostream& stream) {
         }
         case TypeKind::TY_STRUCT: {
             auto struct_type = static_cast<StructType*>(this);
-            stream << "struct { ";
-            for (auto& field : struct_type->_fields) {
-                stream << field.second << " ";
-                if (field.first) {
-                    stream << field.first;
-                } else {
-                    stream << "<anon>";
+            stream << "struct";
+            if (struct_type->isComplete()) {
+                auto complete_type = static_cast<CompleteStructType*>(this);
+                stream << " { ";
+                for (auto& field : complete_type->fields) {
+                    stream << field.type << " ";
+                    if (field.name.has_value()) {
+                        stream << *field.name.value();
+                    } else {
+                        stream << "<anon>";
+                    }
+                    stream << "; ";
                 }
-                stream << "; ";
+                stream << "}";
             }
-            stream << "}";
+            if (!struct_type->isAnonymous()) {
+                stream << " " << *struct_type->tag.value();
+            }
             return;
         }
         case TypeKind::TY_FUNCTION: {

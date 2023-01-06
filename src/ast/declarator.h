@@ -219,13 +219,12 @@ struct StructSpecifier: public TypeSpecifier {
 
     void print(std::ostream& stream);
 
+    void makeComplete();
     void addComponent(Declaration declaration);
+
     TypePtr toType(ScopePtr&);
-    bool isAnonymous() {
-        return !_tag.has_value();
-    }
 
     private:
-    std::vector<Declaration> _components;
+    std::optional<std::vector<Declaration>> _components;
     std::optional<Symbol> _tag;
 };

@@ -61,7 +61,7 @@ struct Type {
     }
 
     bool isArithmetic() {
-        switch(this->kind) {
+        switch (this->kind) {
             case TypeKind::TY_INT:
             case TypeKind::TY_CHAR:
             case TypeKind::TY_NULLPTR:
@@ -74,11 +74,21 @@ struct Type {
     bool isObjectType() {
         switch (this->kind)
         {
-        case TypeKind::TY_FUNCTION:
-        case TypeKind::TY_VOID:
-            return false;
-        default:
-            return true;
+            case TypeKind::TY_FUNCTION:
+            case TypeKind::TY_VOID:
+                return false;
+            default:
+                return true;
+        }
+    }
+
+    virtual bool isComplete() {
+        switch (this->kind) {
+            case TypeKind::TY_VOID:
+            case TypeKind::TY_STRUCT:
+                return false;
+            default:
+                return true;
         }
     }
 
@@ -136,27 +146,17 @@ static TypePtr STRING_TYPE = std::make_shared<PointerType>(CHAR_TYPE);
 
 struct StructType: public Type {
     public:
-    StructType()
-        : Type(TypeKind::TY_STRUCT) {};
-
-    // Returns true if field was already defined, false otherwise.
-    bool addField(Symbol name, TypePtr const& type) {
-        if (name && !this->_field_names.insert({ name, this->_fields.size() }).second) {
-            return true;
-        }
-
-        this->_fields.push_back({ name, type });
-        return false;
-    }
+    StructType(std::optional<Symbol> tag)
+        : Type(TypeKind::TY_STRUCT)
+        , tag(tag) {};
 
     bool equals(TypePtr const& other) {
         if (other->kind != TypeKind::TY_STRUCT) {
             return false;
         }
         auto other_structtype = std::static_pointer_cast<StructType>(other);
-        // TODO: Not sure if it is enough to check only for the name 
-        // or if fields should also be checked
-        if (other_structtype->_tag != this->_tag) {
+
+        if (other_structtype->tag != this->tag) {
             return false;
         }
         return true;
@@ -166,29 +166,50 @@ struct StructType: public Type {
         return this->equals(other);
     }
 
-    void setAnonymous(bool anon) {
-        anonymous = anon;
-    }
-
     bool isAnonymous() {
-        return anonymous;
+        return !this->tag.has_value();
     }
 
-    void setTag(Symbol tag) {
-        this->_tag = tag;
+    std::optional<Symbol> tag;
+};
+
+struct StructField {
+    public:
+    StructField(std::pair<Symbol, TypePtr> pair)
+        : name(pair.first)
+        , type(pair.second) {};
+
+    std::optional<Symbol> name;
+    TypePtr type;
+};
+
+struct CompleteStructType: public StructType {
+    public:
+    CompleteStructType(std::optional<Symbol> tag)
+        : StructType(tag) {};
+
+    // TODO: Do we need to also consider fields in the equality check?
+    // If so, we need to override equals() and maybe strong_equals() here.
+
+    bool isComplete() {
+        return true;
     }
 
-    std::optional<TypePtr> typeOfField(Symbol& ident) {
-        if (this->_field_names.find(ident) == this->_field_names.end()) {
-            return std::nullopt;
+    // Returns true if field was already defined, false otherwise.
+    bool addField(StructField field) {
+        if (field.name.has_value() && !this->_field_names.insert({ field.name.value(), this->fields.size() }).second) {
+            return true;
         }
-        return this->_fields.at(this->_field_names.at(ident)).second;
+
+        this->fields.push_back(field);
+        return false;
     }
 
-    // Returns true if there's a duplicate field; false otherwise.
-    bool addStruct(StructType& other_struct_type) {
-        for (auto field : other_struct_type._fields) {
-            if (this->addField(field.first, field.second)) {
+    // Adds all fields of another struct to this struct.
+    // Returns true if any field was already defined, false otherwise.
+    bool combineWith(CompleteStructType const& other) {
+        for (auto& field : other.fields) {
+            if (this->addField(field)) {
                 return true;
             }
         }
@@ -199,10 +220,17 @@ struct StructType: public Type {
         return !this->_field_names.empty();
     }
 
-    std::vector<std::pair<Symbol, TypePtr>> _fields;
+    std::optional<TypePtr> typeOfField(Symbol& ident) {
+        if (this->_field_names.find(ident) == this->_field_names.end()) {
+            return std::nullopt;
+        }
+        return this->fields.at(this->_field_names.at(ident)).type;
+    }
+
+    std::vector<StructField> fields;
+
+    private:
     std::unordered_map<Symbol, size_t> _field_names;
-    bool anonymous;
-    Symbol _tag;
 };
 
 // This type describes a function without any parameters specified.
@@ -232,12 +260,9 @@ struct FunctionType: public Type {
 
 struct FunctionParam {
     public:
-    FunctionParam(Symbol name, TypePtr type)
-        : name(name)
-        , type(type) {};
-    
     FunctionParam(std::pair<Symbol, TypePtr> pair)
-        : FunctionParam(pair.first, pair.second) {};
+        : name(pair.first)
+        , type(pair.second) {};
 
     Symbol name;
     TypePtr type;
@@ -284,40 +309,32 @@ struct Scope {
     Scope() : parent(std::nullopt) {};
     Scope(std::shared_ptr<Scope> parent)
         : parent(parent)
-        , functionReturnType(parent->functionReturnType)
+        , function_return_type(parent->function_return_type)
         , loop_counter(parent->loop_counter) {};
     Scope(std::shared_ptr<Scope> parent, std::unordered_set<Symbol> labels)
         : parent(parent)
         , labels(labels)
-        , functionReturnType(parent->functionReturnType)
+        , function_return_type(parent->function_return_type)
         , loop_counter(parent->loop_counter) {};
 
-    std::unordered_map<Symbol, TypePtr> vars;
-    std::unordered_set<Symbol> defined_functions;
-    std::unordered_map<Symbol, std::shared_ptr<StructType>> structs;
-
-    std::optional<TypePtr> getTypeVar(Symbol ident) {
-        if (vars.find(ident) == vars.end()) {
-            if (!parent.has_value()) {
+    std::optional<TypePtr> getVarType(Symbol ident) {
+        if (this->vars.find(ident) == this->vars.end()) {
+            if (!this->parent.has_value()) {
                 return std::nullopt;
             }
-            return parent.value()->getTypeVar(ident);
+            return this->parent.value()->getVarType(ident);
         }
-        return vars.at(ident);
+        return this->vars.at(ident);
     }
 
-    std::optional<std::shared_ptr<StructType>> getTypeStruct(Symbol ident) {
-        if (structs.find(ident) == structs.end()) {
-            if (!parent.has_value()) {
+    std::optional<std::shared_ptr<StructType>> getStructType(Symbol ident) {
+        if (this->structs.find(ident) == this->structs.end()) {
+            if (!this->parent.has_value()) {
                 return std::nullopt;
             }
-            return parent.value()->getTypeStruct(ident);
+            return this->parent.value()->getStructType(ident);
         }
-        return structs.at(ident);
-    }
-
-    std::optional<TypePtr> getFunctionReturnType() {
-        return functionReturnType;
+        return this->structs.at(ident);
     }
 
     bool isLabelDefined(Symbol label) {
@@ -328,6 +345,10 @@ struct Scope {
             return parent.value()->isLabelDefined(label);
         }
         return true;
+    }
+
+    std::optional<TypePtr> getFunctionReturnType() {
+        return this->function_return_type;
     }
 
     // Returns whether the variable was already defined
@@ -350,21 +371,39 @@ struct Scope {
     }
 
     // Returns whether the struct was already defined
-    bool addStruct(Symbol name, std::shared_ptr<StructType> type) {
-        return !(this->structs.insert({ name, type }).second);
+    bool addStruct(std::shared_ptr<StructType> type) {
+        if (type->isAnonymous()) {
+            return false;
+        }
+        auto name = type->tag.value();
+
+        auto scope_struct = this->structs.find(name);
+
+        if (scope_struct != this->structs.end() && scope_struct->second->isComplete()) {
+            // The struct has already been completed in this scope
+            return true;
+        }
+
+        this->structs.insert({ name, type });
+        return false;
     }
 
     // adds the function return type
-    void setFunctionReturnType(TypePtr returnType) {
-        this->functionReturnType = returnType;
+    void setFunctionReturnType(TypePtr return_type) {
+        this->function_return_type = return_type;
     }
 
     std::optional<std::shared_ptr<Scope>> parent;
 
+    std::unordered_map<Symbol, TypePtr> vars;
+    std::unordered_set<Symbol> defined_functions;
+
+    std::unordered_map<Symbol, std::shared_ptr<StructType>> structs;
+
     std::unordered_set<Symbol> labels;
     
     // used to typecheck a return-statement
-    std::optional<TypePtr> functionReturnType;
+    std::optional<TypePtr> function_return_type;
 
     int loop_counter = 0;
 };

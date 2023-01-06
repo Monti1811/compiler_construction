@@ -99,11 +99,11 @@ void StructSpecifier::print(std::ostream& stream) {
         stream << ' ' << *_tag.value();
     } 
 
-    if (_components.size() > 0) {
+    if (this->_components.has_value()) {
         IdentManager& ident = IdentManager::getInstance();
         stream << '\n' << ident << "{\n";
         ident.increaseCurrIdentation(1);
-        for (auto& component : _components) {
+        for (auto& component : this->_components.value()) {
             stream << ident << component << ";\n";
         }
         ident.decreaseCurrIdentation(1);
@@ -111,68 +111,84 @@ void StructSpecifier::print(std::ostream& stream) {
     }
 }
 
+void StructSpecifier::makeComplete() {
+    this->_components = std::vector<Declaration>();
+}
+
 void StructSpecifier::addComponent(Declaration declaration) {
-    this->_components.push_back(std::move(declaration));
+    this->_components.value().push_back(std::move(declaration));
 }
 
 TypePtr StructSpecifier::toType(ScopePtr& scope) {
-    auto type = std::make_shared<StructType>();
-    for (auto& field : this->_components) {
-        auto pair = field.toType(scope);
-        // check wether field is a struct
-        if (pair.second->kind == TY_STRUCT) {
-            // add fields of anonymous struct to struct
-            auto casted_struct = std::static_pointer_cast<StructType>(pair.second);
-            if (!field._declarator->getName()) {
-                if (!casted_struct->isAnonymous()) {
-                    continue;
-                }
-                for (auto& casted_struct_field : casted_struct->_fields) {
-                    // TODO: loc not quite correct
-                    if (type->addField(casted_struct_field.first, std::move(casted_struct_field.second))) {
-                        errorloc(field._loc, "duplicate field");
-                    }
-                }
+    if (this->_tag.has_value()) {
+        // Try to retrieve already defined struct from scope
+        auto type = scope->getStructType(this->_tag.value());
+
+        if (type.has_value() && type.value()->isComplete()) {
+            if (this->_components.has_value()) {
+                errorloc(this->_loc, "Cannot redefine already defined struct");
+            }
+
+            return type.value();
+        }
+    }
+
+    if (!this->_components.has_value()) {
+        // Struct is incomplete
+        auto type = std::make_shared<StructType>(this->_tag);
+
+        if (scope->addStruct(type)) {
+            errorloc(this->_loc, "Duplicate struct");
+        }
+
+        return type;
+    }
+
+    auto type = std::make_shared<CompleteStructType>(this->_tag);
+
+    for (auto& field_decl : this->_components.value()) {
+        auto field_scope = std::make_shared<Scope>();
+        auto field = StructField(field_decl.toType(field_scope));
+
+        if (!field.type->isComplete()) {
+            errorloc(field_decl._loc, "Struct fields must be complete");
+        }
+
+        if (field.type->kind == TY_FUNCTION) {
+            errorloc(field_decl._loc, "Struct fields cannot have function type");
+        }
+
+        if (field.type->kind == TY_STRUCT) {
+            // We know that the child struct is complete, because all fields must be complete
+            // and we already checked that above.
+            auto child_struct = std::static_pointer_cast<CompleteStructType>(field.type);
+
+            if (child_struct->isAnonymous()) {
+                // Add fields of anonymous struct to the struct directly
+                type->combineWith(*child_struct);
                 continue;
-            } else {
-                if (this->_tag.has_value()) {
-                    std::string tag(*this->_tag.value());
-                    std::string tag_casted_struct(*casted_struct->_tag);
-                    if (strcmp(tag.c_str(), tag_casted_struct.c_str()) == 0) {
-                        errorloc(field._loc, "struct must not contain instance of itself");
-                    }
+            } else if (!type->isAnonymous() && !child_struct->isAnonymous()) {
+                // Disallow recursive structs
+                std::string this_tag(*type->tag.value());
+                std::string child_tag(*child_struct->tag.value());
+                if (strcmp(this_tag.c_str(), child_tag.c_str()) == 0) {
+                    errorloc(field_decl._loc, "struct must not contain instance of itself");
                 }
             }
         }
 
-        if (type->addField(pair.first, std::move(pair.second))) {
-            errorloc(field._loc, "duplicate field");
+        if (type->addField(field)) {
+            errorloc(field_decl._loc, "duplicate field ", *field.name.value());
         }
     }
-    if (this->_tag.has_value()) {
-        type->setTag(this->_tag.value());
-        // check wether it is abstract
-        // TODO: know from the start
-        // TODO: Distinguish between
-        // struct X {};
-        // and
-        // struct X;
-        if (type->_fields.size() == 0) {
-            auto full_struct_type = scope->getTypeStruct(this->_tag.value());
-            if (full_struct_type.has_value()) {
-                type = full_struct_type.value();
-            }
-            return type;
-        }
-        if (!type->hasNamedFields()) {
-            errorloc(this->_loc, "Struct does not have any named fields");
-        }
-        auto duplicate = scope->addStruct(this->_tag.value(), type);
-        if (duplicate && this->_components.size() > 0) {
-            errorloc(this->_loc, "Duplicate struct");
-        }
-    } else {
-        type->setAnonymous(true);
+
+    if (!type->hasNamedFields()) {
+        errorloc(this->_loc, "Struct does not have any named fields");
     }
+
+    if (scope->addStruct(type)) {
+        errorloc(this->_loc, "Duplicate struct");
+    }
+
     return type;
 }

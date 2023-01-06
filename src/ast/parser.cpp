@@ -20,16 +20,17 @@ Declaration Parser::parseDeclaration(DeclKind declKind) {
                      *peekToken().Text, "'");
         }
 
-        auto structSpec = std::make_unique<StructSpecifier>(loc, tag);
+        auto struct_spec = std::make_unique<StructSpecifier>(loc, tag);
 
         if (accept(TK_LBRACE)) {
+            struct_spec->makeComplete();
             do {  // parse struct member declarations
                 auto declaration = parseDeclaration(DeclKind::CONCRETE);
-                structSpec->addComponent(std::move(declaration));
+                struct_spec->addComponent(std::move(declaration));
                 expect(TK_SEMICOLON, ";");
             } while (!accept(TK_RBRACE));
         }
-        spec = std::move(structSpec);
+        spec = std::move(struct_spec);
 
     } else {
         errorloc(loc, "Expected type specifier but got `", *peekToken().Text,

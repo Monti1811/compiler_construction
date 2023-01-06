@@ -77,7 +77,7 @@ void TernaryExpression::print(std::ostream& stream) {
 // typecheck functions
 
 TypePtr IdentExpression::typecheck(ScopePtr& scope) {
-        auto type = scope->getTypeVar(this->_ident);
+        auto type = scope->getVarType(this->_ident);
         if (!type.has_value()) {
             errorloc(this->loc, "Variable ", *this->_ident, " is not defined");
         }
@@ -143,7 +143,10 @@ TypePtr DotExpression::typecheck(ScopePtr& scope) {
         if (expr_type->kind != TypeKind::TY_STRUCT) {
             errorloc(this->loc, "Cannot access a field of a non-struct expression");
         }
-        auto struct_type = std::static_pointer_cast<StructType>(expr_type);
+        if (!expr_type->isComplete()) {
+            errorloc(this->loc, "Cannot access a field of an incomplete type");
+        }
+        auto struct_type = std::static_pointer_cast<CompleteStructType>(expr_type);
 
         auto ident = this->_ident->_ident;
         auto field_type = struct_type->typeOfField(ident);
@@ -162,9 +165,12 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
         auto pointer_type = std::static_pointer_cast<PointerType>(expr_type);
 
         if (pointer_type->inner->kind != TypeKind::TY_STRUCT) {
-            errorloc(this->loc, "Cannot index a non-struct expression");
+            errorloc(this->loc, "Cannot access a field of a non-struct expression");
         }
-        auto struct_type = std::static_pointer_cast<StructType>(pointer_type->inner);
+        if (!pointer_type->inner->isComplete()) {
+            errorloc(this->loc, "Cannot access a field of an incomplete type");
+        }
+        auto struct_type = std::static_pointer_cast<CompleteStructType>(pointer_type->inner);
 
         auto ident = this->_ident->_ident;
         auto field_type = struct_type->typeOfField(ident);
@@ -183,7 +189,7 @@ TypePtr SizeofExpression::typecheck(ScopePtr& scope) {
         }
         if (inner_type->kind == TY_STRUCT) {
             auto struct_type = std::static_pointer_cast<StructType>(inner_type);
-            if (struct_type->_fields.size() == 0) {
+            if (!struct_type->isComplete()) {
                 errorloc(this->_inner->loc, "inner of sizeof expression must not have incomplete type");
             }
         }
@@ -276,7 +282,7 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
         if (left_pointer->inner->kind == TY_STRUCT && right_pointer->inner->kind == TY_STRUCT) {
             auto left_struct = std::static_pointer_cast<StructType>(left_pointer->inner);
             auto right_struct = std::static_pointer_cast<StructType>(right_pointer->inner);
-            if (left_struct->_fields.size() == 0 || right_struct->_fields.size() == 0) {
+            if (!left_struct->isComplete() || !right_struct->isComplete()) {
                 errorloc(this->loc, "both pointers have to point to object complete types");
             }
         }
@@ -292,7 +298,7 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
         if (pointer_type->inner->kind == TY_STRUCT) {
             // not a complete object
             auto struct_type = std::static_pointer_cast<StructType>(pointer_type->inner);
-            if (struct_type->_fields.size() == 0) {
+            if (!struct_type->isComplete()) {
                  errorloc(this->loc, "Illegal substraction operation");
             }
         }
