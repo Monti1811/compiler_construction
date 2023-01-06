@@ -13,18 +13,14 @@ void FunctionDefinition::print(std::ostream& stream) {
 void FunctionDefinition::typecheck(ScopePtr& scope) {
     auto function = this->_declaration.toType(scope);
 
-    auto function_name = function.first;
-    auto function_def_type = function.second;
-
-    auto function_type_opt = function_def_type->getFunctionType();
+    auto function_type_opt = function.type->getFunctionType();
     if (!function_type_opt.has_value()) {
         errorloc(this->_declaration._loc, "Internal error: Expected function definition to be a function pointer");
     }
     auto function_type = function_type_opt.value();
 
     // Add this function's signature to the scope given as an argument
-    bool duplicate = scope->addFunctionDeclaration(function_name, function_def_type);
-    if (duplicate) {
+    if (scope->addFunctionDeclaration(function)) {
         errorloc(this->_declaration._declarator->loc, "Duplicate function");
     }
 
@@ -39,10 +35,10 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
         auto param_function = std::static_pointer_cast<ParamFunctionType>(function_type);
 
         for (auto& param : param_function->params) {
-            if (param.name == nullptr) {
+            if (param.isAbstract()) {
                 errorloc(this->_declaration._declarator->loc, "parameters must not be abstract");
             }
-            if (function_scope->addDeclaration(param.name, param.type)) {
+            if (function_scope->addDeclaration(param)) {
                 errorloc(this->_declaration._declarator->loc, "parameter names have to be unique");
             }
         }

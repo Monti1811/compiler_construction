@@ -9,6 +9,7 @@
 #include "../util/symbol_internalizer.h"
 
 #include "types.h"
+#include "type_decl.h"
 
 enum DeclaratorKind {
     PRIMITIVE,
@@ -35,7 +36,7 @@ struct Declarator {
 
     bool isAbstract();
 
-    virtual Symbol getName() = 0;
+    virtual std::optional<Symbol> getName() = 0;
     virtual TypePtr wrapType(TypePtr const&, ScopePtr&) = 0;
 
     const Locatable loc;
@@ -81,7 +82,7 @@ struct Declaration {
     friend std::ostream& operator<<(std::ostream& stream, Declaration& declaration);
 
     void typecheck(ScopePtr& scope);
-    std::pair<Symbol, TypePtr> toType(ScopePtr& scope);
+    TypeDecl toType(ScopePtr& scope);
 
     Locatable _loc;
     TypeSpecifierPtr _specifier;
@@ -91,29 +92,25 @@ struct Declaration {
 struct PrimitiveDeclarator: public Declarator {
     PrimitiveDeclarator(Locatable loc, Symbol ident)
         : Declarator(loc, false, DeclaratorKind::PRIMITIVE)
-        , _ident(ident)
-        , abstract(false) {};
+        , _ident(ident) {};
 
     PrimitiveDeclarator(Locatable loc)
         : Declarator(loc, true, DeclaratorKind::PRIMITIVE)
-        , _ident(nullptr)
-        , abstract(true) {};
-
-    Symbol _ident;
+        , _ident(std::nullopt) {};
 
     void print(std::ostream& stream);
 
-    Symbol getName() {
+    std::optional<Symbol> getName() {
         return this->_ident;
     }
     TypePtr wrapType(TypePtr const& type, ScopePtr&) {
         return type;
     }
     bool isAbstract() {
-        return abstract;
+        return !this->_ident.has_value();
     }
 
-    bool abstract;
+    std::optional<Symbol> _ident;
 };
 
 struct FunctionDeclarator : public Declarator {
@@ -127,7 +124,7 @@ struct FunctionDeclarator : public Declarator {
     void print(std::ostream& stream);
     void addParameter(Declaration param);
 
-    Symbol getName() {
+    std::optional<Symbol> getName() {
         return this->_name->getName();
     }
 
@@ -144,12 +141,10 @@ struct FunctionDeclarator : public Declarator {
         auto function_type = std::make_shared<ParamFunctionType>(type);
 
         if (this->_parameters.size() == 1) {
-            auto param_decl = this->_parameters[0].toType(scope);
-            Symbol param_name = param_decl.first;
-            TypePtr param_type = param_decl.second;
+            auto param = this->_parameters[0].toType(scope);
 
-            if (param_type->kind == TypeKind::TY_VOID) {
-                if (param_name != nullptr) {
+            if (param.type->kind == TypeKind::TY_VOID) {
+                if (!param.isAbstract()) {
                     errorloc(this->loc, "void function parameter must be abstract");
                 }
                 return functionPointer(function_type);
@@ -157,7 +152,8 @@ struct FunctionDeclarator : public Declarator {
         }
 
         for (auto& param_decl : this->_parameters) {
-            auto param = FunctionParam(param_decl.toType(scope));
+            auto param = param_decl.toType(scope);
+
             if (param.type->kind == TypeKind::TY_VOID) {
                 errorloc(this->loc, "function parameters cannot be void, unless void is the only parameter");
             }
@@ -177,7 +173,7 @@ struct PointerDeclarator : public Declarator {
 
     void print(std::ostream& stream);
 
-    Symbol getName() {
+    std::optional<Symbol> getName() {
         return this->_inner->getName();
     }
     TypePtr wrapType(TypePtr const& type, ScopePtr& scope) {

@@ -8,6 +8,8 @@
 
 #include "../util/symbol_internalizer.h"
 
+#include "type_decl.h"
+
 enum TypeKind {
     TY_INT,
     TY_VOID,
@@ -173,16 +175,6 @@ struct StructType: public Type {
     std::optional<Symbol> tag;
 };
 
-struct StructField {
-    public:
-    StructField(std::pair<Symbol, TypePtr> pair)
-        : name(pair.first)
-        , type(pair.second) {};
-
-    std::optional<Symbol> name;
-    TypePtr type;
-};
-
 struct CompleteStructType: public StructType {
     public:
     CompleteStructType(std::optional<Symbol> tag)
@@ -256,16 +248,6 @@ struct FunctionType: public Type {
 
     TypePtr return_type;
     bool has_params;
-};
-
-struct FunctionParam {
-    public:
-    FunctionParam(std::pair<Symbol, TypePtr> pair)
-        : name(pair.first)
-        , type(pair.second) {};
-
-    Symbol name;
-    TypePtr type;
 };
 
 // This type describes a function that has params specified.
@@ -352,19 +334,28 @@ struct Scope {
     }
 
     // Returns whether the variable was already defined
-    bool addDeclaration(Symbol name, TypePtr const& type) {
-        return !(this->vars.insert({ name, type }).second);
+    bool addDeclaration(TypeDecl& decl) {
+        if (decl.isAbstract()) {
+            return false;
+        }
+
+        return !(this->vars.insert({ decl.name.value(), decl.type }).second);
     }
     
     // Returns whether the function was already defined
-    bool addFunctionDeclaration(Symbol name, TypePtr const& type) {
+    bool addFunctionDeclaration(TypeDecl& decl) {
+        if (decl.isAbstract()) {
+            return false;
+        }
+        auto name = decl.name.value();
+
         auto decl_type = this->vars.find(name);
         // If function was already declared, check if types are the same
-        if (decl_type != this->vars.end() && !(decl_type->second->equals(type))) {
+        if (decl_type != this->vars.end() && !(decl_type->second->equals(decl.type))) {
             return true;
         }
         // Add the function declaration to the scope's variables
-        this->vars.insert({ name, type });
+        this->vars.insert({ name, decl.type });
         // Mark this function as defined - if it was already before, return true.
         bool function_newly_defined = this->defined_functions.insert(name).second;
         return !function_newly_defined;

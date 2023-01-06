@@ -24,25 +24,24 @@ void Declaration::print(std::ostream& stream) {
 }
 
 void Declaration::typecheck(ScopePtr& scope) {
-    auto pair = this->toType(scope);
+    auto decl = this->toType(scope);
     if (this->_declarator->isAbstract()) {
         return;
     }
-    auto duplicate = scope->addDeclaration(pair.first, pair.second);
-    if (duplicate) {
+    if (scope->addDeclaration(decl)) {
         errorloc(this->_declarator->loc, "Duplicate variable");
     }
 }
 
-std::pair<Symbol, TypePtr> Declaration::toType(ScopePtr& scope) {
+TypeDecl Declaration::toType(ScopePtr& scope) {
     auto name = this->_declarator->getName();
     auto type = this->_declarator->wrapType(this->_specifier->toType(scope), scope);
-    return std::make_pair(name, type);
+    return TypeDecl(name, type);
 }
 
 void PrimitiveDeclarator::print(std::ostream& stream) {
     if (!isAbstract()) {
-        stream << *_ident;
+        stream << *_ident.value();
     }
 }
 
@@ -147,8 +146,8 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
     auto type = std::make_shared<CompleteStructType>(this->_tag);
 
     for (auto& field_decl : this->_components.value()) {
-        auto field_scope = std::make_shared<Scope>();
-        auto field = StructField(field_decl.toType(field_scope));
+        auto field_scope = std::make_shared<Scope>(); // TODO is this needed?
+        auto field = field_decl.toType(field_scope);
 
         if (!field.type->isComplete()) {
             errorloc(field_decl._loc, "Struct fields must be complete");
@@ -178,7 +177,7 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
         }
 
         if (type->addField(field)) {
-            errorloc(field_decl._loc, "duplicate field ", *field.name.value());
+            errorloc(field_decl._loc, "duplicate field");
         }
     }
 
