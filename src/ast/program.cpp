@@ -173,9 +173,6 @@ void Program::typecheck() {
 
     for (bool is_decl : this->_is_declaration) {
         if (is_decl) {
-            if (decl_iter == this->_declarations.end()) {
-                error("Internal error: Tried to read non-existent declaration");
-            }
             decl_iter.base()->checkDefinition(scope);
             decl_iter++;
         } else {
