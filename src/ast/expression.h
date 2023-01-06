@@ -164,7 +164,7 @@ struct ArrowExpression: public Expression {
     void print(std::ostream& stream);
 
     TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue() { return false; } // TODO
+    bool isLvalue() { return true; } // TODO
 
     // expression->ident
     private:

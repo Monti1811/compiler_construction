@@ -1,0 +1,5 @@
+struct S;
+
+int main(void) {
+	return 1;
+}

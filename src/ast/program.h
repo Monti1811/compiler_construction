@@ -22,6 +22,8 @@ struct FunctionDefinition {
     bool isAbstract() {
         return !_block.has_value();
     }
+    void checkDefinition(ScopePtr& scope);
+
 
     private:
     Declaration _declaration;
