@@ -1,1 +1,1 @@
-2:5: error: struct must not contain instance of itself
+2:5: error: Struct fields must be complete
