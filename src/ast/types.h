@@ -168,10 +168,6 @@ struct StructType: public Type {
         return this->equals(other);
     }
 
-    bool isAnonymous() {
-        return !this->tag.has_value();
-    }
-
     std::optional<Symbol> tag;
 };
 
@@ -385,7 +381,7 @@ struct Scope {
         // The presence of a struct-declaration-list in a struct-or-union-specifier declares a new type,
         // *within a translation unit*
 
-        if (type->isAnonymous()) {
+        if (!type->tag.has_value()) {
             return false;
         }
         auto name = type->tag.value();

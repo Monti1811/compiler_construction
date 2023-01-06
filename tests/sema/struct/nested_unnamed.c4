@@ -1,0 +1,18 @@
+struct S {
+    int padding;
+    struct group {
+        int a;
+        int b;
+        int c;
+    };
+    char x;
+} s;
+
+int main() {
+    s.group.a = 1;
+    s.group.b = 2;
+    s.group.c = 3;
+    s.x = 'x';
+
+    return 0;
+}

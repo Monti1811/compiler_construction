@@ -62,7 +62,7 @@ void Type::print(std::ostream& stream) {
                 }
                 stream << "}";
             }
-            if (!struct_type->isAnonymous()) {
+            if (struct_type->tag.has_value()) {
                 stream << " " << *struct_type->tag.value();
             }
             return;

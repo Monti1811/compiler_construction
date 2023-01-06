@@ -1,0 +1,17 @@
+struct S {
+    struct {
+        int a;
+        int b;
+        int c;
+    };
+    char x;
+} s;
+
+int main() {
+    s.a = 1;
+    s.b = 2;
+    s.c = 3;
+    s.x = 'x';
+
+    return 0;
+}

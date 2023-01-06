@@ -161,17 +161,14 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
             // and we already checked that above.
             auto child_struct = std::static_pointer_cast<CompleteStructType>(field.type);
 
-            if (child_struct->isAnonymous()) {
-                // Add fields of anonymous struct to the struct directly
+            // 6.7.2.1.13:
+            // An unnamed member whose type specifier is a structure specifier with no tag is called an
+            // anonymous structure. [...] The members of an anonymous structure or union are considered
+            // to be members of the containing structure or union.
+            // This applies recursively if the containing structure or union is also anonymous.
+            if (field.isAbstract() && !child_struct->tag.has_value()) {
                 type->combineWith(*child_struct);
                 continue;
-            } else if (!type->isAnonymous() && !child_struct->isAnonymous()) {
-                // Disallow recursive structs
-                std::string this_tag(*type->tag.value());
-                std::string child_tag(*child_struct->tag.value());
-                if (strcmp(this_tag.c_str(), child_tag.c_str()) == 0) {
-                    errorloc(field_decl._loc, "struct must not contain instance of itself");
-                }
             }
         }
 
