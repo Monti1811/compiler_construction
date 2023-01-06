@@ -19,6 +19,8 @@ struct FunctionDefinition {
     friend std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition);
 
     void typecheck(ScopePtr& scope);
+    void checkDefinition(ScopePtr& scope);
+
 
     private:
     Declaration _declaration;
