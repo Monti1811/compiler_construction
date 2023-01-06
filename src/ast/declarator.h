@@ -82,6 +82,7 @@ struct Declaration {
 
     void typecheck(ScopePtr& scope);
     std::pair<Symbol, TypePtr> toType(ScopePtr& scope);
+    void checkDefinition(ScopePtr& scope);
 
     Locatable _loc;
     TypeSpecifierPtr _specifier;
@@ -197,7 +198,8 @@ struct StructSpecifier: public TypeSpecifier {
         return !_tag.has_value();
     }
 
+    std::optional<Symbol> _tag;
+
     private:
     std::vector<Declaration> _components;
-    std::optional<Symbol> _tag;
 };

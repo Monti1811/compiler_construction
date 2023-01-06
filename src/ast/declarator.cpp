@@ -34,6 +34,16 @@ void Declaration::typecheck(ScopePtr& scope) {
     }
 }
 
+void Declaration::checkDefinition(ScopePtr& scope) {
+    if (this->_specifier->_kind == SpecifierKind::STRUCT) {
+        auto structspec = static_cast<StructSpecifier*>(this->_specifier.get());
+        auto name = structspec->_tag;
+        if (name.has_value() && scope->structs.find(name.value()) == scope->structs.end()) {
+            errorloc(this->_loc, "Struct " + *(name.value()) + " was not defined");
+        }
+    }
+}
+
 std::pair<Symbol, TypePtr> Declaration::toType(ScopePtr& scope) {
     auto name = this->_declarator->getName();
     auto type = this->_declarator->wrapType(this->_specifier->toType(scope), scope);
