@@ -1,0 +1,8 @@
+struct {
+    int a;
+} *s;
+
+int main() {
+    s->b = 42;
+    return 0;
+}
