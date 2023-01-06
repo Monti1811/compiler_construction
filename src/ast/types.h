@@ -208,8 +208,25 @@ struct CompleteStructType: public StructType {
         return false;
     }
 
-    bool hasNamedFields() {
-        return !this->_field_names.empty();
+    // Returns false if the constraints for named fields are not satisfied, true otherwise.
+    bool validateFields() {
+        // 6.7.2.1.8:
+        // If the struct-declaration-list does not contain any
+        // named members, either directly or via an anonymous structure or anonymous union, the
+        // behavior is undefined.
+        // (we throw an error because why not)
+
+        if (this->_field_names.empty()) {
+            return false;
+        }
+
+        // 6.7.2.1.15:
+        // There may be unnamed padding within a structure object, but not at its beginning.
+        if (this->fields.at(0).isAbstract()) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     std::optional<TypePtr> typeOfField(Symbol& ident) {
@@ -363,6 +380,11 @@ struct Scope {
 
     // Returns whether the struct was already defined
     bool addStruct(std::shared_ptr<StructType> type) {
+        // TODO:
+        // 6.7.2.1.8:
+        // The presence of a struct-declaration-list in a struct-or-union-specifier declares a new type,
+        // *within a translation unit*
+
         if (type->isAnonymous()) {
             return false;
         }

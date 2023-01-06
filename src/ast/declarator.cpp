@@ -146,8 +146,7 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
     auto type = std::make_shared<CompleteStructType>(this->_tag);
 
     for (auto& field_decl : this->_components.value()) {
-        auto field_scope = std::make_shared<Scope>(); // TODO is this needed?
-        auto field = field_decl.toType(field_scope);
+        auto field = field_decl.toType(scope);
 
         if (!field.type->isComplete()) {
             errorloc(field_decl._loc, "Struct fields must be complete");
@@ -181,8 +180,8 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
         }
     }
 
-    if (!type->hasNamedFields()) {
-        errorloc(this->_loc, "Struct does not have any named fields");
+    if (!type->validateFields()) {
+        errorloc(this->_loc, "Structs must have at least one named field, and must not have unnamed fields at the beginning");
     }
 
     if (scope->addStruct(type)) {

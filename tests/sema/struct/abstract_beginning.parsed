@@ -1,0 +1,1 @@
+1:1: error: Structs must have at least one named field, and must not have unnamed fields at the beginning
