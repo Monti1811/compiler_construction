@@ -1,0 +1,6 @@
+int main() {
+    int* arr;
+    arr[0] = 42;
+    arr[1] = 123;
+    arr[2] = arr[0] + arr[1];
+}
