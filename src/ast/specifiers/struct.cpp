@@ -1,96 +1,7 @@
-#include "declarator.h"
-#include "statement.h"
+#include "struct.h"
 
-std::ostream& operator<<(std::ostream& stream, const DeclaratorPtr& declarator) {
-    declarator->print(stream);
-    return stream;
-}
-
-bool Declarator::isAbstract() {
-    return this->_abstract;
-}
-
-std::ostream& operator<<(std::ostream& stream, Declaration& declaration) {
-    declaration.print(stream);
-    return stream;
-}
-
-void Declaration::print(std::ostream& stream) {
-    stream << _specifier;
-    if (_declarator->kind == DeclaratorKind::POINTER || !_declarator->isAbstract()) {
-        stream << ' ';
-    }
-    stream << _declarator;
-}
-
-void Declaration::typecheck(ScopePtr& scope) {
-    auto decl = this->toType(scope);
-    if (this->_declarator->isAbstract()) {
-        return;
-    }
-    if (scope->addDeclaration(decl)) {
-        errorloc(this->_declarator->loc, "Duplicate variable");
-    }
-}
-
-TypeDecl Declaration::toType(ScopePtr& scope) {
-    auto name = this->_declarator->getName();
-    auto type = this->_declarator->wrapType(this->_specifier->toType(scope), scope);
-    return TypeDecl(name, type);
-}
-
-void PrimitiveDeclarator::print(std::ostream& stream) {
-    if (!isAbstract()) {
-        stream << *_ident.value();
-    }
-}
-
-void FunctionDeclarator::print(std::ostream& stream) {
-    if (_name->isAbstract()) {
-        stream << '(';
-    } else {
-        stream << '(' << _name << '(';
-    }
-
-    for (size_t i = 0; i < _parameters.size(); i++) {
-        auto& par = _parameters[i];
-        stream << par;
-        if (i < _parameters.size() - 1) {
-            stream << ", ";
-        }
-    }
-
-    if (_name->isAbstract()) {
-        stream << ')';
-    } else {
-        stream << "))";
-    }
-}
-
-void FunctionDeclarator::addParameter(Declaration param) {
-    this->_parameters.push_back(std::move(param));
-}
-
-void PointerDeclarator::print(std::ostream& stream) {
-    stream << "(*" << _inner << ')';
-}
-
-std::ostream& operator<<(std::ostream& stream, const TypeSpecifierPtr& type) {
-    type->print(stream);
-    return stream;
-}
-
-void VoidSpecifier::print(std::ostream& stream) {
-    stream << "void";
-}
-
-void CharSpecifier::print(std::ostream& stream) {
-    stream << "char";
-}
-
-void IntSpecifier::print(std::ostream& stream) {
-    stream << "int";
-}
+// For IdentManager
+#include "../statement.h"
 
 void StructSpecifier::print(std::ostream& stream) {
     stream << "struct";
@@ -108,14 +19,6 @@ void StructSpecifier::print(std::ostream& stream) {
         ident.decreaseCurrIdentation(1);
         stream << ident << '}';
     }
-}
-
-void StructSpecifier::makeComplete() {
-    this->_components = std::vector<Declaration>();
-}
-
-void StructSpecifier::addComponent(Declaration declaration) {
-    this->_components.value().push_back(std::move(declaration));
 }
 
 TypePtr StructSpecifier::toType(ScopePtr& scope) {
@@ -186,4 +89,12 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
     }
 
     return type;
+}
+
+void StructSpecifier::makeComplete() {
+    this->_components = std::vector<Declaration>();
+}
+
+void StructSpecifier::addComponent(Declaration declaration) {
+    this->_components.value().push_back(std::move(declaration));
 }

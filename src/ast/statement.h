@@ -9,7 +9,7 @@
 #include "../util/symbol_internalizer.h"
 
 #include "expression.h"
-#include "declarator.h"
+#include "declarators.h"
 #include "scope.h"
 #include "types.h"
 

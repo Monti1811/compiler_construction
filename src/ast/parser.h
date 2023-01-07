@@ -8,7 +8,7 @@
 #include "../lexer/token.h"
 #include "../util/diagnostic.h"
 
-#include "declarator.h"
+#include "declarators/declarator.h"
 #include "expression.h"
 #include "statement.h"
 #include "program.h"
