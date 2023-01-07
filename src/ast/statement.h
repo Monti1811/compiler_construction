@@ -10,6 +10,7 @@
 
 #include "expression.h"
 #include "declarator.h"
+#include "scope.h"
 #include "types.h"
 
 enum class StatementKind {
@@ -259,7 +260,7 @@ struct ReturnStatement: public JumpStatement {
     void print(std::ostream& stream);
 
     void typecheck(ScopePtr& scope) {
-        auto return_type_opt = scope->getFunctionReturnType();
+        auto return_type_opt = scope->function_return_type;
         if (!return_type_opt.has_value()) {
             errorloc(this->loc, "Return Statement in a non-function block");
         }

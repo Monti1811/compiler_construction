@@ -8,6 +8,7 @@
 #include "../util/diagnostic.h"
 #include "../util/symbol_internalizer.h"
 
+#include "scope.h"
 #include "types.h"
 #include "type_decl.h"
 
