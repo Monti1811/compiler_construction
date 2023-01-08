@@ -1,0 +1,11 @@
+struct S {
+    int a;
+} s;
+
+int main() {
+    struct S* sptr;
+    *sptr = s;
+    s.a = 42;
+    sptr->a = 42;
+    (*sptr).a = 42;
+}

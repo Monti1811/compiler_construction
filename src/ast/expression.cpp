@@ -94,14 +94,33 @@ TypePtr NullPtrExpression::typecheck(ScopePtr&) { return NULLPTR_TYPE; }
 
 TypePtr IndexExpression::typecheck(ScopePtr& scope) {
         auto expr_type = this->_expression->typecheck(scope);
-        if (expr_type->kind != TypeKind::TY_POINTER) {
-            errorloc(this->loc, "Indexed expression must have pointer type");
+        auto index_type = this->_index->typecheck(scope);
+
+        TypePtr pointer_type;
+
+        if (expr_type->isPointer() && index_type->isInteger()) {
+            // Regular index expression: arr[0]
+            pointer_type = expr_type;
+        } else if (expr_type->isInteger() && index_type->isPointer()) {
+            // Swapped index expression: 0[arr]
+            pointer_type = index_type;
+        } else {
+            errorloc(this->loc, "Index expressions must consist of a pointer and an integer");
         }
-        if (!this->_index->typecheck(scope)->isArithmetic()) {
-            errorloc(this->loc, "Index must have arithmetic type");
+
+        TypePtr indexed_type;
+
+        if (pointer_type->kind == TypeKind::TY_NULLPTR) {
+            indexed_type = VOID_TYPE;
+        } else {
+            indexed_type = std::static_pointer_cast<PointerType>(pointer_type)->inner;
         }
-        auto expr_pointer_type = std::static_pointer_cast<PointerType>(expr_type);
-        return std::make_shared<Type>(*expr_pointer_type->inner);
+
+        if (!indexed_type->isComplete() || !indexed_type->isObjectType()) {
+            errorloc(this->loc, "Cannot index an incomplete or non-object type");
+        }
+        
+        return indexed_type;
     }
 
 TypePtr CallExpression::typecheck(ScopePtr& scope) {
@@ -203,7 +222,6 @@ TypePtr SizeofTypeExpression::typecheck(ScopePtr&) {
 
 TypePtr ReferenceExpression::typecheck(ScopePtr& scope) {
         auto inner_type = this->_inner->typecheck(scope);
-        auto pointer_type = std::static_pointer_cast<PointerType>(inner_type);
         // indexExpression and pointerExpression are defined as l-values
         if (this->_inner->isLvalue()) {
             return std::make_shared<PointerType>(inner_type);
@@ -242,8 +260,7 @@ TypePtr BinaryExpression::typecheck(ScopePtr& scope) {
         auto left_type = _left->typecheck(scope);
         auto right_type = _right->typecheck(scope);
 
-        if (!left_type->isArithmetic() || !right_type->isArithmetic()) 
-        {
+        if (!left_type->isArithmetic() || !right_type->isArithmetic()) {
             errorloc(this->loc, "both sides of an arithmetic binary expression must be of arithemic type");
         }
         return INT_TYPE;

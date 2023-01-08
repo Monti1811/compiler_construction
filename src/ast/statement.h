@@ -9,7 +9,8 @@
 #include "../util/symbol_internalizer.h"
 
 #include "expression.h"
-#include "declarator.h"
+#include "declarators.h"
+#include "scope.h"
 #include "types.h"
 
 enum class StatementKind {
@@ -259,7 +260,7 @@ struct ReturnStatement: public JumpStatement {
     void print(std::ostream& stream);
 
     void typecheck(ScopePtr& scope) {
-        auto return_type_opt = scope->getFunctionReturnType();
+        auto return_type_opt = scope->function_return_type;
         if (!return_type_opt.has_value()) {
             errorloc(this->loc, "Return Statement in a non-function block");
         }
@@ -282,26 +283,4 @@ struct ReturnStatement: public JumpStatement {
             errorloc(this->loc, "return type and type of return expr did not match");
         }
     }
-};
-
-// Class implemented as singleton pattern to get the current identation to print the AST correctly
-class IdentManager
-{
-    public:
-        static IdentManager& getInstance() {
-            static IdentManager instance; 
-            return instance;
-        }
-        int getCurrIdentation();
-        void setCurrIdentation(int value);
-        void increaseCurrIdentation(int value);
-        void decreaseCurrIdentation(int value);
-        void printCurrIdentation(std::ostream& stream);
-        int currIdent = 0;
-
-        friend std::ostream& operator<<(std::ostream& stream, const IdentManager& ident);
-    private:
-        IdentManager() {}
-        IdentManager(IdentManager const&); 
-        IdentManager& operator = (const IdentManager&);
 };

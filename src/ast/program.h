@@ -4,7 +4,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "declarator.h"
+#include "declaration.h"
 #include "expression.h"
 #include "statement.h"
 

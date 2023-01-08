@@ -21,12 +21,11 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
 
     // Add this function's signature to the scope given as an argument
     if (scope->addFunctionDeclaration(function)) {
-        errorloc(this->_declaration._declarator->loc, "Duplicate function");
+        errorloc(this->_declaration._loc, "Duplicate function");
     }
 
     // Create inner function scope and add function arguments
-    auto function_scope = std::make_shared<Scope>(scope, this->_labels);
-    function_scope->setFunctionReturnType(function_type->return_type);
+    auto function_scope = std::make_shared<Scope>(scope, this->_labels, function_type->return_type);
 
     // 6.9.1.3: The return type of a function shall be void or a complete object type other than array type.
     auto return_type = function_type->return_type;

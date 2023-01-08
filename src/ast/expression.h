@@ -8,8 +8,8 @@
 #include "../util/symbol_internalizer.h"
 #include "../lexer/token.h"
 
-#include "declarator.h"
-#include "types.h"
+#include "scope.h"
+#include "specifiers/specifier.h"
 
 struct Expression {
     Expression(Locatable loc)
