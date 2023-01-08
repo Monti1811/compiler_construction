@@ -1,24 +1,26 @@
 #include "statement.h"
 
+#include "indentation.h"
+
 std::ostream& operator<<(std::ostream& stream, const StatementPtr& stat) {
     stat->print(stream);
     return stream;
 }
 
-std::ostream& operator<<(std::ostream& stream, const IdentManager& identmanager) {
-    for (int i = 0; i < identmanager.currIdent; i++) {
+std::ostream& operator<<(std::ostream& stream, const IndentManager& identmanager) {
+    for (int i = 0; i < identmanager.currIndent; i++) {
         stream << '\t';
     }
     return stream;
 }
 
 void LabeledStatement::print(std::ostream& stream) {
-    IdentManager& ident = IdentManager::getInstance();
+    IndentManager& indent = IndentManager::getInstance();
     stream << *this->_name << ':';
     if (this->_inner.get()->kind == StatementKind::ST_LABELED) {
         stream << '\n' << this->_inner;
     } else {
-        stream << '\n' << ident << this->_inner;
+        stream << '\n' << indent << this->_inner;
     }
 }
 
@@ -32,17 +34,17 @@ void ExpressionStatement::print(std::ostream& stream) {
 
 void BlockStatement::print(std::ostream& stream) {
     stream << "{";
-    IdentManager& ident = IdentManager::getInstance();
-    ident.increaseCurrIdentation(1);
+    IndentManager& indent = IndentManager::getInstance();
+    indent.increaseCurrIndentation(1);
     for (auto &item : this->_items) {
         if (item.get()->kind == StatementKind::ST_LABELED) {
             stream << '\n' << item;
         } else {
-            stream << '\n' << ident << item;
+            stream << '\n' << indent << item;
         }
     }
-    ident.decreaseCurrIdentation(1);
-    stream << '\n' << ident << '}';
+    indent.decreaseCurrIndentation(1);
+    stream << '\n' << indent << '}';
 }
 
 void BlockStatement::typecheck(ScopePtr& scope) {
@@ -62,7 +64,7 @@ void EmptyStatement::print(std::ostream& stream) {
 
 void IfStatement::print(std::ostream& stream) {
     stream << "if (" << this->_condition << ')';
-    IdentManager& ident = IdentManager::getInstance();
+    IndentManager& indent = IndentManager::getInstance();
     bool hasElseStatement = this->_else_statement.has_value();
 
     if (this->_then_statement->kind == StatementKind::ST_BLOCK) {
@@ -71,11 +73,11 @@ void IfStatement::print(std::ostream& stream) {
             stream << " ";
         }
     } else {
-        ident.increaseCurrIdentation(1);
-        stream << "\n" << ident << this->_then_statement;
-        ident.decreaseCurrIdentation(1);
+        indent.increaseCurrIndentation(1);
+        stream << "\n" << indent << this->_then_statement;
+        indent.decreaseCurrIndentation(1);
         if (hasElseStatement) {
-            stream << "\n" << ident;
+            stream << "\n" << indent;
         }
     }
         
@@ -87,26 +89,26 @@ void IfStatement::print(std::ostream& stream) {
             stream << "else " << else_statement;
         } else {
             stream << "else";
-            ident.increaseCurrIdentation(1);
-            stream << "\n" << ident << else_statement;
-            ident.decreaseCurrIdentation(1);
+            indent.increaseCurrIndentation(1);
+            stream << "\n" << indent << else_statement;
+            indent.decreaseCurrIndentation(1);
         }
     }
 }
 
 void WhileStatement::print(std::ostream& stream) {
     stream << "while (" << this->_condition << ')';
-    IdentManager& ident = IdentManager::getInstance();
+    IndentManager& indent = IndentManager::getInstance();
     if (this->_body->kind == StatementKind::ST_BLOCK) {
         stream << ' ' << this->_body;
     } else if (this->_body->kind == StatementKind::ST_LABELED) {
-        ident.increaseCurrIdentation(1);
+        indent.increaseCurrIndentation(1);
         stream << '\n' << this->_body;
-        ident.decreaseCurrIdentation(1);
+        indent.decreaseCurrIndentation(1);
     } else {
-        ident.increaseCurrIdentation(1);
-        stream << '\n' << ident << this->_body;
-        ident.decreaseCurrIdentation(1);
+        indent.increaseCurrIndentation(1);
+        stream << '\n' << indent << this->_body;
+        indent.decreaseCurrIndentation(1);
     }
     
 }
@@ -125,27 +127,4 @@ void ReturnStatement::print(std::ostream& stream) {
 
 void GotoStatement::print(std::ostream& stream) {
     stream << "goto " << *this->_ident << ';';
-}
-
-// Identation manager to keep track of idendation
-
-int IdentManager::getCurrIdentation() {
-    return this->currIdent;
-}
-
-void IdentManager::setCurrIdentation(int value) {
-    this->currIdent = value;
-}
-
-void IdentManager::increaseCurrIdentation(int value) {
-    this->currIdent += value;
-}
-
-void IdentManager::decreaseCurrIdentation(int value) {
-    this->currIdent = std::max(this->currIdent-value,0);
-}
-
-void IdentManager::printCurrIdentation(std::ostream& stream) {
-    for (int i = 0; i < this->currIdent; i++)
-        stream << '\t';
 }

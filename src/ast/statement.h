@@ -284,25 +284,3 @@ struct ReturnStatement: public JumpStatement {
         }
     }
 };
-
-// Class implemented as singleton pattern to get the current identation to print the AST correctly
-class IdentManager
-{
-    public:
-        static IdentManager& getInstance() {
-            static IdentManager instance; 
-            return instance;
-        }
-        int getCurrIdentation();
-        void setCurrIdentation(int value);
-        void increaseCurrIdentation(int value);
-        void decreaseCurrIdentation(int value);
-        void printCurrIdentation(std::ostream& stream);
-        int currIdent = 0;
-
-        friend std::ostream& operator<<(std::ostream& stream, const IdentManager& ident);
-    private:
-        IdentManager() {}
-        IdentManager(IdentManager const&); 
-        IdentManager& operator = (const IdentManager&);
-};

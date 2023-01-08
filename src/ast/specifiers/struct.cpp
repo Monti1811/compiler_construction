@@ -1,7 +1,6 @@
 #include "struct.h"
 
-// For IdentManager
-#include "../statement.h"
+#include "../indentation.h"
 
 void StructSpecifier::print(std::ostream& stream) {
     stream << "struct";
@@ -10,14 +9,14 @@ void StructSpecifier::print(std::ostream& stream) {
     } 
 
     if (this->_components.has_value()) {
-        IdentManager& ident = IdentManager::getInstance();
-        stream << '\n' << ident << "{\n";
-        ident.increaseCurrIdentation(1);
+        IndentManager& indent = IndentManager::getInstance();
+        stream << '\n' << indent << "{\n";
+        indent.increaseCurrIndentation(1);
         for (auto& component : this->_components.value()) {
-            stream << ident << component << ";\n";
+            stream << indent << component << ";\n";
         }
-        ident.decreaseCurrIdentation(1);
-        stream << ident << '}';
+        indent.decreaseCurrIndentation(1);
+        stream << indent << '}';
     }
 }
 
