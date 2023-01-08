@@ -1,0 +1,5 @@
+int main() {
+    char c;
+    int* arr;
+    arr[c] = 42;
+}

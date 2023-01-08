@@ -1,0 +1,4 @@
+int main() {
+    void* p;
+    p[0] = p[0];
+}

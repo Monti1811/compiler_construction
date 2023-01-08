@@ -30,9 +30,8 @@ struct Type {
     virtual bool equals(std::shared_ptr<Type> const& other) {
         if (this->kind != other->kind) {
             if (
-                (this->kind == TY_NULLPTR && other->kind == TY_INT) 
-                || (this->kind == TY_INT && other->kind == TY_NULLPTR)
-                || (this->kind == TY_NULLPTR && other->kind == TY_POINTER) 
+                (this->isInteger() && other->isInteger())
+                || (this->kind == TY_NULLPTR && other->kind == TY_POINTER)
                 || (this->kind == TY_POINTER && other->kind == TY_NULLPTR)
                 ) 
             {
@@ -48,6 +47,14 @@ struct Type {
             return false;
         }
         return true;
+    }
+
+    bool isPointer() {
+        return this->kind == TypeKind::TY_POINTER || this->kind == TypeKind::TY_NULLPTR;
+    }
+
+    bool isInteger() {
+        return this->kind == TypeKind::TY_INT || this->kind == TypeKind::TY_NULLPTR;
     }
 
     bool isScalar() {

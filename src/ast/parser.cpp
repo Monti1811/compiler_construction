@@ -187,7 +187,7 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
             expect(TK_LBRACKET, "[");
             auto index = parseExpression(); // accept index
             expect(TK_RBRACKET, "]");
-            auto newPostfixExpr = std::make_unique<IndexExpression>(getLoc(), std::move(postfixExpression.value()), std::move(index));
+            auto newPostfixExpr = std::make_unique<IndexExpression>(token, std::move(postfixExpression.value()), std::move(index));
             return parsePostfixExpression(std::move(newPostfixExpr));
         }
         // function call (a_1, a_2, ...)
