@@ -31,24 +31,28 @@ TypePtr FunctionDeclarator::wrapType(TypePtr const& type, ScopePtr& scope) {
         return std::make_shared<PointerType>(func_type);
     };
 
+    auto function_scope = std::make_shared<Scope>(scope);
+
     if (this->_parameters.empty()) {
-        auto function_type = std::make_shared<FunctionType>(type);
+        auto function_type = std::make_shared<FunctionType>(type, function_scope);
         return functionPointer(function_type);
     }
 
-    auto function_type = std::make_shared<ParamFunctionType>(type);
+    auto function_type = std::make_shared<ParamFunctionType>(type, function_scope);
 
     if (this->_parameters.size() == 1) {
-        auto param = this->_parameters[0].toType(scope);
+        auto param = this->_parameters[0].toType(function_scope);
 
         if (param.type->kind == TypeKind::TY_VOID) {
             if (!param.isAbstract()) {
                 errorloc(this->loc, "void function parameter must be abstract");
             }
-            return functionPointer(function_type);
+        } else {
+            function_type->addParameter(param);
         }
+
+        return functionPointer(function_type);
     }
-    auto function_scope = std::make_shared<Scope>(scope);
 
     for (auto& param_decl : this->_parameters) {
         auto param = param_decl.toType(function_scope);

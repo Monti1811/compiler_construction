@@ -25,7 +25,8 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     }
 
     // Create inner function scope and add function arguments
-    auto function_scope = std::make_shared<Scope>(scope, this->_labels, function_type->return_type);
+    auto function_scope = function_type->scope;
+    function_scope->setLabels(this->_labels);
 
     // 6.9.1.3: The return type of a function shall be void or a complete object type other than array type.
     auto return_type = function_type->return_type;

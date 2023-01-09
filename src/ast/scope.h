@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "types.h"
+#include "types/type.h"
 
 struct Scope {
     Scope() : parent(std::nullopt) {};
@@ -10,17 +10,13 @@ struct Scope {
         : parent(parent)
         , function_return_type(parent->function_return_type)
         , loop_counter(parent->loop_counter) {};
-    Scope(std::shared_ptr<Scope> parent, std::unordered_set<Symbol> labels, std::optional<TypePtr> function_return_type)
-        : parent(parent)
-        , labels(labels)
-        , function_return_type(function_return_type)
-        , loop_counter(parent->loop_counter) {};
 
     std::optional<TypePtr> getVarType(Symbol ident);
 
     std::optional<std::shared_ptr<StructType>> getStructType(Symbol ident);
 
     bool isLabelDefined(Symbol label);
+    void setLabels(std::unordered_set<Symbol> labels);
 
     // Returns whether the variable was already defined
     bool addDeclaration(TypeDecl& decl);

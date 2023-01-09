@@ -1,8 +1,9 @@
 #pragma once
 
-#include "../declaration.h"
-
 #include "declarator.h"
+
+#include "../declaration.h"
+#include "../types.h"
 
 struct FunctionDeclarator : public Declarator {
     public:
