@@ -30,6 +30,10 @@ bool Scope::isLabelDefined(Symbol label) {
     return true;
 }
 
+void Scope::setLabels(std::unordered_set<Symbol> labels) {
+    this->labels = labels;
+}
+
 bool Scope::addDeclaration(TypeDecl& decl) {
     if (decl.isAbstract()) {
         return false;

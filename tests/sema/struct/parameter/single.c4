@@ -1,0 +1,1 @@
+int func(struct S { int x; } s);

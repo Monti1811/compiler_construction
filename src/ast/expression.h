@@ -10,6 +10,7 @@
 
 #include "scope.h"
 #include "specifiers/specifier.h"
+#include "types.h"
 
 struct Expression {
     Expression(Locatable loc)

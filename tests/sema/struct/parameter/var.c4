@@ -1,0 +1,5 @@
+int func(struct S { int x; } s, int x) {
+    s.x = 42;
+    struct S t;
+    t.x = 123;
+}

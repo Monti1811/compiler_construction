@@ -141,7 +141,7 @@ successCount, failedCount, skippedCount = 0, 0, 0
 
 def runTest(file: str):
     global successCount, failedCount, skippedCount
-
+    os.system('')
     print(f"\033[94m{file[6:]}\033[90m ... \033[0m", end = "")
 
     tokenizeResult: "None | str" = runTokenizeTest(file)
@@ -176,6 +176,7 @@ if not ci:
 for test in tests:
     result = runTest(test)
 
+os.system('')
 print(f"""\033[97m{len(tests)} tests executed: \
 \033[92m{successCount} ok\033[97m, \
 \033[91m{failedCount} failed\033[97m, \
