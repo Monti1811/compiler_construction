@@ -48,9 +48,10 @@ TypePtr FunctionDeclarator::wrapType(TypePtr const& type, ScopePtr& scope) {
             return functionPointer(function_type);
         }
     }
+    auto function_scope = std::make_shared<Scope>(scope);
 
     for (auto& param_decl : this->_parameters) {
-        auto param = param_decl.toType(scope);
+        auto param = param_decl.toType(function_scope);
 
         if (param.type->kind == TypeKind::TY_VOID) {
             errorloc(this->loc, "function parameters cannot be void, unless void is the only parameter");
