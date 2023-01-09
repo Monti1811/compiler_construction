@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "types/type.h"
+#include "types/struct.h"
 
 struct Scope {
     Scope() : parent(std::nullopt) {};

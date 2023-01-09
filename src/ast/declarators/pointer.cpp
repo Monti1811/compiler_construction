@@ -1,5 +1,7 @@
 #include "pointer.h"
 
+#include "../types.h"
+
 void PointerDeclarator::print(std::ostream& stream) {
     stream << "(*" << _inner << ')';
 }
