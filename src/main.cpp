@@ -35,11 +35,11 @@ int main(int argc, char const* argv[]) {
             program.typecheck();
             std::cout << program << std::endl;
         } else if (strcmp(argv[i], "--compile") == 0) {
-			Parser parser(lexer);
-			auto program = parser.parseProgram();
-			program.typecheck();
-			// program.compile();
-		}
+            Parser parser(lexer);
+            auto program = parser.parseProgram();
+            program.typecheck();
+            // program.compile();
+        }
     }
 
     return EXIT_SUCCESS;
