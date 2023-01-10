@@ -39,7 +39,21 @@ bool Scope::addDeclaration(TypeDecl& decl) {
         return false;
     }
 
-    return !(this->vars.insert({ decl.name.value(), decl.type }).second);
+    auto var = this->vars.insert({ decl.name.value(), decl.type });
+    auto var_type = var.first;
+    auto is_var_new = var.second;
+
+    if (this->_root) {
+        // 6.9.2: External definitions may be redefined (for some reason)
+        // Only throw an error if type is not the same as previous declaration
+        if (var_type != this->vars.end()) {
+            return !decl.type->equals(var_type->second);
+        } else {
+            return false;
+        }
+    } else {
+        return !is_var_new;
+    }
 }
 
 bool Scope::addFunctionDeclaration(TypeDecl& decl) {

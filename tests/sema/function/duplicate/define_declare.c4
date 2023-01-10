@@ -3,3 +3,5 @@ int function(void) {
 }
 
 int function(void);
+
+// This is legal, weirdly enough.
