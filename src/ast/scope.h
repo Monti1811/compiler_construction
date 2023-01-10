@@ -6,11 +6,16 @@
 #include "types/struct.h"
 
 struct Scope {
-    Scope() : parent(std::nullopt) {};
+    public:
+    Scope()
+        : parent(std::nullopt)
+        , _root(true) {};
+
     Scope(std::shared_ptr<Scope> parent)
         : parent(parent)
         , function_return_type(parent->function_return_type)
-        , loop_counter(parent->loop_counter) {};
+        , loop_counter(parent->loop_counter)
+        , _root(false) {};
 
     std::optional<TypePtr> getVarType(Symbol ident);
 
@@ -43,6 +48,9 @@ struct Scope {
     std::optional<TypePtr> function_return_type;
 
     int loop_counter = 0;
+
+    private:
+    bool _root;
 };
 
 typedef std::shared_ptr<Scope> ScopePtr;
