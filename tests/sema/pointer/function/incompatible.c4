@@ -1,0 +1,19 @@
+void f(int a) {
+    return;
+}
+
+int g(void) {
+    return 42;
+}
+
+int main(int which) {
+    void (*fp)(char);
+
+    if (which) {
+        fp = f;
+    } else {
+        fp = g;
+    }
+
+    fp('x');
+}

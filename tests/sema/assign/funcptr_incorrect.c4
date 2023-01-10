@@ -1,0 +1,6 @@
+int a(void);
+
+int main() {
+    int fp(void);
+    fp = a;
+}
