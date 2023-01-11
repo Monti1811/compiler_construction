@@ -6,8 +6,8 @@ int (main())
 	int (g(int, char));
 	int (h(int (lambda(int x))));
 	int (i(int (lambda(int))));
-	int (j(int(int x)));
-	int (k(int(int)));
+	int (j(int ((int x))));
+	int (k(int ((int))));
 	int (*a);
 	int (*(*b));
 	int c;

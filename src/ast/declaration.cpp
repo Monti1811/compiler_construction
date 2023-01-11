@@ -6,11 +6,14 @@ std::ostream& operator<<(std::ostream& stream, Declaration& declaration) {
 }
 
 void Declaration::print(std::ostream& stream) {
-    stream << _specifier;
-    if (_declarator->kind == DeclaratorKind::POINTER || !_declarator->isAbstract()) {
-        stream << ' ';
+    stream << this->_specifier;
+
+    auto declarator_empty =
+        this->_declarator->kind == DeclaratorKind::PRIMITIVE && this->_declarator->isAbstract();
+
+    if (!declarator_empty) {
+        stream << ' ' << this->_declarator;
     }
-    stream << _declarator;
 }
 
 void Declaration::typecheck(ScopePtr& scope) {

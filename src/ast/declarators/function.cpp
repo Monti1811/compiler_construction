@@ -1,11 +1,7 @@
 #include "function.h"
 
 void FunctionDeclarator::print(std::ostream& stream) {
-    if (_name->isAbstract()) {
-        stream << '(';
-    } else {
-        stream << '(' << _name << '(';
-    }
+    stream << '(' << _name << '(';
 
     for (size_t i = 0; i < _parameters.size(); i++) {
         auto& par = _parameters[i];
@@ -15,11 +11,7 @@ void FunctionDeclarator::print(std::ostream& stream) {
         }
     }
 
-    if (_name->isAbstract()) {
-        stream << ')';
-    } else {
-        stream << "))";
-    }
+    stream << "))";
 }
 
 std::optional<Symbol> FunctionDeclarator::getName() {
