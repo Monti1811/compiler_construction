@@ -24,12 +24,8 @@ void LabeledStatement::print(std::ostream& stream) {
     }
 }
 
-void DeclarationStatement::print(std::ostream& stream) {
-    stream << this->_declaration << ';';
-}
-
-void ExpressionStatement::print(std::ostream& stream) {
-    stream << this->_expr << ';';
+void LabeledStatement::typecheck(ScopePtr& scope) {
+    this->_inner->typecheck(scope);
 }
 
 void BlockStatement::print(std::ostream& stream) {
@@ -60,6 +56,26 @@ void BlockStatement::typecheckInner(ScopePtr& inner_scope) {
 
 void EmptyStatement::print(std::ostream& stream) {
     stream << ';';
+}
+
+void DeclarationStatement::print(std::ostream& stream) {
+    stream << this->_declaration << ';';
+}
+
+void DeclarationStatement::typecheck(ScopePtr& scope) {
+    if (this->_declaration._specifier->_kind != SpecifierKind::STRUCT 
+            && this->_declaration._declarator->isAbstract()) {
+        errorloc(this->_declaration._loc, "Declaration without declarator");
+    }
+    this->_declaration.typecheck(scope);
+}
+
+void ExpressionStatement::print(std::ostream& stream) {
+    stream << this->_expr << ';';
+}
+
+void ExpressionStatement::typecheck(ScopePtr& scope) {
+    this->_expr->typecheck(scope);
 }
 
 void IfStatement::print(std::ostream& stream) {
@@ -96,6 +112,17 @@ void IfStatement::print(std::ostream& stream) {
     }
 }
 
+void IfStatement::typecheck(ScopePtr& scope) {
+    auto condition_type = this->_condition->typecheck(scope);
+    if (!condition_type->isScalar()) {
+        errorloc(this->_condition->loc, "Condition of an if statement must be scalar");
+    }
+    this->_then_statement->typecheck(scope);
+    if (this->_else_statement.has_value()) {
+        this->_else_statement->get()->typecheck(scope);
+    }
+}
+
 void WhileStatement::print(std::ostream& stream) {
     stream << "while (" << this->_condition << ')';
     IndentManager& indent = IndentManager::getInstance();
@@ -109,12 +136,46 @@ void WhileStatement::print(std::ostream& stream) {
         indent.increaseCurrIndentation(1);
         stream << '\n' << indent << this->_body;
         indent.decreaseCurrIndentation(1);
+    }   
+}
+
+void WhileStatement::typecheck(ScopePtr& scope) {
+    auto condition_type = this->_condition->typecheck(scope);
+    if (!condition_type->isScalar()) {
+        errorloc(this->loc, "Condition of a while statement must be scalar");
     }
-    
+    scope->loop_counter++;
+    this->_body->typecheck(scope);
+    scope->loop_counter--;
 }
 
 void JumpStatement::print(std::ostream& stream) {
     stream << this->_jump_str << ';';
+}
+
+void GotoStatement::print(std::ostream& stream) {
+    stream << "goto " << *this->_ident << ';';
+}
+
+void GotoStatement::typecheck(ScopePtr& scope) {
+    if (this->_ident->length() == 0) {
+        errorloc(this->loc, "Labels cannot be empty");
+    }
+    if (!scope->isLabelDefined(this->_ident)) {
+        errorloc(this->loc, "Missing label");
+    }
+}
+
+void ContinueStatement::typecheck(ScopePtr& scope) {
+    if (scope->loop_counter == 0) {
+        errorloc(this->loc, "Invalid 'continue' outside of a loop");
+    }
+}
+
+void BreakStatement::typecheck(ScopePtr& scope) {
+    if (scope->loop_counter == 0) {
+        errorloc(this->loc, "Invalid 'break' outside of a loop");
+    }
 }
 
 void ReturnStatement::print(std::ostream& stream) {
@@ -125,6 +186,27 @@ void ReturnStatement::print(std::ostream& stream) {
     stream << ';';
 }
 
-void GotoStatement::print(std::ostream& stream) {
-    stream << "goto " << *this->_ident << ';';
+void ReturnStatement::typecheck(ScopePtr& scope) {
+    auto return_type_opt = scope->function_return_type;
+    if (!return_type_opt.has_value()) {
+        errorloc(this->loc, "Return Statement in a non-function block");
+    }
+
+    auto return_type = return_type_opt.value();
+
+    if (return_type->kind == TypeKind::TY_VOID) {
+        if (_expr.has_value()) {
+            errorloc(this->loc, "return statement must be empty if return type is void");
+        }
+        return;
+    } 
+
+    if (!_expr.has_value()) {
+        errorloc(this->loc, "expected a return expression but got none");
+    }
+
+    auto expr_type = _expr.value()->typecheck(scope);
+    if (!expr_type->equals(return_type)) {
+        errorloc(this->loc, "return type and type of return expr did not match");
+    }
 }

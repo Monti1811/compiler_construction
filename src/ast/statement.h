@@ -49,16 +49,13 @@ struct LabeledStatement: public Statement {
         , _name(name)
         , _inner(std::move(inner)) {};
 
+    void print(std::ostream& stream);
+
+    void typecheck(ScopePtr& scope);
+
     private:
     Symbol _name;
     StatementPtr _inner;
-
-    void print(std::ostream& stream);
-
-    void typecheck(ScopePtr& scope) {
-        // TODO: Check that labels are unique within a function
-        this->_inner->typecheck(scope);
-    }
 };
 
 /// Block statement, e.g.:
@@ -86,7 +83,6 @@ struct EmptyStatement: public Statement {
     EmptyStatement(Locatable loc)
         : Statement(loc, StatementKind::ST_EMPTY) {};
     
-    private:
     void print(std::ostream& stream);
 
     void typecheck(ScopePtr&) {}
@@ -98,18 +94,12 @@ struct DeclarationStatement: public Statement {
         : Statement(loc, StatementKind::ST_DECLARATION)
         , _declaration(std::move(declaration)) {};
 
-    private:
-    Declaration _declaration;
-
     void print(std::ostream& stream);
 
-    void typecheck(ScopePtr& scope) {
-        if (this->_declaration._specifier->_kind != SpecifierKind::STRUCT 
-                && this->_declaration._declarator->isAbstract()) {
-            errorloc(this->_declaration._loc, "Declaration without declarator");
-        }
-        this->_declaration.typecheck(scope);
-    }
+    void typecheck(ScopePtr& scope);
+
+    private:
+    Declaration _declaration;
 };
 
 // Just an expression disguised as a Statement
@@ -118,14 +108,12 @@ struct ExpressionStatement: public Statement {
         : Statement(loc, StatementKind::ST_EXPRESSION)
         , _expr(std::move(expr)) {};
 
-    private:
-    ExpressionPtr _expr;
-
     void print(std::ostream& stream);
 
-    void typecheck(ScopePtr& scope) {
-        this->_expr->typecheck(scope);
-    }
+    void typecheck(ScopePtr& scope);
+
+    private:
+    ExpressionPtr _expr;
 };
 
 // if (cond) then stat
@@ -140,23 +128,14 @@ struct IfStatement: public Statement {
     IfStatement(Locatable loc, ExpressionPtr condition, StatementPtr then_statement)
         : IfStatement(loc, std::move(condition), std::move(then_statement), std::nullopt) {};
 
+    void print(std::ostream& stream);
+
+    void typecheck(ScopePtr& scope);
+
     private:
     ExpressionPtr _condition;
     StatementPtr _then_statement;
     std::optional<StatementPtr> _else_statement;
-
-    void print(std::ostream& stream);
-
-    void typecheck(ScopePtr& scope) {
-        auto condition_type = this->_condition->typecheck(scope);
-        if (!condition_type->isScalar()) {
-            errorloc(this->_condition->loc, "Condition of an if statement must be scalar");
-        }
-        this->_then_statement->typecheck(scope);
-        if (this->_else_statement.has_value()) {
-            this->_else_statement->get()->typecheck(scope);
-        }
-    }
 };
 
 // while (condition) statement
@@ -167,21 +146,13 @@ struct WhileStatement: public Statement {
         , _condition(std::move(condition))
         , _body(std::move(statement)) {};
 
+    void print(std::ostream& stream);
+
+    void typecheck(ScopePtr& scope);
+
     private:
     ExpressionPtr _condition;
     StatementPtr _body;
-
-    void print(std::ostream& stream);
-
-    void typecheck(ScopePtr& scope) {
-        auto condition_type = this->_condition->typecheck(scope);
-        if (!condition_type->isScalar()) {
-            errorloc(this->loc, "Condition of a while statement must be scalar");
-        }
-        scope->loop_counter++;
-        this->_body->typecheck(scope);
-        scope->loop_counter--;
-    }
 };
 
 // Parent class of jump instructions
@@ -190,12 +161,12 @@ struct JumpStatement: public Statement {
         : Statement(loc, StatementKind::ST_JUMP)
         , _jump_str(*name) {};
 
-    private:        
-    const std::string _jump_str;
-
     void print(std::ostream& stream);
 
     void typecheck(ScopePtr&) {}
+
+    private:
+    const std::string _jump_str;
 };
 
 // goto identifier
@@ -204,19 +175,12 @@ struct GotoStatement: public JumpStatement {
         : JumpStatement(loc, name)
         , _ident(ident) {};
 
-    private:
-    Symbol _ident;
-
     void print(std::ostream& stream);
 
-    void typecheck(ScopePtr& scope) {
-        if (this->_ident->length() == 0) {
-            errorloc(this->loc, "Labels cannot be empty");
-        }
-        if (!scope->isLabelDefined(this->_ident)) {
-            errorloc(this->loc, "Missing label");
-        }
-    }
+    void typecheck(ScopePtr& scope);
+
+    private:
+    Symbol _ident;
 };
 
 // continue; (in loops)
@@ -224,11 +188,7 @@ struct ContinueStatement: public JumpStatement {
     ContinueStatement(Locatable loc, Symbol name)
         : JumpStatement(loc, name) {};
     
-    void typecheck(ScopePtr& scope) {
-        if (scope->loop_counter == 0) {
-            errorloc(this->loc, "Invalid 'continue' outside of a loop");
-        }
-    }
+    void typecheck(ScopePtr& scope);
 };
 
 // break; (in loops)
@@ -236,11 +196,7 @@ struct BreakStatement: public JumpStatement {
     BreakStatement(Locatable loc, Symbol name)
         : JumpStatement(loc, name) {};
 
-    void typecheck(ScopePtr& scope) {
-        if (scope->loop_counter == 0) {
-            errorloc(this->loc, "Invalid 'break' outside of a loop");
-        }
-    }
+    void typecheck(ScopePtr& scope);
 };
 
 // return;
@@ -254,33 +210,10 @@ struct ReturnStatement: public JumpStatement {
         : JumpStatement(loc, name)
         , _expr(std::make_optional(std::move(expr))) {};
 
-    private:
-    std::optional<ExpressionPtr> _expr;
-
     void print(std::ostream& stream);
 
-    void typecheck(ScopePtr& scope) {
-        auto return_type_opt = scope->function_return_type;
-        if (!return_type_opt.has_value()) {
-            errorloc(this->loc, "Return Statement in a non-function block");
-        }
+    void typecheck(ScopePtr& scope);
 
-        auto return_type = return_type_opt.value();
-
-        if (return_type->kind == TypeKind::TY_VOID) {
-            if (_expr.has_value()) {
-                errorloc(this->loc, "return statement must be empty if return type is void");
-            }
-            return;
-        } 
-
-        if (!_expr.has_value()) {
-            errorloc(this->loc, "expected a return expression but got none");
-        }
-
-        auto expr_type = _expr.value()->typecheck(scope);
-        if (!expr_type->equals(return_type)) {
-            errorloc(this->loc, "return type and type of return expr did not match");
-        }
-    }
+    private:
+    std::optional<ExpressionPtr> _expr;
 };
