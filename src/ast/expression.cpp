@@ -274,7 +274,7 @@ TypePtr ReferenceExpression::typecheck(ScopePtr& scope) {
         // The operand of the unary & operator shall be either a function designator,
         // the result of a [] or unary * operator, or an lvalue
 
-        // IndexExpression and PointerExpression are always lvalues
+        // IndexExpression and DerefExpression are always lvalues
         if (this->_inner->isLvalue(scope) || inner_type->kind == TypeKind::TY_FUNCTION) {
             return std::make_shared<PointerType>(inner_type);
         }
@@ -282,7 +282,7 @@ TypePtr ReferenceExpression::typecheck(ScopePtr& scope) {
         errorloc(this->loc, "expression to be referenced must be a function designator or an lvalue");
     }
 
-TypePtr PointerExpression::typecheck(ScopePtr& scope) {
+TypePtr DerefExpression::typecheck(ScopePtr& scope) {
         auto inner_type = this->_inner->typecheckWrap(scope);
         if (inner_type->kind != TypeKind::TY_POINTER) {
             errorloc(this->loc, "Cannot dereference a non-pointer");
@@ -291,7 +291,7 @@ TypePtr PointerExpression::typecheck(ScopePtr& scope) {
         return pointer_type->inner;
     }
 
-bool PointerExpression::isLvalue(ScopePtr&) {
+bool DerefExpression::isLvalue(ScopePtr&) {
     // 6.5.3.2.4:
     // If the operand points to a function, the result is a function designator;
     // if it points to an object, the result is an lvalue designating the object.

@@ -227,11 +227,11 @@ struct ReferenceExpression: public UnaryExpression {
     TypePtr typecheck(ScopePtr& scope);
 };
 
-struct PointerExpression: public UnaryExpression {
+struct DerefExpression: public UnaryExpression {
     // *inner
 
     public:
-    PointerExpression(Locatable loc, ExpressionPtr inner)
+    DerefExpression(Locatable loc, ExpressionPtr inner)
         : UnaryExpression(loc, std::move(inner), "*") {};
 
     TypePtr typecheck(ScopePtr& scope);

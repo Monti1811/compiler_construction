@@ -251,8 +251,8 @@ ExpressionPtr Parser::parseUnaryExpression() {
         case TokenKind::TK_ASTERISK:
         {
             expect(TokenKind::TK_ASTERISK, "*");
-            auto pointerExpr = std::make_unique<PointerExpression>(getLoc(), parseUnaryExpression());
-            return pointerExpr;
+            auto derefExpr = std::make_unique<DerefExpression>(getLoc(), parseUnaryExpression());
+            return derefExpr;
         }
         // +unaryexpr
         case TokenKind::TK_PLUS:
