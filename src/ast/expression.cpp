@@ -274,14 +274,12 @@ TypePtr ReferenceExpression::typecheck(ScopePtr& scope) {
         // The operand of the unary & operator shall be either a function designator,
         // the result of a [] or unary * operator, or an lvalue
 
-        // TODO: Allow function designators
-
         // IndexExpression and PointerExpression are always lvalues
-        if (this->_inner->isLvalue(scope)) {
+        if (this->_inner->isLvalue(scope) || inner_type->kind == TypeKind::TY_FUNCTION) {
             return std::make_shared<PointerType>(inner_type);
         }
 
-        errorloc(this->loc, "expression to be referenced must be an lvalue");
+        errorloc(this->loc, "expression to be referenced must be a function designator or an lvalue");
     }
 
 TypePtr PointerExpression::typecheck(ScopePtr& scope) {
