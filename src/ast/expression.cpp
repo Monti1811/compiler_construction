@@ -451,7 +451,7 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
         // 6.5.16.0.2:
         // An assignment operator shall have a modifiable lvalue as its left operand.
         if (!this->_left->isLvalue(scope)) {
-            errorloc(this->loc, "Cannot assign to rvalue");
+            errorloc(this->loc, "Can only assign to lvalues");
         }
 
         // 6.3.2.1.1:

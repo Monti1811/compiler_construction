@@ -1,1 +1,1 @@
-4:7: error: Cannot assign to rvalue
+4:7: error: Can only assign to lvalues
