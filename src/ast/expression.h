@@ -19,6 +19,15 @@ struct Expression {
     Locatable loc;
 
     virtual TypePtr typecheck(ScopePtr& scope) = 0;
+
+    /// Typechecks the expression, and wraps functions inside into function pointers.
+    ///
+    /// 6.3.2.1.4:
+    /// Except when it is the operand of the sizeof operator [...] or the unary & operator,
+    /// a function designator with type "function returning type" is converted to an expression that
+    /// has type "pointer to function returning type".
+    TypePtr typecheckWrap(ScopePtr& scope);
+
     /// Returns true if the expression is an lvalue
     virtual bool isLvalue(ScopePtr& scope);
 

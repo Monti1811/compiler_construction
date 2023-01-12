@@ -113,7 +113,7 @@ void IfStatement::print(std::ostream& stream) {
 }
 
 void IfStatement::typecheck(ScopePtr& scope) {
-    auto condition_type = this->_condition->typecheck(scope);
+    auto condition_type = this->_condition->typecheckWrap(scope);
     if (!condition_type->isScalar()) {
         errorloc(this->_condition->loc, "Condition of an if statement must be scalar");
     }
@@ -140,7 +140,7 @@ void WhileStatement::print(std::ostream& stream) {
 }
 
 void WhileStatement::typecheck(ScopePtr& scope) {
-    auto condition_type = this->_condition->typecheck(scope);
+    auto condition_type = this->_condition->typecheckWrap(scope);
     if (!condition_type->isScalar()) {
         errorloc(this->loc, "Condition of a while statement must be scalar");
     }
@@ -205,7 +205,7 @@ void ReturnStatement::typecheck(ScopePtr& scope) {
         errorloc(this->loc, "expected a return expression but got none");
     }
 
-    auto expr_type = _expr.value()->typecheck(scope);
+    auto expr_type = _expr.value()->typecheckWrap(scope);
     if (!expr_type->equals(return_type)) {
         errorloc(this->loc, "return type and type of return expr did not match");
     }

@@ -19,15 +19,10 @@ std::optional<Symbol> FunctionDeclarator::getName() {
 }
 
 TypePtr FunctionDeclarator::wrapType(TypePtr const& type, ScopePtr& scope) {
-    auto functionPointer = [](TypePtr func_type) {
-        return std::make_shared<PointerType>(func_type);
-    };
-
     auto function_scope = std::make_shared<Scope>(scope);
 
     if (this->_parameters.empty()) {
-        auto function_type = std::make_shared<FunctionType>(type, function_scope);
-        return functionPointer(function_type);
+        return std::make_shared<FunctionType>(type, function_scope);
     }
 
     auto function_type = std::make_shared<ParamFunctionType>(type, function_scope);
@@ -43,7 +38,7 @@ TypePtr FunctionDeclarator::wrapType(TypePtr const& type, ScopePtr& scope) {
             function_type->addParameter(param);
         }
 
-        return functionPointer(function_type);
+        return function_type;
     }
 
     for (auto& param_decl : this->_parameters) {
@@ -55,7 +50,7 @@ TypePtr FunctionDeclarator::wrapType(TypePtr const& type, ScopePtr& scope) {
         function_type->addParameter(param);
     }
 
-    return functionPointer(function_type);
+    return function_type;
 }
 
 bool FunctionDeclarator::isFunction() {

@@ -154,7 +154,7 @@ bool Type::isComplete() {
     }
 }
 
-std::optional<std::shared_ptr<FunctionType>> Type::getFunctionType() {
+std::optional<std::shared_ptr<FunctionType>> Type::unwrapFunctionPointer() {
     if (this->kind != TypeKind::TY_POINTER) {
         return std::nullopt;
     }
