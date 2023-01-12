@@ -97,12 +97,11 @@ TypePtr IdentExpression::typecheck(ScopePtr& scope) {
     }
 
 bool IdentExpression::isLvalue(ScopePtr& scope) {
-    // TODO:
     // 6.5.1.0.2:
     // An identifier is a primary expression,
     // provided it has been declared as designating an object (in which case it is an lvalue)
     // or a function (in which case it is a function designator).
-    return true;
+    return !scope->isFunctionDesignator(this->_ident);
 }
 
 TypePtr IntConstantExpression::typecheck(ScopePtr&) { return INT_TYPE; }
@@ -159,7 +158,7 @@ TypePtr CallExpression::typecheck(ScopePtr& scope) {
 
         auto function_type_opt = expr_type->unwrapFunctionPointer();
         if (!function_type_opt.has_value()) {
-            errorloc(this->_expression->loc, "Call epression needs to be called on a function pointer");
+            errorloc(this->loc, "Call expression needs to be called on a function pointer");
         }
         auto function_type = function_type_opt.value();
 

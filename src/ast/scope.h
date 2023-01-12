@@ -30,6 +30,9 @@ struct Scope {
     // Returns whether the function was already defined
     bool addFunctionDeclaration(TypeDecl& decl);
 
+    // Returns whether a variable is a function designator
+    bool isFunctionDesignator(Symbol& name);
+
     bool isStructDefined(Symbol& name);
 
     // Returns whether the struct was already defined

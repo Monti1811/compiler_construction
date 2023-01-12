@@ -76,6 +76,11 @@ bool Scope::addFunctionDeclaration(TypeDecl& decl) {
     return !function_newly_defined;
 }
 
+bool Scope::isFunctionDesignator(Symbol& name) {
+    auto type = this->getVarType(name);
+    return type.has_value() && type.value()->kind == TypeKind::TY_FUNCTION;
+}
+
 bool Scope::isStructDefined(Symbol& name) {
     return this->structs.find(name) != this->structs.end() && this->structs.at(name)->isComplete();
 }
