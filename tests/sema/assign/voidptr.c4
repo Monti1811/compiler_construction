@@ -1,0 +1,6 @@
+int main(void) {
+    void* p;
+    int a;
+    a = 42;
+    p = &a;
+}

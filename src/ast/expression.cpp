@@ -385,39 +385,62 @@ TypePtr TernaryExpression::typecheck(ScopePtr& scope) {
 TypePtr AssignExpression::typecheck(ScopePtr& scope) {
         auto right_type = this->_right->typecheck(scope);
         auto left_type = this->_left->typecheck(scope);
+
+        // 6.5.16.0.2:
+        // An assignment operator shall have a modifiable lvalue as its left operand.
         if (!this->_left->isLvalue()) {
             errorloc(this->loc, "Cannot assign to rvalue");
         }
-        
+
+        // 6.5.16.0.3:
+        // The type of an assignment expression is the type the left operand would have
+        // after lvalue conversion.
+
+        // 6.5.16.1.1:
+        // One of the following shall hold:
+
+        // the left operand has [...] arithmetic type,
+        // and the right has arithmetic type;
         if (left_type->isArithmetic() && right_type->isArithmetic()) {
             return left_type;
         }
+
+        // the left operand has [...] structure or union type compatible with the type of the right;
         if (left_type->kind == TY_STRUCT && right_type->kind == TY_STRUCT) {
             if (left_type->equals(right_type)) {
                 return left_type;
             }
             errorloc(this->loc, "left and right struct of an assign expression must be of compatible type");
         }
+
+        // the left operand has [...] pointer type,
+        // and (considering the type the left operand would have after lvalue conversion)
+        // both operands are pointers to [...] compatible types [...];
         if (left_type->kind == TY_POINTER && right_type->kind == TY_POINTER) {
             if (left_type->equals(right_type)) {
                 return left_type;
             }
         }
-        if (left_type->kind == TY_POINTER) {
-            if (right_type->kind == TY_NULLPTR) {
+
+        // the left operand has [...] pointer type,
+        // and (considering the type the left operand would have after lvalue conversion)
+        // one operand is a pointer to an object type, and the other is a pointer to [...] void [...];
+        if (left_type->kind == TY_POINTER && right_type->kind == TY_POINTER) {
+            auto left = std::static_pointer_cast<PointerType>(left_type)->inner;
+            auto right = std::static_pointer_cast<PointerType>(right_type)->inner;
+
+            if (
+                (left->isObjectType() && right->kind == TypeKind::TY_VOID)
+                || (left->kind == TypeKind::TY_VOID && right->isObjectType())
+            ) {
                 return left_type;
             }
-            if (right_type->kind == TY_POINTER) {
-                auto left_pointer = std::static_pointer_cast<PointerType>(left_type);
-                auto right_pointer = std::static_pointer_cast<PointerType>(right_type);
-                if (
-                    (left_pointer->inner->isObjectType() && right_pointer->inner->kind == TY_VOID)
-                    || 
-                    (left_pointer->inner->kind == TY_VOID && right_pointer->inner->isObjectType())
-                    ) {
-                        return left_type;
-                    }
-            }
         }
+
+        // the left operand is a [...] pointer, and the right is a null pointer constant [...]
+        if (left_type->kind == TY_POINTER && right_type->kind == TY_NULLPTR) {
+            return left_type;
+        }
+
         errorloc(this->loc, "wrong assign");
     }
