@@ -21,8 +21,17 @@ std::optional<Symbol> FunctionDeclarator::getName() {
 TypePtr FunctionDeclarator::wrapType(TypePtr const& type, ScopePtr& scope) {
     auto function_scope = std::make_shared<Scope>(scope);
 
+    // This lambda wraps the type of the function itself in a pointer, if necessary.
+    // For example, the declaration
+    // > int (*fp)(void);
+    // has type "pointer to function returning int with no arguments"
+    // and not just "function returning int with no arguments"
+    auto wrap = [&](TypePtr function_type) {
+        return this->_name->wrapType(function_type, scope);
+    };
+
     if (this->_parameters.empty()) {
-        return std::make_shared<FunctionType>(type, function_scope);
+        return wrap(std::make_shared<FunctionType>(type, function_scope));
     }
 
     auto function_type = std::make_shared<ParamFunctionType>(type, function_scope);
@@ -38,7 +47,7 @@ TypePtr FunctionDeclarator::wrapType(TypePtr const& type, ScopePtr& scope) {
             function_type->addParameter(param);
         }
 
-        return function_type;
+        return wrap(function_type);
     }
 
     for (auto& param_decl : this->_parameters) {
@@ -50,7 +59,7 @@ TypePtr FunctionDeclarator::wrapType(TypePtr const& type, ScopePtr& scope) {
         function_type->addParameter(param);
     }
 
-    return function_type;
+    return wrap(function_type);
 }
 
 bool FunctionDeclarator::isFunction() {
