@@ -76,6 +76,10 @@ void TernaryExpression::print(std::ostream& stream) {
 
 // typecheck functions
 
+bool Expression::isLvalue(ScopePtr&) {
+    return false;
+}
+
 TypePtr IdentExpression::typecheck(ScopePtr& scope) {
         auto type = scope->getVarType(this->_ident);
         if (!type.has_value()) {
@@ -84,13 +88,28 @@ TypePtr IdentExpression::typecheck(ScopePtr& scope) {
         return type.value();
     }
 
+bool IdentExpression::isLvalue(ScopePtr& scope) {
+    // TODO:
+    // 6.5.1.0.2:
+    // An identifier is a primary expression,
+    // provided it has been declared as designating an object (in which case it is an lvalue)
+    // or a function (in which case it is a function designator).
+    return true;
+}
+
 TypePtr IntConstantExpression::typecheck(ScopePtr&) { return INT_TYPE; }
+
+TypePtr NullPtrExpression::typecheck(ScopePtr&) { return NULLPTR_TYPE; }
 
 TypePtr CharConstantExpression::typecheck(ScopePtr&) { return CHAR_TYPE; }
 
 TypePtr StringLiteralExpression::typecheck(ScopePtr&) { return STRING_TYPE; }
 
-TypePtr NullPtrExpression::typecheck(ScopePtr&) { return NULLPTR_TYPE; }
+bool StringLiteralExpression::isLvalue(ScopePtr&) {
+    // 6.5.1.0.4:
+    // A string literal is a primary expression. It is an lvalue with type as detailed in 6.4.5.
+    return true;
+}
 
 TypePtr IndexExpression::typecheck(ScopePtr& scope) {
         auto expr_type = this->_expression->typecheck(scope);
@@ -122,6 +141,10 @@ TypePtr IndexExpression::typecheck(ScopePtr& scope) {
         
         return indexed_type;
     }
+
+bool IndexExpression::isLvalue(ScopePtr&) {
+    return true;
+}
 
 TypePtr CallExpression::typecheck(ScopePtr& scope) {
         auto expr_type = this->_expression->typecheck(scope);
@@ -176,6 +199,12 @@ TypePtr DotExpression::typecheck(ScopePtr& scope) {
         return field_type.value();
     }
 
+bool DotExpression::isLvalue(ScopePtr& scope) {
+    // 6.5.2.3.3:
+    // [...] is an lvalue if the first expression is an lvalue.
+    return this->_expression->isLvalue(scope);
+}
+
 TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
         auto expr_type = _expression->typecheck(scope);
         if (expr_type->kind != TypeKind::TY_POINTER) {
@@ -200,6 +229,12 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
         return field_type.value();
     }
 
+bool ArrowExpression::isLvalue(ScopePtr& scope) {
+    // 6.5.2.3.4:
+    // The value [...] is an lvalue.
+    return true;
+}
+
 TypePtr SizeofExpression::typecheck(ScopePtr& scope) {
         auto inner_type = this->_inner->typecheck(scope);
 
@@ -222,13 +257,19 @@ TypePtr SizeofTypeExpression::typecheck(ScopePtr&) {
 
 TypePtr ReferenceExpression::typecheck(ScopePtr& scope) {
         auto inner_type = this->_inner->typecheck(scope);
-        // indexExpression and pointerExpression are defined as l-values
-        if (this->_inner->isLvalue()) {
+
+        // 6.5.3.2.1:
+        // The operand of the unary & operator shall be either a function designator,
+        // the result of a [] or unary * operator, or an lvalue
+
+        // TODO: Allow function designators
+
+        // IndexExpression and PointerExpression are always lvalues
+        if (this->_inner->isLvalue(scope)) {
             return std::make_shared<PointerType>(inner_type);
-        } 
-        // function designator allowed as well
-        // function designator will be typchecked as a pointertype to a functiontype
-        errorloc(this->loc, "expression to be referenced must be an l-value");
+        }
+
+        errorloc(this->loc, "expression to be referenced must be an lvalue");
     }
 
 TypePtr PointerExpression::typecheck(ScopePtr& scope) {
@@ -239,6 +280,17 @@ TypePtr PointerExpression::typecheck(ScopePtr& scope) {
         auto pointer_type = std::static_pointer_cast<PointerType>(inner_type);
         return pointer_type->inner;
     }
+
+bool PointerExpression::isLvalue(ScopePtr& scope) {
+    // 6.5.3.2.4:
+    // If the operand points to a function, the result is a function designator;
+    // if it points to an object, the result is an lvalue designating the object.
+
+    // NOTE: Always returning true here technically isn't quite correct.
+    // However, it should not make a noticeable difference,
+    // because AssignExpression throws an error when it encounters a function type.
+    return true;
+}
 
 TypePtr NegationExpression::typecheck(ScopePtr& scope) {
         auto inner_type = this->_inner->typecheck(scope);
@@ -388,8 +440,14 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
 
         // 6.5.16.0.2:
         // An assignment operator shall have a modifiable lvalue as its left operand.
-        if (!this->_left->isLvalue()) {
+        if (!this->_left->isLvalue(scope)) {
             errorloc(this->loc, "Cannot assign to rvalue");
+        }
+
+        // 6.3.2.1.1:
+        // A modifiable lvalue is an lvalue that [...] does not have an incomplete type
+        if (!left_type->isComplete()) {
+            errorloc(this->loc, "Cannot assign to an incomplete type");
         }
 
         // 6.5.16.0.3:
@@ -406,7 +464,7 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
         }
 
         // the left operand has [...] structure or union type compatible with the type of the right;
-        if (left_type->kind == TY_STRUCT && right_type->kind == TY_STRUCT) {
+        if (left_type->kind == TY_STRUCT) {
             if (left_type->equals(right_type)) {
                 return left_type;
             }
