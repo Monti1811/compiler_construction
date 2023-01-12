@@ -1,0 +1,5 @@
+int main(void) {
+    int (****fp)(void);
+    int result;
+    result = (****fp)();
+}

@@ -42,7 +42,7 @@ struct Type {
     virtual bool isComplete();
 
     // If this is a function pointer, extract the function type
-    std::optional<std::shared_ptr<FunctionType>> getFunctionType();
+    std::optional<std::shared_ptr<FunctionType>> unwrapFunctionPointer();
 
     const TypeKind kind;
 };

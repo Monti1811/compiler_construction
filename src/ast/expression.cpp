@@ -76,6 +76,18 @@ void TernaryExpression::print(std::ostream& stream) {
 
 // typecheck functions
 
+TypePtr Expression::typecheckWrap(ScopePtr& scope) {
+    auto type = this->typecheck(scope);
+    if (type->kind == TypeKind::TY_FUNCTION) {
+        return std::make_shared<PointerType>(type);
+    }
+    return type;
+}
+
+bool Expression::isLvalue(ScopePtr&) {
+    return false;
+}
+
 TypePtr IdentExpression::typecheck(ScopePtr& scope) {
         auto type = scope->getVarType(this->_ident);
         if (!type.has_value()) {
@@ -84,17 +96,31 @@ TypePtr IdentExpression::typecheck(ScopePtr& scope) {
         return type.value();
     }
 
+bool IdentExpression::isLvalue(ScopePtr& scope) {
+    // 6.5.1.0.2:
+    // An identifier is a primary expression,
+    // provided it has been declared as designating an object (in which case it is an lvalue)
+    // or a function (in which case it is a function designator).
+    return !scope->isFunctionDesignator(this->_ident);
+}
+
 TypePtr IntConstantExpression::typecheck(ScopePtr&) { return INT_TYPE; }
+
+TypePtr NullPtrExpression::typecheck(ScopePtr&) { return NULLPTR_TYPE; }
 
 TypePtr CharConstantExpression::typecheck(ScopePtr&) { return CHAR_TYPE; }
 
 TypePtr StringLiteralExpression::typecheck(ScopePtr&) { return STRING_TYPE; }
 
-TypePtr NullPtrExpression::typecheck(ScopePtr&) { return NULLPTR_TYPE; }
+bool StringLiteralExpression::isLvalue(ScopePtr&) {
+    // 6.5.1.0.4:
+    // A string literal is a primary expression. It is an lvalue with type as detailed in 6.4.5.
+    return true;
+}
 
 TypePtr IndexExpression::typecheck(ScopePtr& scope) {
-        auto expr_type = this->_expression->typecheck(scope);
-        auto index_type = this->_index->typecheck(scope);
+        auto expr_type = this->_expression->typecheckWrap(scope);
+        auto index_type = this->_index->typecheckWrap(scope);
 
         TypePtr pointer_type;
 
@@ -123,18 +149,27 @@ TypePtr IndexExpression::typecheck(ScopePtr& scope) {
         return indexed_type;
     }
 
+bool IndexExpression::isLvalue(ScopePtr&) {
+    return true;
+}
+
 TypePtr CallExpression::typecheck(ScopePtr& scope) {
-        auto expr_type = this->_expression->typecheck(scope);
-        auto function_type_opt = expr_type->getFunctionType();
+        auto expr_type = this->_expression->typecheckWrap(scope);
+
+        auto function_type_opt = expr_type->unwrapFunctionPointer();
         if (!function_type_opt.has_value()) {
-            errorloc(this->_expression->loc, "Call epression needs to be called on a function pointer");
+            errorloc(this->loc, "Call expression needs to be called on a function pointer");
         }
         auto function_type = function_type_opt.value();
+
+        if (!function_type->return_type->isComplete() && function_type->return_type->kind != TypeKind::TY_VOID) {
+            errorloc(this->loc, "Cannot call a function that returns a non-void incomplete type");
+        }
 
         // A function without specified parameters can be called with any arguments
         if (!function_type->has_params) {
             for (auto& arg : this->_arguments) {
-                arg->typecheck(scope);
+                arg->typecheckWrap(scope);
             }
 
             return function_type->return_type;
@@ -148,7 +183,7 @@ TypePtr CallExpression::typecheck(ScopePtr& scope) {
         }
 
         for (size_t i = 0; i < params.size(); i++) {
-            auto arg_type = this->_arguments[i]->typecheck(scope);
+            auto arg_type = this->_arguments[i]->typecheckWrap(scope);
             if (!arg_type->equals(params[i].type)) {
                 errorloc(this->_arguments[i]->loc, "Incorrect argument type");
             }
@@ -158,7 +193,7 @@ TypePtr CallExpression::typecheck(ScopePtr& scope) {
     }
 
 TypePtr DotExpression::typecheck(ScopePtr& scope) {
-        auto expr_type = _expression->typecheck(scope);
+        auto expr_type = _expression->typecheckWrap(scope);
         if (expr_type->kind != TypeKind::TY_STRUCT) {
             errorloc(this->loc, "Cannot access a field of a non-struct expression");
         }
@@ -176,8 +211,14 @@ TypePtr DotExpression::typecheck(ScopePtr& scope) {
         return field_type.value();
     }
 
+bool DotExpression::isLvalue(ScopePtr& scope) {
+    // 6.5.2.3.3:
+    // [...] is an lvalue if the first expression is an lvalue.
+    return this->_expression->isLvalue(scope);
+}
+
 TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
-        auto expr_type = _expression->typecheck(scope);
+        auto expr_type = _expression->typecheckWrap(scope);
         if (expr_type->kind != TypeKind::TY_POINTER) {
             errorloc(this->loc, "Cannot access non-pointers using the arrow operator");
         }
@@ -199,6 +240,12 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
         }
         return field_type.value();
     }
+
+bool ArrowExpression::isLvalue(ScopePtr&) {
+    // 6.5.2.3.4:
+    // The value [...] is an lvalue.
+    return true;
+}
 
 TypePtr SizeofExpression::typecheck(ScopePtr& scope) {
         auto inner_type = this->_inner->typecheck(scope);
@@ -222,17 +269,21 @@ TypePtr SizeofTypeExpression::typecheck(ScopePtr&) {
 
 TypePtr ReferenceExpression::typecheck(ScopePtr& scope) {
         auto inner_type = this->_inner->typecheck(scope);
-        // indexExpression and pointerExpression are defined as l-values
-        if (this->_inner->isLvalue()) {
+
+        // 6.5.3.2.1:
+        // The operand of the unary & operator shall be either a function designator,
+        // the result of a [] or unary * operator, or an lvalue
+
+        // IndexExpression and DerefExpression are always lvalues
+        if (this->_inner->isLvalue(scope) || inner_type->kind == TypeKind::TY_FUNCTION) {
             return std::make_shared<PointerType>(inner_type);
-        } 
-        // function designator allowed as well
-        // function designator will be typchecked as a pointertype to a functiontype
-        errorloc(this->loc, "expression to be referenced must be an l-value");
+        }
+
+        errorloc(this->loc, "expression to be referenced must be a function designator or an lvalue");
     }
 
-TypePtr PointerExpression::typecheck(ScopePtr& scope) {
-        auto inner_type = this->_inner->typecheck(scope);
+TypePtr DerefExpression::typecheck(ScopePtr& scope) {
+        auto inner_type = this->_inner->typecheckWrap(scope);
         if (inner_type->kind != TypeKind::TY_POINTER) {
             errorloc(this->loc, "Cannot dereference a non-pointer");
         }
@@ -240,8 +291,19 @@ TypePtr PointerExpression::typecheck(ScopePtr& scope) {
         return pointer_type->inner;
     }
 
+bool DerefExpression::isLvalue(ScopePtr&) {
+    // 6.5.3.2.4:
+    // If the operand points to a function, the result is a function designator;
+    // if it points to an object, the result is an lvalue designating the object.
+
+    // NOTE: Always returning true here technically isn't quite correct.
+    // However, it should not make a noticeable difference,
+    // because AssignExpression throws an error when it encounters a function type.
+    return true;
+}
+
 TypePtr NegationExpression::typecheck(ScopePtr& scope) {
-        auto inner_type = this->_inner->typecheck(scope);
+        auto inner_type = this->_inner->typecheckWrap(scope);
         if (!inner_type->isArithmetic()) {
             errorloc(this->loc, "type to be negated has to be arithmetic");
         }
@@ -249,7 +311,7 @@ TypePtr NegationExpression::typecheck(ScopePtr& scope) {
     }
 
 TypePtr LogicalNegationExpression::typecheck(ScopePtr& scope) {
-        auto inner_type = _inner->typecheck(scope);
+        auto inner_type = _inner->typecheckWrap(scope);
         if (!inner_type->isScalar()) {
             errorloc(this->loc, "type to be logcially negated has to be scalar");
         }
@@ -257,8 +319,8 @@ TypePtr LogicalNegationExpression::typecheck(ScopePtr& scope) {
     }
 
 TypePtr BinaryExpression::typecheck(ScopePtr& scope) {
-        auto left_type = _left->typecheck(scope);
-        auto right_type = _right->typecheck(scope);
+        auto left_type = _left->typecheckWrap(scope);
+        auto right_type = _right->typecheckWrap(scope);
 
         if (!left_type->isArithmetic() || !right_type->isArithmetic()) {
             errorloc(this->loc, "both sides of an arithmetic binary expression must be of arithemic type");
@@ -267,8 +329,8 @@ TypePtr BinaryExpression::typecheck(ScopePtr& scope) {
     }
 
 TypePtr AddExpression::typecheck(ScopePtr& scope) {
-    auto left_type = _left->typecheck(scope);
-    auto right_type = _right->typecheck(scope);
+    auto left_type = _left->typecheckWrap(scope);
+    auto right_type = _right->typecheckWrap(scope);
 
     if (left_type->isArithmetic() && right_type->isArithmetic()) {
         return INT_TYPE;
@@ -284,8 +346,8 @@ TypePtr AddExpression::typecheck(ScopePtr& scope) {
 }
 
 TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
-    auto left_type = _left->typecheck(scope);
-    auto right_type = _right->typecheck(scope);
+    auto left_type = _left->typecheckWrap(scope);
+    auto right_type = _right->typecheckWrap(scope);
 
     if (left_type->isArithmetic() && right_type->isArithmetic()) {
         return INT_TYPE;
@@ -326,8 +388,8 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
 }
 
 TypePtr LessThanExpression::typecheck(ScopePtr& scope) {
-        auto left_type = this->_left->typecheck(scope);
-        auto right_type = this->_right->typecheck(scope);
+        auto left_type = this->_left->typecheckWrap(scope);
+        auto right_type = this->_right->typecheckWrap(scope);
 
         if (!left_type->equals(right_type)) {
             errorloc(this->loc, "Cannot compare two values of different types");
@@ -336,8 +398,8 @@ TypePtr LessThanExpression::typecheck(ScopePtr& scope) {
     }
 
 TypePtr EqualExpression::typecheck(ScopePtr& scope) {
-        auto left_type = this->_left->typecheck(scope);
-        auto right_type = this->_right->typecheck(scope);
+        auto left_type = this->_left->typecheckWrap(scope);
+        auto right_type = this->_right->typecheckWrap(scope);
 
         if (!left_type->equals(right_type)) {
             errorloc(this->loc, "Cannot compare two values of different types");
@@ -346,8 +408,8 @@ TypePtr EqualExpression::typecheck(ScopePtr& scope) {
     }
 
 TypePtr UnequalExpression::typecheck(ScopePtr& scope) {
-        auto left_type = this->_left->typecheck(scope);
-        auto right_type = this->_right->typecheck(scope);
+        auto left_type = this->_left->typecheckWrap(scope);
+        auto right_type = this->_right->typecheckWrap(scope);
 
         if (!left_type->equals(right_type)) {
             errorloc(this->loc, "Cannot compare two values of different types");
@@ -356,26 +418,26 @@ TypePtr UnequalExpression::typecheck(ScopePtr& scope) {
     }
 
 TypePtr AndExpression::typecheck(ScopePtr& scope) {
-        if (!this->_left->typecheck(scope)->isScalar() || !this->_right->typecheck(scope)->isScalar()) {
+        if (!this->_left->typecheckWrap(scope)->isScalar() || !this->_right->typecheckWrap(scope)->isScalar()) {
             errorloc(this->loc, "Both sides of a logical and expression must be scalar types");
         }
         return INT_TYPE;
     }
 
 TypePtr OrExpression::typecheck(ScopePtr& scope) {
-        if (!this->_left->typecheck(scope)->isScalar() || !this->_right->typecheck(scope)->isScalar()) {
+        if (!this->_left->typecheckWrap(scope)->isScalar() || !this->_right->typecheckWrap(scope)->isScalar()) {
             errorloc(this->loc, "Both sides of a logical or expression must be scalar types");
         }
         return INT_TYPE;
     }
 
 TypePtr TernaryExpression::typecheck(ScopePtr& scope) {
-        auto condition_type = this->_condition->typecheck(scope);
+        auto condition_type = this->_condition->typecheckWrap(scope);
         if (!condition_type->isScalar()) {
             errorloc(this->loc, "Condition type must be scalar");
         }
-        auto left_type = this->_left->typecheck(scope);
-        auto right_type = this->_right->typecheck(scope);
+        auto left_type = this->_left->typecheckWrap(scope);
+        auto right_type = this->_right->typecheckWrap(scope);
         if (!left_type->equals(right_type)) {
             errorloc(this->loc, "Left and right type of ternary expression must be equal");
         }
@@ -383,41 +445,70 @@ TypePtr TernaryExpression::typecheck(ScopePtr& scope) {
     }
 
 TypePtr AssignExpression::typecheck(ScopePtr& scope) {
-        auto right_type = this->_right->typecheck(scope);
-        auto left_type = this->_left->typecheck(scope);
-        if (!this->_left->isLvalue()) {
-            errorloc(this->loc, "Cannot assign to rvalue");
+        auto right_type = this->_right->typecheckWrap(scope);
+        auto left_type = this->_left->typecheckWrap(scope);
+
+        // 6.5.16.0.2:
+        // An assignment operator shall have a modifiable lvalue as its left operand.
+        if (!this->_left->isLvalue(scope)) {
+            errorloc(this->loc, "Can only assign to lvalues");
         }
-        
+
+        // 6.3.2.1.1:
+        // A modifiable lvalue is an lvalue that [...] does not have an incomplete type
+        if (!left_type->isComplete()) {
+            errorloc(this->loc, "Cannot assign to an incomplete type");
+        }
+
+        // 6.5.16.0.3:
+        // The type of an assignment expression is the type the left operand would have
+        // after lvalue conversion.
+
+        // 6.5.16.1.1:
+        // One of the following shall hold:
+
+        // the left operand has [...] arithmetic type,
+        // and the right has arithmetic type;
         if (left_type->isArithmetic() && right_type->isArithmetic()) {
             return left_type;
         }
-        if (left_type->kind == TY_STRUCT && right_type->kind == TY_STRUCT) {
+
+        // the left operand has [...] structure or union type compatible with the type of the right;
+        if (left_type->kind == TY_STRUCT) {
             if (left_type->equals(right_type)) {
                 return left_type;
             }
             errorloc(this->loc, "left and right struct of an assign expression must be of compatible type");
         }
+
+        // the left operand has [...] pointer type,
+        // and (considering the type the left operand would have after lvalue conversion)
+        // both operands are pointers to [...] compatible types [...];
         if (left_type->kind == TY_POINTER && right_type->kind == TY_POINTER) {
             if (left_type->equals(right_type)) {
                 return left_type;
             }
         }
-        if (left_type->kind == TY_POINTER) {
-            if (right_type->kind == TY_NULLPTR) {
+
+        // the left operand has [...] pointer type,
+        // and (considering the type the left operand would have after lvalue conversion)
+        // one operand is a pointer to an object type, and the other is a pointer to [...] void [...];
+        if (left_type->kind == TY_POINTER && right_type->kind == TY_POINTER) {
+            auto left = std::static_pointer_cast<PointerType>(left_type)->inner;
+            auto right = std::static_pointer_cast<PointerType>(right_type)->inner;
+
+            if (
+                (left->isObjectType() && right->kind == TypeKind::TY_VOID)
+                || (left->kind == TypeKind::TY_VOID && right->isObjectType())
+            ) {
                 return left_type;
             }
-            if (right_type->kind == TY_POINTER) {
-                auto left_pointer = std::static_pointer_cast<PointerType>(left_type);
-                auto right_pointer = std::static_pointer_cast<PointerType>(right_type);
-                if (
-                    (left_pointer->inner->isObjectType() && right_pointer->inner->kind == TY_VOID)
-                    || 
-                    (left_pointer->inner->kind == TY_VOID && right_pointer->inner->isObjectType())
-                    ) {
-                        return left_type;
-                    }
-            }
         }
+
+        // the left operand is a [...] pointer, and the right is a null pointer constant [...]
+        if (left_type->kind == TY_POINTER && right_type->kind == TY_NULLPTR) {
+            return left_type;
+        }
+
         errorloc(this->loc, "wrong assign");
     }

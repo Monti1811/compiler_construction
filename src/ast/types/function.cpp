@@ -1,7 +1,11 @@
 #include "function.h"
 
 bool FunctionType::equals(TypePtr const& other) {
-    if (other->kind != TypeKind::TY_FUNCTION) {
+    return other->kind == TypeKind::TY_FUNCTION;
+}
+
+bool FunctionType::strong_equals(TypePtr const& other) {
+    if (!FunctionType::equals(other)) {
         return false;
     }
 
@@ -9,12 +13,8 @@ bool FunctionType::equals(TypePtr const& other) {
     return this->return_type->strong_equals(other_type->return_type);
 }
 
-bool FunctionType::strong_equals(TypePtr const& other) {
-    return this->equals(other);
-}
-
-bool ParamFunctionType::equals(TypePtr const& other) {
-    if (!FunctionType::equals(other)) {
+bool ParamFunctionType::strong_equals(TypePtr const& other) {
+    if (!FunctionType::strong_equals(other)) {
         return false;
     }
 
@@ -32,10 +32,6 @@ bool ParamFunctionType::equals(TypePtr const& other) {
         }
     }
     return true;
-}
-
-bool ParamFunctionType::strong_equals(TypePtr const& other) {
-    return this->equals(other);
 }
 
 void ParamFunctionType::addParameter(FunctionParam const& param) {

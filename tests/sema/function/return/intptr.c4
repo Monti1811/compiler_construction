@@ -1,0 +1,15 @@
+int* func(void) {
+    int x;
+    x = 42;
+    return &x;
+}
+
+int main(void) {
+    int* result;
+    result = func();
+
+    int y;
+    y = *result;
+
+    return y;
+}

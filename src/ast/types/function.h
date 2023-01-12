@@ -29,7 +29,6 @@ struct ParamFunctionType: public FunctionType {
     ParamFunctionType(TypePtr const& return_type, ScopePtr scope)
         : FunctionType(return_type, scope, true) {};
 
-    bool equals(TypePtr const& other) override;
     bool strong_equals(TypePtr const& other) override;
 
     void addParameter(FunctionParam const& param);

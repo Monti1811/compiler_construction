@@ -1,6 +1,6 @@
 struct
 {
 	int a;
-	int (b(void));
+	int ((*b)(void));
 	int (*c);
 } test;

@@ -1,0 +1,26 @@
+int f(int i, int* arr) {
+    return arr[i];
+}
+
+int g(int x, int* ptr) {
+    int temp;
+    temp = *ptr;
+    *ptr = x;
+    return temp;
+}
+
+int main(int which) {
+    int (*fp)(int, int*);
+
+    if (which) {
+        fp = f;
+    } else {
+        fp = g;
+    }
+
+    int x;
+    int* ptr;
+
+    int y;
+    y = fp(x, ptr);
+}

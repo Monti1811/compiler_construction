@@ -13,11 +13,11 @@ void FunctionDefinition::print(std::ostream& stream) {
 void FunctionDefinition::typecheck(ScopePtr& scope) {
     auto function = this->_declaration.toType(scope);
 
-    auto function_type_opt = function.type->getFunctionType();
-    if (!function_type_opt.has_value()) {
-        errorloc(this->_declaration._loc, "Internal error: Expected function definition to be a function pointer");
+    if (function.type->kind != TypeKind::TY_FUNCTION) {
+        errorloc(this->_declaration._loc, "Internal error: Expected function definition to have function type");
     }
-    auto function_type = function_type_opt.value();
+
+    auto function_type = std::static_pointer_cast<FunctionType>(function.type);
 
     // Add this function's signature to the scope given as an argument
     if (scope->addFunctionDeclaration(function)) {

@@ -1,0 +1,9 @@
+int a(void);
+int b(void);
+
+int main() {
+    int (*fp)(void);
+
+    fp = a;
+    fp = b;
+}

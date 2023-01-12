@@ -19,7 +19,17 @@ struct Expression {
     Locatable loc;
 
     virtual TypePtr typecheck(ScopePtr& scope) = 0;
-    virtual bool isLvalue(void) = 0;
+
+    /// Typechecks the expression, and wraps functions inside into function pointers.
+    ///
+    /// 6.3.2.1.4:
+    /// Except when it is the operand of the sizeof operator [...] or the unary & operator,
+    /// a function designator with type "function returning type" is converted to an expression that
+    /// has type "pointer to function returning type".
+    TypePtr typecheckWrap(ScopePtr& scope);
+
+    /// Returns true if the expression is an lvalue
+    virtual bool isLvalue(ScopePtr& scope);
 
     virtual void print(std::ostream& stream) = 0;
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Expression>& expr);
@@ -34,7 +44,7 @@ struct IdentExpression: public Expression {
         , _ident(ident) {};
 
     TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue() { return true; }
+    bool isLvalue(ScopePtr& scope);
 
     void print(std::ostream& stream);
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<IdentExpression>& expr);
@@ -50,7 +60,6 @@ struct IntConstantExpression: public Expression {
         , _value(std::stoull(*value)) {};
 
     TypePtr typecheck(ScopePtr&);
-    bool isLvalue() { return false; }
 
     void print(std::ostream& stream);
 
@@ -64,7 +73,6 @@ struct NullPtrExpression: public Expression {
         , _value(std::stoull(*value)) {};
 
     TypePtr typecheck(ScopePtr&);
-    bool isLvalue() { return false; }
 
     void print(std::ostream& stream);
 
@@ -78,7 +86,6 @@ struct CharConstantExpression: public Expression {
         , _value( (*value) ) {};
 
     TypePtr typecheck(ScopePtr&);
-    bool isLvalue() { return false; }
 
     void print(std::ostream& stream);
 
@@ -92,7 +99,7 @@ struct StringLiteralExpression: public Expression {
         , _value(*value) {};
 
     TypePtr typecheck(ScopePtr&);
-    bool isLvalue() { return true; }
+    bool isLvalue(ScopePtr& scope);
 
     void print(std::ostream& stream);
 
@@ -108,9 +115,7 @@ struct IndexExpression: public Expression {
         , _index(std::move(index)) {};
 
     TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue() {
-        return true; // TODO
-    }
+    bool isLvalue(ScopePtr&);
 
     void print(std::ostream& stream);
 
@@ -128,7 +133,6 @@ struct CallExpression: public Expression {
         , _arguments(std::move(arguments)) {};
 
     TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue() { return false; } // TODO
 
     void print(std::ostream& stream);
 
@@ -147,7 +151,7 @@ struct DotExpression: public Expression {
     void print(std::ostream& stream);
 
     TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue() { return true; } // TODO
+    bool isLvalue(ScopePtr& scope);
 
     // expression.ident
     private:
@@ -165,7 +169,7 @@ struct ArrowExpression: public Expression {
     void print(std::ostream& stream);
 
     TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue() { return true; } // TODO
+    bool isLvalue(ScopePtr& scope);
 
     // expression->ident
     private:
@@ -196,7 +200,6 @@ struct SizeofExpression: public UnaryExpression {
         : UnaryExpression(loc, std::move(inner), "sizeof ") {};
         
     TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue() { return false; }
 };
 
 struct SizeofTypeExpression: public Expression {
@@ -208,7 +211,6 @@ struct SizeofTypeExpression: public Expression {
     void print(std::ostream& stream);
 
     TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue() { return false; }
 
     // sizeof (inner)
     private:
@@ -223,18 +225,17 @@ struct ReferenceExpression: public UnaryExpression {
         : UnaryExpression(loc, std::move(inner), "&") {};
     
     TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue() { return false; }
 };
 
-struct PointerExpression: public UnaryExpression {
+struct DerefExpression: public UnaryExpression {
     // *inner
 
     public:
-    PointerExpression(Locatable loc, ExpressionPtr inner)
+    DerefExpression(Locatable loc, ExpressionPtr inner)
         : UnaryExpression(loc, std::move(inner), "*") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue() { return true; }
+    bool isLvalue(ScopePtr& scope);
 };
 
 struct NegationExpression: public UnaryExpression {
@@ -245,8 +246,6 @@ struct NegationExpression: public UnaryExpression {
         : UnaryExpression(loc, std::move(inner), "-") {};
         
     TypePtr typecheck(ScopePtr& scope);
-
-    bool isLvalue() { return false; }
 };
 
 struct LogicalNegationExpression: public UnaryExpression {
@@ -257,7 +256,6 @@ struct LogicalNegationExpression: public UnaryExpression {
         : UnaryExpression(loc, std::move(inner), "!") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue() { return false; }
 };
 
 struct BinaryExpression: public Expression {
@@ -269,8 +267,8 @@ struct BinaryExpression: public Expression {
         , _op_str(op_str) {};
 
     void print(std::ostream& stream);
+
     TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue() { return false; }
 
     ExpressionPtr _left;
     ExpressionPtr _right;
@@ -293,6 +291,7 @@ struct AddExpression: public BinaryExpression {
     public:
     AddExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "+") {};
+
     TypePtr typecheck(ScopePtr& scope);
 };
 
@@ -302,6 +301,7 @@ struct SubstractExpression: public BinaryExpression {
     public:
     SubstractExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "-") {};
+
     TypePtr typecheck(ScopePtr& scope);
 };
 
@@ -321,7 +321,7 @@ struct EqualExpression: public BinaryExpression {
     public:
     EqualExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "==") {};
-    
+
     TypePtr typecheck(ScopePtr& scope);
 };
 
@@ -368,7 +368,6 @@ struct TernaryExpression: public Expression {
     void print(std::ostream& stream);
 
     TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue() { return false; }
 
     private:
     ExpressionPtr _condition;
@@ -384,5 +383,4 @@ struct AssignExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "=") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue() { return false; }
 };
