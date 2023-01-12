@@ -47,7 +47,7 @@ bool Scope::addDeclaration(TypeDecl& decl) {
         // 6.9.2: External definitions may be redefined (for some reason)
         // Only throw an error if type is not the same as previous declaration
         if (var_type != this->vars.end()) {
-            return !decl.type->equals(var_type->second);
+            return !decl.type->strong_equals(var_type->second);
         } else {
             return false;
         }
@@ -65,7 +65,7 @@ bool Scope::addFunctionDeclaration(TypeDecl& decl) {
     // If function was already declared:
     // assert that the declared type is the same as the one for this definition
     auto decl_type = this->vars.find(name);
-    if (decl_type != this->vars.end() && !(decl_type->second->equals(decl.type))) {
+    if (decl_type != this->vars.end() && !(decl_type->second->strong_equals(decl.type))) {
         return true;
     }
 
@@ -86,11 +86,6 @@ bool Scope::isStructDefined(Symbol& name) {
 }
 
 bool Scope::addStruct(std::shared_ptr<StructType> type) {
-    // TODO:
-    // 6.7.2.1.8:
-    // The presence of a struct-declaration-list in a struct-or-union-specifier declares a new type,
-    // *within a translation unit*
-
     if (!type->tag.has_value()) {
         return false;
     }
