@@ -1,0 +1,19 @@
+struct ListElement {
+    struct ListElement* next;
+    int value;
+};
+
+int main(void) {
+    struct ListElement a;
+    a.value = 1;
+
+    struct ListElement b;
+    b.value = 2;
+    a.next = &b;
+
+    struct ListElement c;
+    c.value = 3;
+    b.next = &c;
+
+    return 0;
+}

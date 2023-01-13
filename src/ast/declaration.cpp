@@ -19,6 +19,9 @@ void Declaration::print(std::ostream& stream) {
 void Declaration::typecheck(ScopePtr& scope) {
     auto decl = this->toType(scope);
     if (this->_declarator->isAbstract()) {
+        if (decl.type->kind != TypeKind::TY_STRUCT) {
+            errorloc(this->_loc, "Declaration without declarator");
+        }
         return;
     }
     if (scope->addDeclaration(decl)) {

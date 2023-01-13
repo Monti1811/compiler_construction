@@ -95,7 +95,11 @@ bool Scope::addStruct(std::shared_ptr<StructType> type) {
         // The struct has already been completed in this scope
         return true;
     }
-
-    this->structs.insert({ name, type });
+    auto def_struct_it = this->structs.find(name);
+    if (def_struct_it != this->structs.end()) {
+        def_struct_it->second = type;
+    } else {
+        this->structs.insert({ name, type });
+    }
     return false;
 }
