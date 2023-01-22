@@ -17,6 +17,13 @@ int main(int argc, char const* argv[]) {
     // cout << "Filename: " << filename << std::endl;
     Lexer lexer(filename, internalizer);
 
+    if (argc == 2) {
+        Parser parser(lexer);
+        auto program = parser.parseProgram();
+        program.typecheck();
+        program.compile(filename);
+    }
+
     for (int i = 1; i < argc - 1; i++) {
         if (strcmp(argv[i], "--tokenize") == 0) {
             // cout << "Start to tokenize the chosen file" << std::endl;
@@ -38,7 +45,7 @@ int main(int argc, char const* argv[]) {
             Parser parser(lexer);
             auto program = parser.parseProgram();
             program.typecheck();
-            // program.compile();
+            program.compile(filename);
         }
     }
 

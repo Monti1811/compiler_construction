@@ -1,5 +1,15 @@
 #include "program.h"
 
+#include "llvm/IR/Module.h"                /* Module */
+#include "llvm/IR/Function.h"              /* Function */
+#include "llvm/IR/IRBuilder.h"             /* IRBuilder */
+#include "llvm/IR/LLVMContext.h"           /* LLVMContext */
+#include "llvm/IR/GlobalValue.h"           /* GlobaleVariable, LinkageTypes */
+#include "llvm/IR/Verifier.h"              /* verifyFunction, verifyModule */
+#include "llvm/Support/Signals.h"          /* Nice stacktrace output */
+#include "llvm/Support/SystemUtils.h"
+#include "llvm/Support/PrettyStackTrace.h"
+
 std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition) {
     definition.print(stream);
     return stream;
@@ -112,6 +122,66 @@ void Program::typecheck() {
                 error("Internal error: Tried to read non-existent function definition");
             }
             func_iter.base()->typecheck(scope);
+            func_iter++;
+        }
+    }
+}
+
+void Program::compile(std::string filename) {
+    llvm::sys::PrintStackTraceOnErrorSignal(filename);
+    // PrettyStackTraceProgram X(argc, argv);
+
+    /* Make a global context (only one needed) */
+    llvm::LLVMContext Ctx;
+
+     /* Create a Module (only one needed) */
+    llvm::Module M(filename, Ctx);
+
+    /* Two IR-Builder to output intermediate instructions but also types, ... */
+    llvm::IRBuilder<> Builder(Ctx), AllocaBuilder(Ctx);
+    auto decl_iter = this->_declarations.begin();
+    auto func_iter = this->_functions.begin();
+
+    for (bool is_decl : this->_is_declaration) {
+        if (is_decl) {
+            if (decl_iter == this->_declarations.end()) {
+                error("Internal error: Tried to read non-existent declaration");
+            }
+            // does not declare a variable
+            if (decl_iter.base()->_declarator->isAbstract()) {
+                continue;
+            }
+            auto type = decl_iter.base()->getTypeDecl().type;
+            auto llvm_type = type->toLLVMType(Builder);
+            auto name = decl_iter.base()->_declarator->getName().value();
+
+            /* Create a global variable */
+              
+            llvm::GlobalVariable(
+                M                                               /* Module & */,
+                llvm_type                                       /* Type * */,
+                false                                           /* bool isConstant */,
+                llvm::GlobalValue::CommonLinkage                /* LinkageType */,
+                llvm::Constant::getNullValue(llvm_type)         /* Constant * Initializer */,
+                *name                                            /* const Twine &Name = "" */,
+                /* --------- We do not need this part (=> use defaults) ---------- */
+                0                                               /* GlobalVariable *InsertBefore = 0 */,
+                llvm::GlobalVariable::NotThreadLocal            /* ThreadLocalMode TLMode = NotThreadLocal */,
+                0                                               /* unsigned AddressSpace = 0 */,
+                false                                           /* bool isExternallyInitialized = false */);
+            decl_iter++;
+        } else {
+            if (func_iter == this->_functions.end()) {
+                error("Internal error: Tried to read non-existent function definition");
+            }
+            auto func_type = func_iter.base()->getFunctionType();
+            auto llvm_type = func_type.toLLVMType(Builder);
+            auto name = func_iter.base()->_declaration._declarator->getName().value();
+            llvm::Function *Func = llvm::Function::Create(
+                llvm_type                                       /* FunctionType *Ty */,
+                llvm::GlobalValue::ExternalLinkage              /* LinkageType */,
+                *name                                           /* const Twine &N="" */,
+                &M                                              /* Module *M=0 */);
             func_iter++;
         }
     }

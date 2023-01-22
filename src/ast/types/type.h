@@ -10,6 +10,16 @@
 
 #include "../type_decl.h"
 
+#include "llvm/IR/Module.h"                /* Module */
+#include "llvm/IR/Function.h"              /* Function */
+#include "llvm/IR/IRBuilder.h"             /* IRBuilder */
+#include "llvm/IR/LLVMContext.h"           /* LLVMContext */
+#include "llvm/IR/GlobalValue.h"           /* GlobaleVariable, LinkageTypes */
+#include "llvm/IR/Verifier.h"              /* verifyFunction, verifyModule */
+#include "llvm/Support/Signals.h"          /* Nice stacktrace output */
+#include "llvm/Support/SystemUtils.h"
+#include "llvm/Support/PrettyStackTrace.h"
+
 enum TypeKind {
     TY_INT,
     TY_VOID,
@@ -40,6 +50,7 @@ struct Type {
     bool isArithmetic();
     bool isObjectType();
     virtual bool isComplete();
+    llvm::Type* toLLVMType(llvm::IRBuilder<>& Builder);
 
     // If this is a function pointer, extract the function type
     std::optional<std::shared_ptr<FunctionType>> unwrapFunctionPointer();

@@ -19,11 +19,16 @@ struct FunctionDefinition {
     friend std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition);
 
     void typecheck(ScopePtr& scope);
+    FunctionType getFunctionType() {
+        return type.value();
+    }
 
-    private:
     Declaration _declaration;
+    private:
     BlockStatement _block;
     std::unordered_set<Symbol> _labels;
+    // TODO: add this while typechecking
+    std::optional<FunctionType> type;
 };
 
 struct Program {
@@ -36,6 +41,7 @@ struct Program {
     void addDeclaration(Declaration declaration);
     void addFunctionDefinition(FunctionDefinition definition);
     void typecheck();
+    void compile(std::string filename);
 
     private:
     std::vector<Declaration> _declarations;
