@@ -19,9 +19,12 @@ struct FunctionDefinition {
     friend std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition);
 
     void typecheck(ScopePtr& scope);
-    FunctionType getFunctionType() {
-        return type.value();
+    std::shared_ptr<FunctionType> getFunctionType() {
+        return std::make_shared<FunctionType>(type.value());
     }
+    /* std::shared_ptr<BlockStatement> getBlockStmnt() {
+        return std::make_shared<BlockStatement>(_block);
+    } */
 
     Declaration _declaration;
     private:

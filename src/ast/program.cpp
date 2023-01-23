@@ -174,14 +174,46 @@ void Program::compile(std::string filename) {
             if (func_iter == this->_functions.end()) {
                 error("Internal error: Tried to read non-existent function definition");
             }
-            auto func_type = func_iter.base()->getFunctionType();
-            auto llvm_type = func_type.toLLVMType(Builder);
+            std::shared_ptr<FunctionType> func_type_ptr = func_iter.base()->getFunctionType();
+            auto llvm_type = func_type_ptr->toLLVMType(Builder);
             auto name = func_iter.base()->_declaration._declarator->getName().value();
             llvm::Function *Func = llvm::Function::Create(
                 llvm_type                                       /* FunctionType *Ty */,
                 llvm::GlobalValue::ExternalLinkage              /* LinkageType */,
                 *name                                           /* const Twine &N="" */,
                 &M                                              /* Module *M=0 */);
+            llvm::Function::arg_iterator FuncArgIt = Func->arg_begin();
+            int count = 0;
+            auto param_func_type = std::static_pointer_cast<ParamFunctionType>(func_type_ptr);
+            while (FuncArgIt != Func->arg_end()) {
+                llvm::Argument *Arg = FuncArgIt;
+                if (param_func_type->params[count].name.has_value()) {
+                    Arg->setName(*(param_func_type->params[count].name.value()));
+                } else {
+                    Arg->setName("");
+                }
+                FuncArgIt++;
+                count++;
+            }
+            llvm::BasicBlock *FuncEntryBB = llvm::BasicBlock::Create(
+                Ctx                                     /* LLVMContext &Context */,
+                "entry"                                 /* const Twine &Name="" */,
+                Func                                    /* Function *Parent=0 */,
+                0                                       /* BasicBlock *InsertBefore=0 */);
+            Builder.SetInsertPoint(FuncEntryBB);
+            AllocaBuilder.SetInsertPoint(FuncEntryBB);
+
+            FuncArgIt = Func->arg_begin();
+            while (FuncArgIt != Func->arg_end()) {
+                AllocaBuilder.SetInsertPoint(AllocaBuilder.GetInsertBlock(),
+                                AllocaBuilder.GetInsertBlock()->begin());
+                llvm::Argument *Arg = FuncArgIt;
+                llvm::Value *ArgVarPtr = AllocaBuilder.CreateAlloca(Arg->getType());
+                Builder.CreateStore(Arg, ArgVarPtr);
+                FuncArgIt++;
+            }
+            
+            // auto llvm_block = func_iter.base()->getBlockStmnt()->compile(Builder);
             func_iter++;
         }
     }

@@ -36,5 +36,6 @@ struct Declaration {
     TypeSpecifierPtr _specifier;
     DeclaratorPtr _declarator;
     private:
+    // TODO: Add this while typechecking
     std::optional<TypeDecl> _typeDecl;
 };
