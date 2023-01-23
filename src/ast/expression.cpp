@@ -512,3 +512,129 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
 
         errorloc(this->loc, "wrong assign");
     }
+
+
+llvm::Value* IdentExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* IntConstantExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* NullPtrExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* CharConstantExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* StringLiteralExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* IndexExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* CallExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* DotExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* ArrowExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* SizeofExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* SizeofTypeExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* ReferenceExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* DerefExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* NegationExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* LogicalNegationExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* MultiplyExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* AddExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* SubstractExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* LessThanExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* EqualExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* UnequalExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* AndExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* OrExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* TernaryExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
+
+llvm::Value* AssignExpression::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function& Parent) {
+    // TODO
+    return Builder.getInt32(1);
+}
