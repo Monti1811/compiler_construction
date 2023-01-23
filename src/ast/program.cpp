@@ -168,6 +168,7 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                 error("Internal error: Tried to read non-existent declaration");
             }
             // does not declare a variable
+            // TODO: compile abstract function declaration
             if (decl_iter.base()->_declarator->isAbstract()) {
                 continue;
             }
