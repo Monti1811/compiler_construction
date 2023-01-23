@@ -28,6 +28,10 @@ void LabeledStatement::typecheck(ScopePtr& scope) {
     this->_inner->typecheck(scope);
 }
 
+void LabeledStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+    // TODO
+}
+
 void BlockStatement::print(std::ostream& stream) {
     stream << "{";
     IndentManager& indent = IndentManager::getInstance();
@@ -54,8 +58,16 @@ void BlockStatement::typecheckInner(ScopePtr& inner_scope) {
     }
 }
 
+void BlockStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+    // TODO
+}
+
 void EmptyStatement::print(std::ostream& stream) {
     stream << ';';
+}
+
+void EmptyStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+    // TODO
 }
 
 void DeclarationStatement::print(std::ostream& stream) {
@@ -66,12 +78,20 @@ void DeclarationStatement::typecheck(ScopePtr& scope) {
     this->_declaration.typecheck(scope);
 }
 
+void DeclarationStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+    // TODO
+}
+
 void ExpressionStatement::print(std::ostream& stream) {
     stream << this->_expr << ';';
 }
 
 void ExpressionStatement::typecheck(ScopePtr& scope) {
     this->_expr->typecheck(scope);
+}
+
+void ExpressionStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+    // TODO
 }
 
 void IfStatement::print(std::ostream& stream) {
@@ -119,6 +139,10 @@ void IfStatement::typecheck(ScopePtr& scope) {
     }
 }
 
+void IfStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+    // TODO
+}
+
 void WhileStatement::print(std::ostream& stream) {
     stream << "while (" << this->_condition << ')';
     IndentManager& indent = IndentManager::getInstance();
@@ -145,8 +169,16 @@ void WhileStatement::typecheck(ScopePtr& scope) {
     scope->loop_counter--;
 }
 
+void WhileStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+    // TODO
+}
+
 void JumpStatement::print(std::ostream& stream) {
     stream << this->_jump_str << ';';
+}
+
+void JumpStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+    // TODO
 }
 
 void GotoStatement::print(std::ostream& stream) {
@@ -162,16 +194,28 @@ void GotoStatement::typecheck(ScopePtr& scope) {
     }
 }
 
+void GotoStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+    // TODO
+}
+
 void ContinueStatement::typecheck(ScopePtr& scope) {
     if (scope->loop_counter == 0) {
         errorloc(this->loc, "Invalid 'continue' outside of a loop");
     }
 }
 
+void ContinueStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+    // TODO
+}
+
 void BreakStatement::typecheck(ScopePtr& scope) {
     if (scope->loop_counter == 0) {
         errorloc(this->loc, "Invalid 'break' outside of a loop");
     }
+}
+
+void BreakStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+    // TODO
 }
 
 void ReturnStatement::print(std::ostream& stream) {
@@ -205,4 +249,8 @@ void ReturnStatement::typecheck(ScopePtr& scope) {
     if (!expr_type->equals(return_type)) {
         errorloc(this->loc, "return type and type of return expr did not match");
     }
+}
+
+void ReturnStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+    // TODO
 }
