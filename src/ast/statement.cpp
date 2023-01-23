@@ -28,7 +28,7 @@ void LabeledStatement::typecheck(ScopePtr& scope) {
     this->_inner->typecheck(scope);
 }
 
-void LabeledStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+void LabeledStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
     // TODO
 }
 
@@ -58,10 +58,10 @@ void BlockStatement::typecheckInner(ScopePtr& inner_scope) {
     }
 }
 
-void BlockStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+void BlockStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
     // TODO
     for (auto& item : this->_items) {
-        item->compile(Builder, AllocaBuilder, Module);
+        item->compile(Builder, AllocaBuilder, Module, Parent);
     }
 }
 
@@ -69,7 +69,7 @@ void EmptyStatement::print(std::ostream& stream) {
     stream << ';';
 }
 
-void EmptyStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+void EmptyStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
     // TODO
 }
 
@@ -81,7 +81,7 @@ void DeclarationStatement::typecheck(ScopePtr& scope) {
     this->_declaration.typecheck(scope);
 }
 
-void DeclarationStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+void DeclarationStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
     // TODO
 }
 
@@ -93,7 +93,8 @@ void ExpressionStatement::typecheck(ScopePtr& scope) {
     this->_expr->typecheck(scope);
 }
 
-void ExpressionStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+void ExpressionStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
+    this->_expr->compile(Builder, AllocaBuilder, Module, Parent);
     // TODO
 }
 
@@ -142,7 +143,7 @@ void IfStatement::typecheck(ScopePtr& scope) {
     }
 }
 
-void IfStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+void IfStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
     // TODO
 }
 
@@ -172,7 +173,7 @@ void WhileStatement::typecheck(ScopePtr& scope) {
     scope->loop_counter--;
 }
 
-void WhileStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+void WhileStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
     // TODO
 }
 
@@ -180,7 +181,7 @@ void JumpStatement::print(std::ostream& stream) {
     stream << this->_jump_str << ';';
 }
 
-void JumpStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+void JumpStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
     // TODO
 }
 
@@ -197,7 +198,7 @@ void GotoStatement::typecheck(ScopePtr& scope) {
     }
 }
 
-void GotoStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+void GotoStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
     // TODO
 }
 
@@ -207,7 +208,7 @@ void ContinueStatement::typecheck(ScopePtr& scope) {
     }
 }
 
-void ContinueStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+void ContinueStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
     // TODO
 }
 
@@ -217,7 +218,7 @@ void BreakStatement::typecheck(ScopePtr& scope) {
     }
 }
 
-void BreakStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+void BreakStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
     // TODO
 }
 
@@ -254,6 +255,6 @@ void ReturnStatement::typecheck(ScopePtr& scope) {
     }
 }
 
-void ReturnStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
+void ReturnStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
     // TODO
 }

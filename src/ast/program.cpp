@@ -163,7 +163,6 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
 
     for (bool is_decl : this->_is_declaration) {
         if (is_decl) {
-            std::cout << "compiling decl\n";
             if (decl_iter == this->_declarations.end()) {
                 error("Internal error: Tried to read non-existent declaration");
             }
@@ -238,7 +237,7 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                 FuncArgIt++;
             }
             
-            func_iter.base()->_block.compile(Builder, AllocaBuilder, M);
+            func_iter.base()->_block.compile(Builder, AllocaBuilder, M, Func);
 
             if (Builder.GetInsertBlock()->getTerminator() == nullptr) {
                 llvm::Type *CurFuncReturnType = Builder.getCurrentFunctionReturnType();
