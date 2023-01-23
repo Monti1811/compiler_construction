@@ -10,6 +10,7 @@ struct PointerType: public Type {
 
     bool equals(TypePtr const& other) override;
     bool strong_equals(TypePtr const& other) override;
+    llvm::PointerType* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
 
     TypePtr inner; 
 };

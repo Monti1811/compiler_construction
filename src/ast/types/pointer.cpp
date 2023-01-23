@@ -23,3 +23,7 @@ bool PointerType::strong_equals(TypePtr const& other) {
     auto other_pointer = std::static_pointer_cast<PointerType>(other);
     return this->inner->strong_equals(other_pointer->inner);
 }
+
+llvm::PointerType* PointerType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+    return Builder.getPtrTy();
+}
