@@ -22,13 +22,13 @@ struct FunctionDefinition {
     std::shared_ptr<FunctionType> getFunctionType() {
         return std::make_shared<FunctionType>(type.value());
     }
-    /* std::shared_ptr<BlockStatement> getBlockStmnt() {
-        return std::make_shared<BlockStatement>(_block);
+    /* BlockStatement getBlockStmnt() {
+        return _block;
     } */
 
+    BlockStatement _block;
     Declaration _declaration;
     private:
-    BlockStatement _block;
     std::unordered_set<Symbol> _labels;
     // TODO: add this while typechecking
     std::optional<FunctionType> type;

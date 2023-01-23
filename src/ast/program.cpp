@@ -9,6 +9,8 @@
 #include "llvm/Support/Signals.h"          /* Nice stacktrace output */
 #include "llvm/Support/SystemUtils.h"
 #include "llvm/Support/PrettyStackTrace.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/raw_ostream.h"
 
 std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition) {
     definition.print(stream);
@@ -213,8 +215,26 @@ void Program::compile(std::string filename) {
                 FuncArgIt++;
             }
             
-            // auto llvm_block = func_iter.base()->getBlockStmnt()->compile(Builder);
+            func_iter.base()->_block.compile(Builder, AllocaBuilder, M);
+
+            if (Builder.GetInsertBlock()->getTerminator() == nullptr) {
+                llvm::Type *CurFuncReturnType = Builder.getCurrentFunctionReturnType();
+                if (CurFuncReturnType->isVoidTy()) {
+                    Builder.CreateRetVoid();
+                } else {
+                    Builder.CreateRet(llvm::Constant::getNullValue(CurFuncReturnType));
+                }
+            }
             func_iter++;
         }
     }
+    /* Ensure that we created a 'valid' module */
+    verifyModule(M);
+    
+    std::error_code EC;
+    llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::OpenFlags::OF_Text);
+    M.print(stream, nullptr); /* M is a llvm::Module */
+    
+    /* Dump the final module to std::cerr */
+    M.dump();
 }
