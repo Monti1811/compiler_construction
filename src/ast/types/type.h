@@ -50,7 +50,7 @@ struct Type {
     bool isArithmetic();
     bool isObjectType();
     virtual bool isComplete();
-    llvm::Type* toLLVMType(llvm::IRBuilder<>& Builder);
+    llvm::Type* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
 
     // If this is a function pointer, extract the function type
     std::optional<std::shared_ptr<FunctionType>> unwrapFunctionPointer();

@@ -153,8 +153,8 @@ void Program::compile(std::string filename) {
             if (decl_iter.base()->_declarator->isAbstract()) {
                 continue;
             }
-            auto type = decl_iter.base()->getTypeDecl().type;
-            auto llvm_type = type->toLLVMType(Builder);
+            std::shared_ptr<Type> type = decl_iter.base()->getTypeDecl().type;
+            auto llvm_type = type->toLLVMType(Builder, Ctx);
             auto name = decl_iter.base()->_declarator->getName().value();
 
             /* Create a global variable */
@@ -177,7 +177,7 @@ void Program::compile(std::string filename) {
                 error("Internal error: Tried to read non-existent function definition");
             }
             std::shared_ptr<FunctionType> func_type_ptr = func_iter.base()->getFunctionType();
-            auto llvm_type = func_type_ptr->toLLVMType(Builder);
+            auto llvm_type = func_type_ptr->toLLVMType(Builder, Ctx);
             auto name = func_iter.base()->_declaration._declarator->getName().value();
             llvm::Function *Func = llvm::Function::Create(
                 llvm_type                                       /* FunctionType *Ty */,
@@ -234,7 +234,7 @@ void Program::compile(std::string filename) {
     std::error_code EC;
     llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::OpenFlags::OF_Text);
     M.print(stream, nullptr); /* M is a llvm::Module */
-    
+
     /* Dump the final module to std::cerr */
     M.dump();
 }
