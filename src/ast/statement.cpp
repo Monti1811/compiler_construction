@@ -60,6 +60,9 @@ void BlockStatement::typecheckInner(ScopePtr& inner_scope) {
 
 void BlockStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module) {
     // TODO
+    for (auto& item : this->_items) {
+        item->compile(Builder, AllocaBuilder, Module);
+    }
 }
 
 void EmptyStatement::print(std::ostream& stream) {

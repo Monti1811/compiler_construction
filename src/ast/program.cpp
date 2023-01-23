@@ -194,7 +194,12 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                 error("Internal error: Tried to read non-existent function definition");
             }
             std::shared_ptr<FunctionType> func_type_ptr = func_iter.base()->getFunctionType();
-            auto llvm_type = func_type_ptr->toLLVMType(Builder, Ctx);
+            auto llvm_type = 
+                !func_type_ptr->has_params 
+                ?
+                func_type_ptr->toLLVMType(Builder, Ctx) 
+                :
+                std::static_pointer_cast<ParamFunctionType>(func_type_ptr)->toLLVMType(Builder, Ctx);
             auto name = func_iter.base()->_declaration._declarator->getName().value();
             llvm::Function *Func = llvm::Function::Create(
                 llvm_type                                       /* FunctionType *Ty */,
