@@ -20,18 +20,15 @@ struct FunctionDefinition {
 
     void typecheck(ScopePtr& scope);
     std::shared_ptr<FunctionType> getFunctionType() {
-        return std::make_shared<FunctionType>(type.value());
+        return type.value();
     }
-    /* BlockStatement getBlockStmnt() {
-        return _block;
-    } */
 
     BlockStatement _block;
     Declaration _declaration;
     private:
     std::unordered_set<Symbol> _labels;
     // TODO: add this while typechecking
-    std::optional<FunctionType> type;
+    std::optional<std::shared_ptr<FunctionType>> type;
 };
 
 struct Program {
@@ -44,7 +41,7 @@ struct Program {
     void addDeclaration(Declaration declaration);
     void addFunctionDefinition(FunctionDefinition definition);
     void typecheck();
-    void compile(std::string filename);
+    void compile(int argc, char const* argv[], std::string filename);
 
     private:
     std::vector<Declaration> _declarations;

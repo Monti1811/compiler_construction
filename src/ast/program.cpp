@@ -60,6 +60,8 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     }
 
     this->_block.typecheckInner(function_scope);
+    // for compilation
+    this->type = function_type;
 }
 
 void Program::addDeclaration(Declaration declaration) {
@@ -129,9 +131,24 @@ void Program::typecheck() {
     }
 }
 
-void Program::compile(std::string filename) {
+void Program::compile(int argc, char const* argv[], std::string filename) {
+    // change filename "x/y.c" to "x.ll"
+    std::string filename_to_print("");
+    for (size_t i = 0; i < filename.length(); i++) {
+        if (filename.at(i) == '/') {
+            filename_to_print = "";
+        } else if (filename.at(i) == '.') {
+            if (filename.substr(i, filename.length() - i) == ".c") {
+                filename_to_print += ".ll";
+                break;
+            }
+        } else {
+            filename_to_print += filename.at(i);
+        }
+    }
+
     llvm::sys::PrintStackTraceOnErrorSignal(filename);
-    // PrettyStackTraceProgram X(argc, argv);
+    llvm::PrettyStackTraceProgram X(argc, argv);
 
     /* Make a global context (only one needed) */
     llvm::LLVMContext Ctx;
@@ -146,6 +163,7 @@ void Program::compile(std::string filename) {
 
     for (bool is_decl : this->_is_declaration) {
         if (is_decl) {
+            std::cout << "compiling decl\n";
             if (decl_iter == this->_declarations.end()) {
                 error("Internal error: Tried to read non-existent declaration");
             }
@@ -158,8 +176,7 @@ void Program::compile(std::string filename) {
             auto name = decl_iter.base()->_declarator->getName().value();
 
             /* Create a global variable */
-              
-            llvm::GlobalVariable(
+            new llvm::GlobalVariable(
                 M                                               /* Module & */,
                 llvm_type                                       /* Type * */,
                 false                                           /* bool isConstant */,
@@ -232,7 +249,7 @@ void Program::compile(std::string filename) {
     verifyModule(M);
     
     std::error_code EC;
-    llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::OpenFlags::OF_Text);
+    llvm::raw_fd_ostream stream(filename_to_print, EC, llvm::sys::fs::OpenFlags::OF_Text);
     M.print(stream, nullptr); /* M is a llvm::Module */
 
     /* Dump the final module to std::cerr */

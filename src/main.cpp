@@ -21,7 +21,7 @@ int main(int argc, char const* argv[]) {
         Parser parser(lexer);
         auto program = parser.parseProgram();
         program.typecheck();
-        program.compile(filename);
+        program.compile(argc, argv, filename);
     }
 
     for (int i = 1; i < argc - 1; i++) {
@@ -45,7 +45,7 @@ int main(int argc, char const* argv[]) {
             Parser parser(lexer);
             auto program = parser.parseProgram();
             program.typecheck();
-            program.compile(filename);
+            program.compile(argc, argv, filename);
         }
     }
 
