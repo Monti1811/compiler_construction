@@ -172,7 +172,12 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                 continue;
             }
             std::shared_ptr<Type> type = decl_iter.base()->getTypeDecl().type;
-            auto llvm_type = type->toLLVMType(Builder, Ctx);
+            auto llvm_type = 
+                type->kind != TY_STRUCT
+                ?
+                type->toLLVMType(Builder, Ctx)
+                : 
+                std::static_pointer_cast<CompleteStructType>(type)->toLLVMType(Builder, Ctx);
             auto name = decl_iter.base()->_declarator->getName().value();
 
             /* Create a global variable */
