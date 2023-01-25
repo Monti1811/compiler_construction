@@ -32,7 +32,8 @@ struct Expression {
     /// Returns true if the expression is an lvalue
     virtual bool isLvalue(ScopePtr& scope);
 
-    virtual llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) = 0;
+    virtual llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) = 0;
+    virtual llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) = 0;
 
     virtual void print(std::ostream& stream) = 0;
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Expression>& expr);
@@ -51,7 +52,8 @@ struct IdentExpression: public Expression {
 
     void print(std::ostream& stream);
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<IdentExpression>& expr);
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     public:
     Symbol _ident;
 };
@@ -64,7 +66,8 @@ struct IntConstantExpression: public Expression {
 
     TypePtr typecheck(ScopePtr&);
 
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     void print(std::ostream& stream);
 
     unsigned long long _value;
@@ -80,7 +83,8 @@ struct NullPtrExpression: public Expression {
 
     void print(std::ostream& stream);
 
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     unsigned long long _value;
 };
 
@@ -94,7 +98,8 @@ struct CharConstantExpression: public Expression {
 
     void print(std::ostream& stream);
 
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     std::string _value;
 };
 
@@ -109,7 +114,8 @@ struct StringLiteralExpression: public Expression {
 
     void print(std::ostream& stream);
 
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     private:
     std::string _value;
 };
@@ -126,7 +132,8 @@ struct IndexExpression: public Expression {
 
     void print(std::ostream& stream);
 
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     // expression[index]
     private:
     ExpressionPtr _expression;
@@ -144,7 +151,8 @@ struct CallExpression: public Expression {
 
     void print(std::ostream& stream);
 
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     // expression(args)
     ExpressionPtr _expression;
     std::vector<ExpressionPtr> _arguments;
@@ -162,7 +170,8 @@ struct DotExpression: public Expression {
     TypePtr typecheck(ScopePtr& scope);
     bool isLvalue(ScopePtr& scope);
 
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     // expression.ident
     private:
     ExpressionPtr _expression;
@@ -181,7 +190,8 @@ struct ArrowExpression: public Expression {
     TypePtr typecheck(ScopePtr& scope);
     bool isLvalue(ScopePtr& scope);
 
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     // expression->ident
     private:
     ExpressionPtr _expression;
@@ -211,7 +221,8 @@ struct SizeofExpression: public UnaryExpression {
         : UnaryExpression(loc, std::move(inner), "sizeof ") {};
         
     TypePtr typecheck(ScopePtr& scope);    
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
 struct SizeofTypeExpression: public Expression {
@@ -224,7 +235,8 @@ struct SizeofTypeExpression: public Expression {
 
     TypePtr typecheck(ScopePtr& scope);
 
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     // sizeof (inner)
     private:
     TypeSpecifierPtr _type;
@@ -238,7 +250,8 @@ struct ReferenceExpression: public UnaryExpression {
         : UnaryExpression(loc, std::move(inner), "&") {};
     
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
 struct DerefExpression: public UnaryExpression {
@@ -250,7 +263,8 @@ struct DerefExpression: public UnaryExpression {
 
     TypePtr typecheck(ScopePtr& scope);
     bool isLvalue(ScopePtr& scope);
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
 struct NegationExpression: public UnaryExpression {
@@ -261,7 +275,8 @@ struct NegationExpression: public UnaryExpression {
         : UnaryExpression(loc, std::move(inner), "-") {};
         
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
 struct LogicalNegationExpression: public UnaryExpression {
@@ -272,7 +287,8 @@ struct LogicalNegationExpression: public UnaryExpression {
         : UnaryExpression(loc, std::move(inner), "!") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
 struct BinaryExpression: public Expression {
@@ -286,7 +302,9 @@ struct BinaryExpression: public Expression {
     void print(std::ostream& stream);
 
     TypePtr typecheck(ScopePtr& scope);
-
+    
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    
     ExpressionPtr _left;
     ExpressionPtr _right;
 
@@ -300,7 +318,7 @@ struct MultiplyExpression: public BinaryExpression {
     public:
     MultiplyExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "*") {};
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
 struct AddExpression: public BinaryExpression {
@@ -311,7 +329,7 @@ struct AddExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "+") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
 struct SubstractExpression: public BinaryExpression {
@@ -322,7 +340,7 @@ struct SubstractExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "-") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
 struct LessThanExpression: public BinaryExpression {
@@ -333,7 +351,7 @@ struct LessThanExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "<") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
 struct EqualExpression: public BinaryExpression {
@@ -344,7 +362,7 @@ struct EqualExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "==") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
 struct UnequalExpression: public BinaryExpression {
@@ -355,7 +373,7 @@ struct UnequalExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "!=") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
 struct AndExpression: public BinaryExpression {
@@ -366,7 +384,7 @@ struct AndExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "&&") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
 struct OrExpression: public BinaryExpression {
@@ -377,7 +395,7 @@ struct OrExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "||") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
 struct TernaryExpression: public Expression {
@@ -394,7 +412,8 @@ struct TernaryExpression: public Expression {
 
     TypePtr typecheck(ScopePtr& scope);
 
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     private:
     ExpressionPtr _condition;
     ExpressionPtr _left;
@@ -409,5 +428,6 @@ struct AssignExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "=") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
