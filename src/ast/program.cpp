@@ -181,6 +181,8 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                 std::static_pointer_cast<CompleteStructType>(type)->toLLVMType(Builder, Ctx);
             auto name = decl_iter.base()->_declarator->getName().value();
 
+            compile_scope_ptr->addType(name, llvm_type);
+
             /* Create a global variable */
             new llvm::GlobalVariable(
                 M                                               /* Module & */,
@@ -199,9 +201,6 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
             if (func_iter == this->_functions.end()) {
                 error("Internal error: Tried to read non-existent function definition");
             }
-
-            auto inner_compile_scope_ptr = std::make_shared<CompileScope>(compile_scope_ptr);
-
             std::shared_ptr<FunctionType> func_type_ptr = func_iter.base()->getFunctionType();
             auto llvm_type = 
                 !func_type_ptr->has_params 
@@ -216,6 +215,8 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                 *name                                           /* const Twine &N="" */,
                 &M                                              /* Module *M=0 */);
             llvm::Function::arg_iterator FuncArgIt = Func->arg_begin();
+
+            auto inner_compile_scope_ptr = std::make_shared<CompileScope>(compile_scope_ptr, Func);
 
             int count = 0;
             auto param_func_type = std::static_pointer_cast<ParamFunctionType>(func_type_ptr);
@@ -253,7 +254,7 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                 count++;
             }
             
-            func_iter.base()->_block.compile(inner_compile_scope_ptr, Func);
+            func_iter.base()->_block.compile(inner_compile_scope_ptr);
 
             if (Builder.GetInsertBlock()->getTerminator() == nullptr) {
                 llvm::Type *CurFuncReturnType = Builder.getCurrentFunctionReturnType();
