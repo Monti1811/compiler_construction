@@ -28,7 +28,7 @@ void LabeledStatement::typecheck(ScopePtr& scope) {
     this->_inner->typecheck(scope);
 }
 
-void LabeledStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
+void LabeledStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
     // TODO
 }
 
@@ -58,10 +58,10 @@ void BlockStatement::typecheckInner(ScopePtr& inner_scope) {
     }
 }
 
-void BlockStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
+void BlockStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
     // TODO
     for (auto& item : this->_items) {
-        item->compile(CompileScopePtr, Parent);
+        item->compile(CompileScopePtr);
     }
 }
 
@@ -69,7 +69,7 @@ void EmptyStatement::print(std::ostream& stream) {
     stream << ';';
 }
 
-void EmptyStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
+void EmptyStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
     // TODO
 }
 
@@ -81,7 +81,7 @@ void DeclarationStatement::typecheck(ScopePtr& scope) {
     this->_declaration.typecheck(scope);
 }
 
-void DeclarationStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
+void DeclarationStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
     // TODO
 }
 
@@ -93,8 +93,7 @@ void ExpressionStatement::typecheck(ScopePtr& scope) {
     this->_expr->typecheck(scope);
 }
 
-void ExpressionStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
-    this->_expr->compile(CompileScopePtr, Parent);
+void ExpressionStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
     // TODO
 }
 
@@ -143,7 +142,7 @@ void IfStatement::typecheck(ScopePtr& scope) {
     }
 }
 
-void IfStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
+void IfStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
     // TODO
 }
 
@@ -173,7 +172,7 @@ void WhileStatement::typecheck(ScopePtr& scope) {
     scope->loop_counter--;
 }
 
-void WhileStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
+void WhileStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
     // TODO
 }
 
@@ -181,7 +180,7 @@ void JumpStatement::print(std::ostream& stream) {
     stream << this->_jump_str << ';';
 }
 
-void JumpStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
+void JumpStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
     // TODO
 }
 
@@ -198,7 +197,7 @@ void GotoStatement::typecheck(ScopePtr& scope) {
     }
 }
 
-void GotoStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
+void GotoStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
     // TODO
 }
 
@@ -208,7 +207,7 @@ void ContinueStatement::typecheck(ScopePtr& scope) {
     }
 }
 
-void ContinueStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
+void ContinueStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
     // TODO
 }
 
@@ -218,7 +217,7 @@ void BreakStatement::typecheck(ScopePtr& scope) {
     }
 }
 
-void BreakStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
+void BreakStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
     // TODO
 }
 
@@ -255,9 +254,9 @@ void ReturnStatement::typecheck(ScopePtr& scope) {
     }
 }
 
-void ReturnStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
+void ReturnStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
     if (this->_expr.has_value()) {
-        llvm::Value* return_value = this->_expr.value()->compile(CompileScopePtr, Parent);
+        llvm::Value* return_value = this->_expr.value()->compileRValue(CompileScopePtr);
         CompileScopePtr->_Builder.CreateRet(return_value);
     }
     /* Always create a new block after a return statement
@@ -268,6 +267,6 @@ void ReturnStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llv
    llvm::BasicBlock *ReturnDeadBlock = llvm::BasicBlock::Create(
           CompileScopePtr->_Ctx                                     /* LLVMContext &Context */,
           "DEAD_BLOCK"                                              /* const Twine &Name="" */,
-          Parent                                                    /* Function *Parent=0 */,
+          CompileScopePtr->_ParentFunction.value()                  /* Function *Parent=0 */,
           0                                                         /* BasicBlock *InsertBefore=0 */);
 }
