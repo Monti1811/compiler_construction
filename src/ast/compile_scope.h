@@ -23,10 +23,15 @@ struct CompileScope {
     // Constructor for first CompileScope
     CompileScope(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::LLVMContext& Ctx) :
     _Parent(std::nullopt), _Builder(Builder), _AllocaBuilder(AllocaBuilder), _Module(Module), _Ctx(Ctx) {};
-    // Construct for CompileScopes with Parents
+    // Construct for CompileScopes with Parent and ParentFunction
+    CompileScope(std::shared_ptr<CompileScope> Parent, llvm::Function* ParentFunction) :
+    _Parent(Parent), _Builder(Parent->_Builder), _AllocaBuilder(Parent->_AllocaBuilder), _Module(Parent->_Module), _Ctx(Parent->_Ctx), 
+    _ParentFunction(ParentFunction) {};
+    // Construct for CompileScopes with Parent
     CompileScope(std::shared_ptr<CompileScope> Parent) :
-    _Parent(Parent), _Builder(Parent->_Builder), _AllocaBuilder(Parent->_AllocaBuilder), _Module(Parent->_Module), _Ctx(Parent->_Ctx) {};
-
+    _Parent(Parent), _Builder(Parent->_Builder), _AllocaBuilder(Parent->_AllocaBuilder), _Module(Parent->_Module), _Ctx(Parent->_Ctx), 
+    _ParentFunction(Parent->_ParentFunction) {};
+    
     std::optional<llvm::Value*> getAlloca(Symbol var) {
         if (this->_Allocas.find(var) == this->_Allocas.end()) {
             if (!this->_Parent.has_value()) {
@@ -47,10 +52,7 @@ struct CompileScope {
     std::optional<llvm::Type*> getType(Symbol var) {
         if (this->_Types.find(var) == this->_Types.end()) {
             if (!this->_Parent.has_value()) {
-                if (_Module.getGlobalVariable(*var) == NULL) {
-                    return std::nullopt;
-                }
-                return _Module.getGlobalVariable(*var)->getValueType();
+                return std::nullopt;
             }
             return this->_Parent.value()->getType(var);
         }
@@ -66,6 +68,7 @@ struct CompileScope {
     llvm::IRBuilder<>& _AllocaBuilder;
     llvm::Module& _Module;
     llvm::LLVMContext& _Ctx;
+    std::optional<llvm::Function*> _ParentFunction;
     std::unordered_map<Symbol, llvm::Value*> _Allocas;
     std::unordered_map<Symbol, llvm::Type*> _Types;
 };
