@@ -28,7 +28,7 @@ void LabeledStatement::typecheck(ScopePtr& scope) {
     this->_inner->typecheck(scope);
 }
 
-void LabeledStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
+void LabeledStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
     // TODO
 }
 
@@ -58,10 +58,10 @@ void BlockStatement::typecheckInner(ScopePtr& inner_scope) {
     }
 }
 
-void BlockStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
+void BlockStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
     // TODO
     for (auto& item : this->_items) {
-        item->compile(Builder, AllocaBuilder, Module, Parent);
+        item->compile(CompileScopePtr, Parent);
     }
 }
 
@@ -69,7 +69,7 @@ void EmptyStatement::print(std::ostream& stream) {
     stream << ';';
 }
 
-void EmptyStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
+void EmptyStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
     // TODO
 }
 
@@ -81,7 +81,7 @@ void DeclarationStatement::typecheck(ScopePtr& scope) {
     this->_declaration.typecheck(scope);
 }
 
-void DeclarationStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
+void DeclarationStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
     // TODO
 }
 
@@ -93,8 +93,8 @@ void ExpressionStatement::typecheck(ScopePtr& scope) {
     this->_expr->typecheck(scope);
 }
 
-void ExpressionStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
-    this->_expr->compile(Builder, AllocaBuilder, Module, Parent);
+void ExpressionStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
+    this->_expr->compile(CompileScopePtr, Parent);
     // TODO
 }
 
@@ -143,7 +143,7 @@ void IfStatement::typecheck(ScopePtr& scope) {
     }
 }
 
-void IfStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
+void IfStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
     // TODO
 }
 
@@ -173,7 +173,7 @@ void WhileStatement::typecheck(ScopePtr& scope) {
     scope->loop_counter--;
 }
 
-void WhileStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
+void WhileStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
     // TODO
 }
 
@@ -181,7 +181,7 @@ void JumpStatement::print(std::ostream& stream) {
     stream << this->_jump_str << ';';
 }
 
-void JumpStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
+void JumpStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
     // TODO
 }
 
@@ -198,7 +198,7 @@ void GotoStatement::typecheck(ScopePtr& scope) {
     }
 }
 
-void GotoStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
+void GotoStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
     // TODO
 }
 
@@ -208,7 +208,7 @@ void ContinueStatement::typecheck(ScopePtr& scope) {
     }
 }
 
-void ContinueStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
+void ContinueStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
     // TODO
 }
 
@@ -218,7 +218,7 @@ void BreakStatement::typecheck(ScopePtr& scope) {
     }
 }
 
-void BreakStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
+void BreakStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
     // TODO
 }
 
@@ -255,6 +255,14 @@ void ReturnStatement::typecheck(ScopePtr& scope) {
     }
 }
 
-void ReturnStatement::compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) {
-    // TODO
+void ReturnStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
+    if (this->_expr.has_value()) {
+        llvm::Value* return_value = this->_expr.value()->compile(CompileScopePtr, Parent);
+        CompileScopePtr->_Builder.CreateRet(return_value);
+    }
+    /* Always create a new block after a return statement
+    *
+    *  This will prevent you from inserting code after a block terminator (here
+    *  the return instruction), but it will create a dead basic block instead.
+    */
 }

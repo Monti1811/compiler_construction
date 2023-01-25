@@ -158,6 +158,7 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
 
     /* Two IR-Builder to output intermediate instructions but also types, ... */
     llvm::IRBuilder<> Builder(Ctx), AllocaBuilder(Ctx);
+    auto compile_scope_ptr = std::make_shared<CompileScope>(Builder, AllocaBuilder, M, Ctx);
     auto decl_iter = this->_declarations.begin();
     auto func_iter = this->_functions.begin();
 
@@ -232,17 +233,23 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
             Builder.SetInsertPoint(FuncEntryBB);
             AllocaBuilder.SetInsertPoint(FuncEntryBB);
 
+            auto inner_compile_scope_ptr = std::make_shared<CompileScope>(compile_scope_ptr);
+
+            count = 0;
             FuncArgIt = Func->arg_begin();
             while (FuncArgIt != Func->arg_end()) {
                 AllocaBuilder.SetInsertPoint(AllocaBuilder.GetInsertBlock(),
                                 AllocaBuilder.GetInsertBlock()->begin());
-                llvm::Argument *Arg = FuncArgIt;
+                llvm::Argument *Arg = FuncArgIt; 
                 llvm::Value *ArgVarPtr = AllocaBuilder.CreateAlloca(Arg->getType());
+                // save alloca for this var in compile_scope
+                inner_compile_scope_ptr->addAlloca(param_func_type->params[count].name.value(), ArgVarPtr);
                 Builder.CreateStore(Arg, ArgVarPtr);
                 FuncArgIt++;
+                count++;
             }
             
-            func_iter.base()->_block.compile(Builder, AllocaBuilder, M, Func);
+            func_iter.base()->_block.compile(inner_compile_scope_ptr, Func);
 
             if (Builder.GetInsertBlock()->getTerminator() == nullptr) {
                 llvm::Type *CurFuncReturnType = Builder.getCurrentFunctionReturnType();

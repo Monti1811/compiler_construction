@@ -11,6 +11,7 @@
 #include "scope.h"
 #include "specifiers/specifier.h"
 #include "types.h"
+#include "compile_scope.h"
 
 struct Expression {
     Expression(Locatable loc)
@@ -31,7 +32,7 @@ struct Expression {
     /// Returns true if the expression is an lvalue
     virtual bool isLvalue(ScopePtr& scope);
 
-    virtual llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) = 0;
+    virtual llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) = 0;
 
     virtual void print(std::ostream& stream) = 0;
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Expression>& expr);
@@ -50,7 +51,7 @@ struct IdentExpression: public Expression {
 
     void print(std::ostream& stream);
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<IdentExpression>& expr);
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
     public:
     Symbol _ident;
 };
@@ -63,7 +64,7 @@ struct IntConstantExpression: public Expression {
 
     TypePtr typecheck(ScopePtr&);
 
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
     void print(std::ostream& stream);
 
     unsigned long long _value;
@@ -79,7 +80,7 @@ struct NullPtrExpression: public Expression {
 
     void print(std::ostream& stream);
 
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
     unsigned long long _value;
 };
 
@@ -93,7 +94,7 @@ struct CharConstantExpression: public Expression {
 
     void print(std::ostream& stream);
 
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
     std::string _value;
 };
 
@@ -108,7 +109,7 @@ struct StringLiteralExpression: public Expression {
 
     void print(std::ostream& stream);
 
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
     private:
     std::string _value;
 };
@@ -125,7 +126,7 @@ struct IndexExpression: public Expression {
 
     void print(std::ostream& stream);
 
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
     // expression[index]
     private:
     ExpressionPtr _expression;
@@ -143,7 +144,7 @@ struct CallExpression: public Expression {
 
     void print(std::ostream& stream);
 
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
     // expression(args)
     ExpressionPtr _expression;
     std::vector<ExpressionPtr> _arguments;
@@ -161,7 +162,7 @@ struct DotExpression: public Expression {
     TypePtr typecheck(ScopePtr& scope);
     bool isLvalue(ScopePtr& scope);
 
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
     // expression.ident
     private:
     ExpressionPtr _expression;
@@ -180,7 +181,7 @@ struct ArrowExpression: public Expression {
     TypePtr typecheck(ScopePtr& scope);
     bool isLvalue(ScopePtr& scope);
 
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
     // expression->ident
     private:
     ExpressionPtr _expression;
@@ -210,7 +211,7 @@ struct SizeofExpression: public UnaryExpression {
         : UnaryExpression(loc, std::move(inner), "sizeof ") {};
         
     TypePtr typecheck(ScopePtr& scope);    
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };
 
 struct SizeofTypeExpression: public Expression {
@@ -223,7 +224,7 @@ struct SizeofTypeExpression: public Expression {
 
     TypePtr typecheck(ScopePtr& scope);
 
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
     // sizeof (inner)
     private:
     TypeSpecifierPtr _type;
@@ -237,7 +238,7 @@ struct ReferenceExpression: public UnaryExpression {
         : UnaryExpression(loc, std::move(inner), "&") {};
     
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };
 
 struct DerefExpression: public UnaryExpression {
@@ -249,7 +250,7 @@ struct DerefExpression: public UnaryExpression {
 
     TypePtr typecheck(ScopePtr& scope);
     bool isLvalue(ScopePtr& scope);
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };
 
 struct NegationExpression: public UnaryExpression {
@@ -260,7 +261,7 @@ struct NegationExpression: public UnaryExpression {
         : UnaryExpression(loc, std::move(inner), "-") {};
         
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };
 
 struct LogicalNegationExpression: public UnaryExpression {
@@ -271,7 +272,7 @@ struct LogicalNegationExpression: public UnaryExpression {
         : UnaryExpression(loc, std::move(inner), "!") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };
 
 struct BinaryExpression: public Expression {
@@ -299,7 +300,7 @@ struct MultiplyExpression: public BinaryExpression {
     public:
     MultiplyExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "*") {};
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };
 
 struct AddExpression: public BinaryExpression {
@@ -310,7 +311,7 @@ struct AddExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "+") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };
 
 struct SubstractExpression: public BinaryExpression {
@@ -321,7 +322,7 @@ struct SubstractExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "-") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };
 
 struct LessThanExpression: public BinaryExpression {
@@ -332,7 +333,7 @@ struct LessThanExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "<") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };
 
 struct EqualExpression: public BinaryExpression {
@@ -343,7 +344,7 @@ struct EqualExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "==") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };
 
 struct UnequalExpression: public BinaryExpression {
@@ -354,7 +355,7 @@ struct UnequalExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "!=") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };
 
 struct AndExpression: public BinaryExpression {
@@ -365,7 +366,7 @@ struct AndExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "&&") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };
 
 struct OrExpression: public BinaryExpression {
@@ -376,7 +377,7 @@ struct OrExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "||") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };
 
 struct TernaryExpression: public Expression {
@@ -393,7 +394,7 @@ struct TernaryExpression: public Expression {
 
     TypePtr typecheck(ScopePtr& scope);
 
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
     private:
     ExpressionPtr _condition;
     ExpressionPtr _left;
@@ -408,5 +409,5 @@ struct AssignExpression: public BinaryExpression {
         : BinaryExpression(loc, std::move(left), std::move(right), "=") {};
 
     TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    llvm::Value* compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };

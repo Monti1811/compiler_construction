@@ -179,7 +179,7 @@ llvm::Type* Type::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx)
         case TY_POINTER:
             return Builder.getPtrTy();
         default:
-            // TODO: throw error here
+            // TODO: to be done
             return Builder.getVoidTy();
     }
 }

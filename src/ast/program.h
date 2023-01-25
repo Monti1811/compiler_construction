@@ -7,6 +7,7 @@
 #include "declaration.h"
 #include "expression.h"
 #include "statement.h"
+#include "compile_scope.h"
 
 struct FunctionDefinition {
     public:

@@ -35,7 +35,7 @@ struct Statement {
 
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Statement>& stat);
     virtual void print(std::ostream& stream) = 0;
-    virtual void compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent) = 0;
+    virtual void compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) = 0;
 
     virtual void typecheck(ScopePtr& scope) = 0;
 };
@@ -54,7 +54,7 @@ struct LabeledStatement: public Statement {
 
     void typecheck(ScopePtr& scope);
 
-    void compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    void compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 
     private:
     Symbol _name;
@@ -78,7 +78,7 @@ struct BlockStatement: public Statement {
     void typecheck(ScopePtr& scope);
     void typecheckInner(ScopePtr& inner_scope);
 
-    void compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    void compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 
     private:
     std::vector<StatementPtr> _items;
@@ -90,7 +90,7 @@ struct EmptyStatement: public Statement {
     
     void print(std::ostream& stream);
 
-    void compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    void compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 
     void typecheck(ScopePtr&) {}
 };
@@ -103,7 +103,7 @@ struct DeclarationStatement: public Statement {
 
     void print(std::ostream& stream);
 
-    void compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    void compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 
     void typecheck(ScopePtr& scope);
 
@@ -119,7 +119,7 @@ struct ExpressionStatement: public Statement {
 
     void print(std::ostream& stream);
 
-    void compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    void compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 
     void typecheck(ScopePtr& scope);
 
@@ -143,7 +143,7 @@ struct IfStatement: public Statement {
 
     void typecheck(ScopePtr& scope);
 
-    void compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    void compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 
     private:
     ExpressionPtr _condition;
@@ -163,7 +163,7 @@ struct WhileStatement: public Statement {
 
     void typecheck(ScopePtr& scope);
 
-    void compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    void compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 
     private:
     ExpressionPtr _condition;
@@ -180,7 +180,7 @@ struct JumpStatement: public Statement {
 
     void typecheck(ScopePtr&) {}
 
-    void compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    void compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 
     private:
     const std::string _jump_str;
@@ -196,7 +196,7 @@ struct GotoStatement: public JumpStatement {
 
     void typecheck(ScopePtr& scope);
 
-    void compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    void compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 
     private:
     Symbol _ident;
@@ -209,7 +209,7 @@ struct ContinueStatement: public JumpStatement {
     
     void typecheck(ScopePtr& scope);
 
-    void compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    void compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };
 
 // break; (in loops)
@@ -219,7 +219,7 @@ struct BreakStatement: public JumpStatement {
 
     void typecheck(ScopePtr& scope);
 
-    void compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    void compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 };
 
 // return;
@@ -237,7 +237,7 @@ struct ReturnStatement: public JumpStatement {
 
     void typecheck(ScopePtr& scope);
 
-    void compile(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::Function* Parent);
+    void compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent);
 
     private:
     std::optional<ExpressionPtr> _expr;
