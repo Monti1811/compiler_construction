@@ -265,4 +265,9 @@ void ReturnStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr, llv
     *  This will prevent you from inserting code after a block terminator (here
     *  the return instruction), but it will create a dead basic block instead.
     */
+   llvm::BasicBlock *ReturnDeadBlock = llvm::BasicBlock::Create(
+          CompileScopePtr->_Ctx                                     /* LLVMContext &Context */,
+          "DEAD_BLOCK"                                              /* const Twine &Name="" */,
+          Parent                                                    /* Function *Parent=0 */,
+          0                                                         /* BasicBlock *InsertBefore=0 */);
 }

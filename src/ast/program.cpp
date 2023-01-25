@@ -199,6 +199,9 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
             if (func_iter == this->_functions.end()) {
                 error("Internal error: Tried to read non-existent function definition");
             }
+
+            auto inner_compile_scope_ptr = std::make_shared<CompileScope>(compile_scope_ptr);
+
             std::shared_ptr<FunctionType> func_type_ptr = func_iter.base()->getFunctionType();
             auto llvm_type = 
                 !func_type_ptr->has_params 
@@ -213,6 +216,7 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                 *name                                           /* const Twine &N="" */,
                 &M                                              /* Module *M=0 */);
             llvm::Function::arg_iterator FuncArgIt = Func->arg_begin();
+
             int count = 0;
             auto param_func_type = std::static_pointer_cast<ParamFunctionType>(func_type_ptr);
             while (FuncArgIt != Func->arg_end()) {
@@ -232,19 +236,19 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                 0                                       /* BasicBlock *InsertBefore=0 */);
             Builder.SetInsertPoint(FuncEntryBB);
             AllocaBuilder.SetInsertPoint(FuncEntryBB);
-
-            auto inner_compile_scope_ptr = std::make_shared<CompileScope>(compile_scope_ptr);
-
+            
             count = 0;
             FuncArgIt = Func->arg_begin();
+            auto FuncLLVMTypeIt = llvm_type->param_begin();
             while (FuncArgIt != Func->arg_end()) {
                 AllocaBuilder.SetInsertPoint(AllocaBuilder.GetInsertBlock(),
                                 AllocaBuilder.GetInsertBlock()->begin());
                 llvm::Argument *Arg = FuncArgIt; 
                 llvm::Value *ArgVarPtr = AllocaBuilder.CreateAlloca(Arg->getType());
-                // save alloca for this var in compile_scope
-                inner_compile_scope_ptr->addAlloca(param_func_type->params[count].name.value(), ArgVarPtr);
                 Builder.CreateStore(Arg, ArgVarPtr);
+                // fill compile_scope
+                inner_compile_scope_ptr->addAlloca(param_func_type->params[count].name.value(), ArgVarPtr);
+                inner_compile_scope_ptr->addType(param_func_type->params[count].name.value(), FuncLLVMTypeIt[count]);
                 FuncArgIt++;
                 count++;
             }

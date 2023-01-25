@@ -515,8 +515,10 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
 
 
 llvm::Value* IdentExpression::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {
-    // TODO
-    return CompileScopePtr->_Builder.getInt32(1);
+    // identifier should always exist since we typechecked the program already
+    llvm::Value* saved_alloca = CompileScopePtr->getAlloca(this->_ident).value();
+    llvm::Type* var_type = CompileScopePtr->getType(this->_ident).value();
+    return CompileScopePtr->_Builder.CreateLoad(var_type, saved_alloca);
 }
 
 llvm::Value* IntConstantExpression::compile(std::shared_ptr<CompileScope> CompileScopePtr, llvm::Function* Parent) {

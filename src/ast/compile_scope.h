@@ -44,12 +44,30 @@ struct CompileScope {
         this->_Allocas.insert({var, allocaa});
     }
 
+    std::optional<llvm::Type*> getType(Symbol var) {
+        if (this->_Types.find(var) == this->_Types.end()) {
+            if (!this->_Parent.has_value()) {
+                if (_Module.getGlobalVariable(*var) == NULL) {
+                    return std::nullopt;
+                }
+                return _Module.getGlobalVariable(*var)->getValueType();
+            }
+            return this->_Parent.value()->getType(var);
+        }
+        return this->_Types.at(var);
+    }
+
+    void addType(Symbol var, llvm::Type* type) {
+        this->_Types.insert({var, type});
+    }
+
     std::optional<std::shared_ptr<CompileScope>> _Parent;
     llvm::IRBuilder<>& _Builder;
     llvm::IRBuilder<>& _AllocaBuilder;
     llvm::Module& _Module;
     llvm::LLVMContext& _Ctx;
     std::unordered_map<Symbol, llvm::Value*> _Allocas;
+    std::unordered_map<Symbol, llvm::Type*> _Types;
 };
 
 // std::shared_ptr<CompileScope> CompileScopePtr;
