@@ -95,6 +95,7 @@ void ExpressionStatement::typecheck(ScopePtr& scope) {
 
 void ExpressionStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
     // TODO
+    this->_expr->compileRValue(CompileScopePtr);
 }
 
 void IfStatement::print(std::ostream& stream) {
