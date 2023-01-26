@@ -263,7 +263,7 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                 } else {
                     Builder.CreateRet(llvm::Constant::getNullValue(CurFuncReturnType));
                 }
-            }
+            } 
             func_iter++;
         }
     }

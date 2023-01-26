@@ -69,6 +69,7 @@ struct CompileScope {
     llvm::Module& _Module;
     llvm::LLVMContext& _Ctx;
     std::optional<llvm::Function*> _ParentFunction;
+    private:
     std::unordered_map<Symbol, llvm::Value*> _Allocas;
     std::unordered_map<Symbol, llvm::Type*> _Types;
 };
