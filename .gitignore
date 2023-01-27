@@ -74,3 +74,6 @@ llvm/
 *.code-workspace
 
 test.c4
+test.c
+test.ll
+test

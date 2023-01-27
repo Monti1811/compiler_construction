@@ -16,6 +16,14 @@ bool StructType::strong_equals(TypePtr const& other) {
     return this->equals(other);
 }
 
+llvm::StructType* StructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+    // declarations of structs should have CompleteStructType already, so this shouldn't get called at all
+    llvm::StructType *StructXType = llvm::StructType::create(Ctx, "struct." + *tag.value());
+    std::vector<llvm::Type *> StructMemberTypes;
+    StructXType->setBody(StructMemberTypes);
+    return StructXType;
+}
+
 bool CompleteStructType::isComplete() {
     return true;
 }
@@ -63,4 +71,14 @@ std::optional<TypePtr> CompleteStructType::typeOfField(Symbol& ident) {
         return std::nullopt;
     }
     return this->fields.at(this->_field_names.at(ident)).type;
+}
+
+llvm::StructType* CompleteStructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+    llvm::StructType *StructXType = llvm::StructType::create(Ctx, "struct." + *tag.value());
+    std::vector<llvm::Type *> StructMemberTypes;
+    for (auto field : this->fields) {
+        StructMemberTypes.push_back(field.type->toLLVMType(Builder, Ctx));
+    }
+    StructXType->setBody(StructMemberTypes);
+    return StructXType;
 }

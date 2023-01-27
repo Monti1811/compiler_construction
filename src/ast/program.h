@@ -7,6 +7,7 @@
 #include "declaration.h"
 #include "expression.h"
 #include "statement.h"
+#include "compile_scope.h"
 
 struct FunctionDefinition {
     public:
@@ -19,11 +20,16 @@ struct FunctionDefinition {
     friend std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition);
 
     void typecheck(ScopePtr& scope);
+    std::shared_ptr<FunctionType> getFunctionType() {
+        return type.value();
+    }
 
-    private:
-    Declaration _declaration;
     BlockStatement _block;
+    Declaration _declaration;
+    private:
     std::unordered_set<Symbol> _labels;
+    // TODO: add this while typechecking
+    std::optional<std::shared_ptr<FunctionType>> type;
 };
 
 struct Program {
@@ -36,6 +42,7 @@ struct Program {
     void addDeclaration(Declaration declaration);
     void addFunctionDefinition(FunctionDefinition definition);
     void typecheck();
+    void compile(int argc, char const* argv[], std::string filename);
 
     private:
     std::vector<Declaration> _declarations;

@@ -512,3 +512,249 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
 
         errorloc(this->loc, "wrong assign");
     }
+
+
+llvm::Value* IdentExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // identifier should always exist since we typechecked the program already
+    llvm::Value* saved_alloca = CompileScopePtr->getAlloca(this->_ident).value();
+    llvm::Type* var_type = CompileScopePtr->getType(this->_ident).value();
+    return CompileScopePtr->_Builder.CreateLoad(var_type, saved_alloca);
+}
+
+llvm::Value* IdentExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    llvm::Value* saved_alloca = CompileScopePtr->getAlloca(this->_ident).value();
+    return saved_alloca;
+}
+
+llvm::Value* IntConstantExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    return CompileScopePtr->_Builder.getInt32(this->_value);
+}
+
+llvm::Value* IntConstantExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    error("cannot compute l-value of this expression");
+}
+
+llvm::Value* NullPtrExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // TODO
+    return CompileScopePtr->_Builder.getInt32(0);
+}
+
+llvm::Value* NullPtrExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    error("cannot compute l-value of this expression");
+}
+
+llvm::Value* CharConstantExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    return CompileScopePtr->_Builder.getInt8(this->_value[0]);
+}
+
+llvm::Value* CharConstantExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    error("cannot compute l-value of this expression");
+}
+
+llvm::Value* StringLiteralExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    return CompileScopePtr->_Builder.CreateGlobalStringPtr(this->_value);
+}
+
+llvm::Value* StringLiteralExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    error("cannot compute l-value of this expression");
+}
+
+llvm::Value* IndexExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // TODO: gleiche vorgehensweise wie bei dotexpression?
+    llvm::Value* array_alloca = this->_expression->compileLValue(CompileScopePtr);
+    llvm::Value* index_value = this->_index->compileRValue(CompileScopePtr);
+    llvm::Value* alloca_here = CompileScopePtr->_Builder.CreateInBoundsGEP(array_alloca->getType(), array_alloca, index_value);
+    return CompileScopePtr->_Builder.CreateLoad(CompileScopePtr->_Builder.getInt32Ty(), alloca_here);
+}
+
+llvm::Value* IndexExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // TODO
+    error("cannot compute l-value of this expression");
+}
+
+llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // TODO get name of function
+    llvm::Function* fun = CompileScopePtr->_Module.getFunction("f");
+    std::vector<llvm::Value*> args;
+    for (size_t i = 0; i < this->_arguments.size(); i++) {
+        llvm::Value* val = this->_arguments[i]->compileRValue(CompileScopePtr);
+    }
+    return llvm::CallInst::Create(fun, llvm::makeArrayRef(args));
+}
+
+llvm::Value* CallExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    error("cannot compute l-value of this expression");
+}
+
+llvm::Value* DotExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // TODO get name of struct 
+    llvm::Type* struct_type = CompileScopePtr->getType(Symbol("my_struct")).value();
+    llvm::Value* get_alloca = CompileScopePtr->getAlloca(Symbol("my_struct")).value();
+    // TODO: get index according to _ident
+    llvm::Value* index = CompileScopePtr->_Builder.getInt32(1);
+    std::vector<llvm::Value *> ElementIndexes;
+    ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(0));
+    ElementIndexes.push_back(index);
+    llvm::Value* indexed_alloca = CompileScopePtr->_Builder.CreateInBoundsGEP(struct_type, get_alloca, ElementIndexes);
+    return CompileScopePtr->_Builder.CreateLoad(CompileScopePtr->_Builder.getInt32Ty(), indexed_alloca);
+}
+
+llvm::Value* DotExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // TODO get name of struct   
+    std::cout << "1\n";
+    llvm::Type* struct_type = CompileScopePtr->getType(Symbol("my_struct")).value();
+    std::cout << "2\n";
+    llvm::Value* get_alloca = CompileScopePtr->getAlloca(Symbol("my_struct")).value();
+    std::cout << "3\n";
+    // TODO: get index according to _ident
+    llvm::Value* index = CompileScopePtr->_Builder.getInt32(1);
+    std::vector<llvm::Value *> ElementIndexes;
+    ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(0));
+    ElementIndexes.push_back(index);
+    return CompileScopePtr->_Builder.CreateInBoundsGEP(struct_type, get_alloca, ElementIndexes);
+}
+
+llvm::Value* ArrowExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // TODO
+    return CompileScopePtr->_Builder.getInt32(1);
+}
+
+llvm::Value* ArrowExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // TODO
+    error("cannot compute l-value of this expression");
+}
+
+llvm::Value* SizeofExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // TODO
+    return CompileScopePtr->_Builder.getInt32(1);
+}
+
+llvm::Value* SizeofExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    error("cannot compute l-value of this expression");
+}
+
+llvm::Value* SizeofTypeExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // TODO
+    switch (this->_type->_kind) {
+        case TY_INT: return CompileScopePtr->_Builder.getInt32(4);
+        case TY_CHAR: return CompileScopePtr->_Builder.getInt32(1);
+        case TY_VOID: return CompileScopePtr->_Builder.getInt32(1);
+        case TY_POINTER: return CompileScopePtr->_Builder.getInt32(8);
+        case TY_NULLPTR: return CompileScopePtr->_Builder.getInt32(8);
+        default:
+            error("sizeof type cannot be compiled");
+    }
+}
+
+llvm::Value* SizeofTypeExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    error("cannot compute l-value of this expression");
+}
+
+llvm::Value* ReferenceExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // TODO
+    return CompileScopePtr->_Builder.getInt32(1);
+}
+
+llvm::Value* ReferenceExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    error("cannot compute l-value of this expression");
+}
+
+llvm::Value* DerefExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // TODO
+    return CompileScopePtr->_Builder.getInt32(1);
+}
+
+llvm::Value* DerefExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // TODO
+    error("cannot compute l-value of this expression");
+}
+
+llvm::Value* NegationExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    llvm::Value* inner_value = this->_inner->compileRValue(CompileScopePtr);
+    return CompileScopePtr->_Builder.CreateMul(CompileScopePtr->_Builder.getInt32(-1), inner_value);
+}
+
+llvm::Value* NegationExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    error("cannot compute l-value of this expression");
+}
+
+llvm::Value* LogicalNegationExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    llvm::Value* inner_value = this->_inner->compileRValue(CompileScopePtr);
+    return CompileScopePtr->_Builder.CreateICmpEQ(CompileScopePtr->_Builder.getInt32(0), inner_value);
+}
+
+llvm::Value* LogicalNegationExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    error("cannot compute l-value of this expression");
+}
+
+llvm::Value* BinaryExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    error("cannot compute l-value of this expression");
+}
+
+llvm::Value* MultiplyExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
+    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+    return CompileScopePtr->_Builder.CreateMul(value_lhs, value_rhs);
+}
+
+llvm::Value* AddExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
+    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+    return CompileScopePtr->_Builder.CreateAdd(value_lhs, value_rhs);
+}
+
+llvm::Value* SubstractExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
+    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+    return CompileScopePtr->_Builder.CreateSub(value_lhs, value_rhs);
+}
+
+llvm::Value* LessThanExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
+    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+    return CompileScopePtr->_Builder.CreateICmpULT(value_lhs, value_rhs);
+}
+
+llvm::Value* EqualExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
+    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+    return CompileScopePtr->_Builder.CreateICmpEQ(value_lhs, value_rhs);
+}
+
+llvm::Value* UnequalExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
+    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+    return CompileScopePtr->_Builder.CreateICmpULT(value_lhs, value_rhs);
+}
+
+llvm::Value* AndExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
+    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+    return CompileScopePtr->_Builder.CreateLogicalAnd(value_lhs, value_rhs);
+}
+
+llvm::Value* OrExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
+    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+    return CompileScopePtr->_Builder.CreateLogicalOr(value_lhs, value_rhs);
+}
+
+llvm::Value* TernaryExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // TODO
+    return CompileScopePtr->_Builder.getInt32(1);
+}
+
+llvm::Value* TernaryExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    error("cannot compute l-value of this expression");
+}
+
+llvm::Value* AssignExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    llvm::Value* to_be_stored_in = this->_left->compileLValue(CompileScopePtr);
+    llvm::Value* value_to_be_stored = this->_right->compileRValue(CompileScopePtr);
+    CompileScopePtr->_Builder.CreateStore(value_to_be_stored, to_be_stored_in);
+    return value_to_be_stored;
+}
+
+llvm::Value* AssignExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    error("cannot compute l-value of this expression");
+}

@@ -17,6 +17,7 @@ struct FunctionType: public Type {
     
     bool equals(TypePtr const& other) override;
     bool strong_equals(TypePtr const& other) override;
+    llvm::FunctionType* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
 
     TypePtr return_type;
     ScopePtr scope;
@@ -32,6 +33,8 @@ struct ParamFunctionType: public FunctionType {
     bool strong_equals(TypePtr const& other) override;
 
     void addParameter(FunctionParam const& param);
+
+    llvm::FunctionType* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
 
     std::vector<FunctionParam> params;
 };

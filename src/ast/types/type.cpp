@@ -168,3 +168,18 @@ std::optional<std::shared_ptr<FunctionType>> Type::unwrapFunctionPointer() {
 
     return std::static_pointer_cast<FunctionType>(function_ptr_inner_type);
 }
+
+llvm::Type* Type::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+    switch(this->kind) {
+        case TY_INT:
+            return Builder.getInt32Ty();
+        case TY_CHAR:
+            return Builder.getInt8Ty();
+        case TY_NULLPTR:
+        case TY_POINTER:
+            return Builder.getPtrTy();
+        default:
+            // TODO: to be done
+            return Builder.getVoidTy();
+    }
+}

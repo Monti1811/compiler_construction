@@ -1,5 +1,17 @@
 #include "program.h"
 
+#include "llvm/IR/Module.h"                /* Module */
+#include "llvm/IR/Function.h"              /* Function */
+#include "llvm/IR/IRBuilder.h"             /* IRBuilder */
+#include "llvm/IR/LLVMContext.h"           /* LLVMContext */
+#include "llvm/IR/GlobalValue.h"           /* GlobaleVariable, LinkageTypes */
+#include "llvm/IR/Verifier.h"              /* verifyFunction, verifyModule */
+#include "llvm/Support/Signals.h"          /* Nice stacktrace output */
+#include "llvm/Support/SystemUtils.h"
+#include "llvm/Support/PrettyStackTrace.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/raw_ostream.h"
+
 std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition) {
     definition.print(stream);
     return stream;
@@ -48,6 +60,8 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     }
 
     this->_block.typecheckInner(function_scope);
+    // for compilation
+    this->type = function_type;
 }
 
 void Program::addDeclaration(Declaration declaration) {
@@ -115,4 +129,151 @@ void Program::typecheck() {
             func_iter++;
         }
     }
+}
+
+void Program::compile(int argc, char const* argv[], std::string filename) {
+    // change filename "x/y.c" to "x.ll"
+    std::string filename_to_print("");
+    for (size_t i = 0; i < filename.length(); i++) {
+        if (filename.at(i) == '/') {
+            filename_to_print = "";
+        } else if (filename.at(i) == '.') {
+            if (filename.substr(i, filename.length() - i) == ".c") {
+                filename_to_print += ".ll";
+                break;
+            }
+        } else {
+            filename_to_print += filename.at(i);
+        }
+    }
+
+    llvm::sys::PrintStackTraceOnErrorSignal(filename);
+    llvm::PrettyStackTraceProgram X(argc, argv);
+
+    /* Make a global context (only one needed) */
+    llvm::LLVMContext Ctx;
+
+     /* Create a Module (only one needed) */
+    llvm::Module M(filename, Ctx);
+
+    /* Two IR-Builder to output intermediate instructions but also types, ... */
+    llvm::IRBuilder<> Builder(Ctx), AllocaBuilder(Ctx);
+    auto compile_scope_ptr = std::make_shared<CompileScope>(Builder, AllocaBuilder, M, Ctx);
+    auto decl_iter = this->_declarations.begin();
+    auto func_iter = this->_functions.begin();
+
+    for (bool is_decl : this->_is_declaration) {
+        if (is_decl) {
+            if (decl_iter == this->_declarations.end()) {
+                error("Internal error: Tried to read non-existent declaration");
+            }
+            // does not declare a variable
+            // TODO: compile abstract function declaration
+            if (decl_iter.base()->_declarator->isAbstract()) {
+                continue;
+            }
+            std::shared_ptr<Type> type = decl_iter.base()->getTypeDecl().type;
+            auto llvm_type = 
+                type->kind != TY_STRUCT
+                ?
+                type->toLLVMType(Builder, Ctx)
+                : 
+                std::static_pointer_cast<CompleteStructType>(type)->toLLVMType(Builder, Ctx);
+            auto name = decl_iter.base()->_declarator->getName().value();
+
+            compile_scope_ptr->addType(name, llvm_type);
+
+            /* Create a global variable */
+            new llvm::GlobalVariable(
+                M                                               /* Module & */,
+                llvm_type                                       /* Type * */,
+                false                                           /* bool isConstant */,
+                llvm::GlobalValue::CommonLinkage                /* LinkageType */,
+                llvm::Constant::getNullValue(llvm_type)         /* Constant * Initializer */,
+                *name                                            /* const Twine &Name = "" */,
+                /* --------- We do not need this part (=> use defaults) ---------- */
+                0                                               /* GlobalVariable *InsertBefore = 0 */,
+                llvm::GlobalVariable::NotThreadLocal            /* ThreadLocalMode TLMode = NotThreadLocal */,
+                0                                               /* unsigned AddressSpace = 0 */,
+                false                                           /* bool isExternallyInitialized = false */);
+            decl_iter++;
+        } else {
+            if (func_iter == this->_functions.end()) {
+                error("Internal error: Tried to read non-existent function definition");
+            }
+            std::shared_ptr<FunctionType> func_type_ptr = func_iter.base()->getFunctionType();
+            auto llvm_type = 
+                !func_type_ptr->has_params 
+                ?
+                func_type_ptr->toLLVMType(Builder, Ctx) 
+                :
+                std::static_pointer_cast<ParamFunctionType>(func_type_ptr)->toLLVMType(Builder, Ctx);
+            auto name = func_iter.base()->_declaration._declarator->getName().value();
+            llvm::Function *Func = llvm::Function::Create(
+                llvm_type                                       /* FunctionType *Ty */,
+                llvm::GlobalValue::ExternalLinkage              /* LinkageType */,
+                *name                                           /* const Twine &N="" */,
+                &M                                              /* Module *M=0 */);
+            llvm::Function::arg_iterator FuncArgIt = Func->arg_begin();
+
+            auto inner_compile_scope_ptr = std::make_shared<CompileScope>(compile_scope_ptr, Func);
+
+            int count = 0;
+            auto param_func_type = std::static_pointer_cast<ParamFunctionType>(func_type_ptr);
+            while (FuncArgIt != Func->arg_end()) {
+                llvm::Argument *Arg = FuncArgIt;
+                if (param_func_type->params[count].name.has_value()) {
+                    Arg->setName(*(param_func_type->params[count].name.value()));
+                } else {
+                    Arg->setName("");
+                }
+                FuncArgIt++;
+                count++;
+            }
+            llvm::BasicBlock *FuncEntryBB = llvm::BasicBlock::Create(
+                Ctx                                     /* LLVMContext &Context */,
+                "entry"                                 /* const Twine &Name="" */,
+                Func                                    /* Function *Parent=0 */,
+                0                                       /* BasicBlock *InsertBefore=0 */);
+            Builder.SetInsertPoint(FuncEntryBB);
+            AllocaBuilder.SetInsertPoint(FuncEntryBB);
+            
+            count = 0;
+            FuncArgIt = Func->arg_begin();
+            auto FuncLLVMTypeIt = llvm_type->param_begin();
+            while (FuncArgIt != Func->arg_end()) {
+                AllocaBuilder.SetInsertPoint(AllocaBuilder.GetInsertBlock(),
+                                AllocaBuilder.GetInsertBlock()->begin());
+                llvm::Argument *Arg = FuncArgIt; 
+                llvm::Value *ArgVarPtr = AllocaBuilder.CreateAlloca(Arg->getType());
+                Builder.CreateStore(Arg, ArgVarPtr);
+                // fill compile_scope
+                inner_compile_scope_ptr->addAlloca(param_func_type->params[count].name.value(), ArgVarPtr);
+                inner_compile_scope_ptr->addType(param_func_type->params[count].name.value(), FuncLLVMTypeIt[count]);
+                FuncArgIt++;
+                count++;
+            }
+            
+            func_iter.base()->_block.compile(inner_compile_scope_ptr);
+
+            if (Builder.GetInsertBlock()->getTerminator() == nullptr) {
+                llvm::Type *CurFuncReturnType = Builder.getCurrentFunctionReturnType();
+                if (CurFuncReturnType->isVoidTy()) {
+                    Builder.CreateRetVoid();
+                } else {
+                    Builder.CreateRet(llvm::Constant::getNullValue(CurFuncReturnType));
+                }
+            } 
+            func_iter++;
+        }
+    }
+    /* Ensure that we created a 'valid' module */
+    verifyModule(M);
+    
+    std::error_code EC;
+    llvm::raw_fd_ostream stream(filename_to_print, EC, llvm::sys::fs::OpenFlags::OF_Text);
+    M.print(stream, nullptr); /* M is a llvm::Module */
+
+    /* Dump the final module to std::cerr */
+    M.dump();
 }

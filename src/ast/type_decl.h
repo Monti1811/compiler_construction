@@ -4,6 +4,7 @@
 #include <memory>
 #include "../util/symbol_internalizer.h"
 
+
 struct Type;
 typedef std::shared_ptr<Type> TypePtr;
 

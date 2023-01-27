@@ -27,6 +27,11 @@ void Declaration::typecheck(ScopePtr& scope) {
     if (scope->addDeclaration(decl)) {
         errorloc(this->_declarator->loc, "Duplicate variable");
     }
+    this->_typeDecl = decl;
+}
+
+TypeDecl Declaration::getTypeDecl() {
+    return this->_typeDecl.value();
 }
 
 TypeDecl Declaration::toType(ScopePtr& scope) {
@@ -34,3 +39,5 @@ TypeDecl Declaration::toType(ScopePtr& scope) {
     auto type = this->_declarator->wrapType(this->_specifier->toType(scope), scope);
     return TypeDecl(name, type);
 }
+
+
