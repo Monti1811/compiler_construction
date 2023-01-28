@@ -26,11 +26,11 @@ struct CompileScope {
     // Construct for CompileScopes with Parent and ParentFunction
     CompileScope(std::shared_ptr<CompileScope> Parent, llvm::Function* ParentFunction) :
     _Parent(Parent), _Builder(Parent->_Builder), _AllocaBuilder(Parent->_AllocaBuilder), _Module(Parent->_Module), _Ctx(Parent->_Ctx), 
-    _ParentFunction(ParentFunction) {};
+    _ParentFunction(ParentFunction), _BreakBlock(Parent->getBreakBlock()), _ContinueBlock(Parent->getContinueBlock()) {};
     // Construct for CompileScopes with Parent
     CompileScope(std::shared_ptr<CompileScope> Parent) :
     _Parent(Parent), _Builder(Parent->_Builder), _AllocaBuilder(Parent->_AllocaBuilder), _Module(Parent->_Module), _Ctx(Parent->_Ctx), 
-    _ParentFunction(Parent->_ParentFunction) {};
+    _ParentFunction(Parent->_ParentFunction), _BreakBlock(Parent->getBreakBlock()), _ContinueBlock(Parent->getContinueBlock()) {};
     
     std::optional<llvm::Value*> getAlloca(Symbol var) {
         if (this->_Allocas.find(var) == this->_Allocas.end()) {
@@ -63,6 +63,33 @@ struct CompileScope {
         this->_Types.insert({var, type});
     }
 
+    void addLabeledBlock(Symbol name, llvm::BasicBlock* LabeledBlock) {
+        this->_LabeledBlocks.insert({name, LabeledBlock});
+    }
+
+    std::optional<llvm::BasicBlock*> getLabeledBlock(Symbol name) {
+        if (this->_LabeledBlocks.find(name) == this->_LabeledBlocks.end()) {
+            if (!this->_Parent.has_value()) {
+                return std::nullopt;
+            }
+            return this->_Parent.value()->getLabeledBlock(name);
+        }
+        return this->_LabeledBlocks.at(name);
+    }
+
+    void setBreakBlock(llvm::BasicBlock *BreakBlock) {
+        this->_BreakBlock = BreakBlock;
+    }
+    std::optional<llvm::BasicBlock*> getBreakBlock() {
+        return this->_BreakBlock;
+    }
+    void setContinueBlock(llvm::BasicBlock *ContinueBlock) {
+        this->_ContinueBlock = ContinueBlock;
+    }
+    std::optional<llvm::BasicBlock*> getContinueBlock() {
+        return this->_ContinueBlock;
+    }
+
     std::optional<std::shared_ptr<CompileScope>> _Parent;
     llvm::IRBuilder<>& _Builder;
     llvm::IRBuilder<>& _AllocaBuilder;
@@ -72,6 +99,9 @@ struct CompileScope {
     private:
     std::unordered_map<Symbol, llvm::Value*> _Allocas;
     std::unordered_map<Symbol, llvm::Type*> _Types;
+    std::unordered_map<Symbol, llvm::BasicBlock*> _LabeledBlocks;
+    std::optional<llvm::BasicBlock*> _BreakBlock;
+    std::optional<llvm::BasicBlock*> _ContinueBlock;
 };
 
 // std::shared_ptr<CompileScope> CompileScopePtr;
