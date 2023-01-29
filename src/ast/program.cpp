@@ -119,21 +119,29 @@ void Program::typecheck() {
     }
 }
 
-void Program::compile(int argc, char const* argv[], std::string filename) {
-    // change filename "x/y.c" to "x.ll"
-    std::string filename_to_print("");
-    for (size_t i = 0; i < filename.length(); i++) {
-        if (filename.at(i) == '/') {
-            filename_to_print = "";
-        } else if (filename.at(i) == '.') {
-            if (filename.substr(i, filename.length() - i) == ".c") {
-                filename_to_print += ".ll";
-                break;
-            }
-        } else {
-            filename_to_print += filename.at(i);
-        }
+// change filename "x/y.c" to "x.ll"
+std::string getCompilerOutputFilename(std::string filename) {
+    auto slash = filename.find_last_of('/');
+
+    if (slash != std::string::npos) {
+        // There is a slash in the filename:
+        // Trim everything up to and including the first slash
+        filename = filename.substr(slash + 1);
     }
+
+    auto dot = filename.find_last_of('.');
+
+    if (dot != std::string::npos) {
+        // There is a dot in the filename:
+        // Trim the dot and everything after it
+        filename = filename.substr(0, dot);
+    }
+
+    return filename + ".ll";
+}
+
+void Program::compile(int argc, char const* argv[], std::string filename) {
+    std::string filename_to_print = getCompilerOutputFilename(filename);
 
     llvm::sys::PrintStackTraceOnErrorSignal(filename);
     llvm::PrettyStackTraceProgram X(argc, argv);
