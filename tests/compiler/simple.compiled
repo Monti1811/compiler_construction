@@ -1,0 +1,10 @@
+; ModuleID = 'tests/compiler/simple.c4'
+source_filename = "tests/compiler/simple.c4"
+
+define i32 @main() {
+entry:
+  ret i32 0
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}
