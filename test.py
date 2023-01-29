@@ -13,6 +13,7 @@ LLI_PATH = "./llvm/install/bin/lli"
 verbose = False
 fullDiff = False
 ci = False
+update = False
 
 tests: "list[str]" = list()
 
@@ -28,10 +29,14 @@ while len(sys.argv) > argIdx and sys.argv[argIdx][:2] == "--":
         fullDiff = True
     elif arg == "ci":
         ci = True
+    elif arg == "update":
+        update = True
     elif arg == "help":
-        print(f"Usage: {sys.argv[0]} [--verbose|--full-diff] [filters...]")
+        print(f"Usage: {sys.argv[0]} [--verbose|--full-diff|--ci|--update] [filters...]")
         print("    --verbose    Always show explanation for failed tests")
         print("    --full-diff  Show a more detailed diff for failed tests")
+        print("    --ci         Skip building the compiler; assume it's already built")
+        print("    --update     Update compiler test files with the actual output")
         print("    filters      Only run tests whose name matches one of these filters")
         exit(0)
     argIdx += 1
@@ -168,6 +173,10 @@ def runCompileTest(file: str) -> "None | str":
 
     result: list[str] = list()
     result.extend(makeDiff(expectedLlvmCode, actualLlvmCode, "LLVM code output"))
+
+    if update:
+        with open(expectedFile, "w") as f:
+            f.write("\n".join(actualLlvmCode) + "\n")
 
     def cleanupAndGetResult() -> str:
         os.remove(compilerOutputFile)
