@@ -1,13 +1,15 @@
 # Based on this template:
 # https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/C++.gitlab-ci.yml
 
-# https://hub.docker.com/_/gcc/
-image: gcc
+# https://hub.docker.com/luanst/c4build
+image:
+  luanst/c4build:latest
 
 # build the compiler executable
 build:
   stage: build
   script:
+    - ln -s /llvm ./llvm
     - make
   artifacts:
     paths:
@@ -17,4 +19,5 @@ build:
 test:
   stage: test
   script:
+    - ln -s /llvm ./llvm
     - python3 test.py --ci --verbose lexer parser sema

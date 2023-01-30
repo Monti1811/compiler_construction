@@ -8,9 +8,12 @@ import sys
 from typing import Tuple
 
 COMPILER_PATH = "./build/debug/c4"
+LLI_PATH = "./llvm/install/bin/lli"
+
 verbose = False
 fullDiff = False
 ci = False
+update = False
 
 tests: "list[str]" = list()
 
@@ -26,10 +29,14 @@ while len(sys.argv) > argIdx and sys.argv[argIdx][:2] == "--":
         fullDiff = True
     elif arg == "ci":
         ci = True
+    elif arg == "update":
+        update = True
     elif arg == "help":
-        print(f"Usage: {sys.argv[0]} [--verbose|--full-diff] [filters...]")
+        print(f"Usage: {sys.argv[0]} [--verbose|--full-diff|--ci|--update] [filters...]")
         print("    --verbose    Always show explanation for failed tests")
         print("    --full-diff  Show a more detailed diff for failed tests")
+        print("    --ci         Skip building the compiler; assume it's already built")
+        print("    --update     Update compiler test files with the actual output")
         print("    filters      Only run tests whose name matches one of these filters")
         exit(0)
     argIdx += 1
@@ -54,10 +61,28 @@ def make():
 
 def runCompiler(arg: str, file: str) -> "Tuple[list[str], list[str], int]":
     try:
-        result = subprocess.run([f"{COMPILER_PATH}", arg, f"{file}.c4"], capture_output=True, text=True, encoding="ISO-8859-1")
+        result = subprocess.run([COMPILER_PATH, arg, f"{file}.c4"], capture_output=True, text=True, encoding="ISO-8859-1")
         return result.stdout.splitlines(), result.stderr.splitlines(), result.returncode
     except subprocess.CalledProcessError as e:
         return e.stdout.splitlines(), e.stderr.splitlines(), e.returncode
+
+def executeLlvmFile(file: str) -> "None | int":
+    try:
+        result = subprocess.run([LLI_PATH, file])
+        return result.returncode
+    except subprocess.CalledProcessError as e:
+        return None
+
+def readFile(file: str) -> "list[str]":
+    return open(file, encoding="ISO-8859-1").read().splitlines()
+
+def makeDiff(expected: "list[str]", actual: "list[str]", name: str) -> "list[str]":
+    delta = difflib.unified_diff(expected, actual, fromfile="expected " + name, tofile="actual " + name)
+    if fullDiff and len(list(delta)) > 0:
+        differ = difflib.Differ(None, None)
+        return list(differ.compare(list(expected), list(actual)))
+    else:
+        return list(delta)
 
 def compareResults(expected: "Tuple[list[str], list[str], int]", actual: "Tuple[list[str], list[str], int]") -> str:
     expectedStdout, expectedStderr, expectedSuccess = expected
@@ -68,25 +93,13 @@ def compareResults(expected: "Tuple[list[str], list[str], int]", actual: "Tuple[
     if success != expectedSuccess:
         result.append(f"Incorrect exit code: Should be {expectedSuccess}, is {success}")
 
-    stdoutDelta = difflib.unified_diff(expectedStdout, stdout, lineterm="", fromfile="expected stdout", tofile="actual stdout")
-    if fullDiff and len(list(stdoutDelta)) > 0:
-        differ = difflib.Differ(None, None)
-        result.extend(differ.compare(list(expectedStdout), list(stdout)))
-    else:
-        result.extend(stdoutDelta)
-
-    stderrDelta = difflib.unified_diff(expectedStderr, stderr, lineterm="", fromfile="expected stderr", tofile="actual stderr")
-    if fullDiff and len(list(stderrDelta)) > 0:
-        differ = difflib.Differ(None, None)
-        result.extend(differ.compare(list(stderrDelta), list(stderr)))
-    else:
-        result.extend(stderrDelta)
+    result.extend(makeDiff(expectedStdout, stdout, "stdout"))
+    result.extend(makeDiff(expectedStderr, stderr, "stderr"))
 
     return "\n".join(result)
 
 def formatExpected(file: str, expectedFile: str) -> "Tuple[list[str], list[str], int]":
-    expectedLines = open(expectedFile, encoding="ISO-8859-1").read()
-    expectedLines = expectedLines.splitlines()
+    expectedLines = readFile(expectedFile)
     expectedLines = map(lambda line: line.strip(), expectedLines)
     expectedLines = filter(lambda line: len(line) > 0, expectedLines)
     expectedLines = map(lambda line: f"{file}.c4:{line}", expectedLines)
@@ -115,11 +128,13 @@ def runTokenizeTest(file: str) -> "None | str":
 def runParseTest(file: str) -> "None | str":
     expectedFile: str = f"{file}.parsed"
     formattedFile: str = f"{file}.formatted"
+    compiledFile: str = f"{file}.compiled"
+    executedFile: str = f"{file}.executed"
 
     expected = [list(), list(), 0]
     if os.path.exists(expectedFile):
         expected = formatExpected(file, expectedFile)
-    elif not os.path.exists(formattedFile):
+    elif not os.path.exists(formattedFile) and not os.path.exists(compiledFile) and not os.path.exists(executedFile):
         return None
 
     actual = runCompiler("--parse", file)
@@ -131,11 +146,60 @@ def runFormatTest(file: str) -> "None | str":
     if not os.path.exists(expectedFile):
         return None
     
-    expectedStdout = open(expectedFile, encoding="ISO-8859-1").read().splitlines()
+    expectedStdout = readFile(expectedFile)
     expected = [expectedStdout, "", 0]
     actual = runCompiler("--print-ast", file)
 
     return compareResults(expected, actual)
+
+def runCompileTest(file: str) -> "None | str":
+    expectedFile: str = f"{file}.compiled"
+    if not os.path.exists(expectedFile):
+        return None
+
+    expectedLlvmCode = readFile(expectedFile)
+    runCompiler("--compile", file)
+
+    def getLlvmOutputFile(file: str) -> str:
+        slash = file.rfind("/")
+        if slash >= 0:
+            file = file[slash + 1:]
+        return file + ".ll"
+
+    compilerOutputFile = getLlvmOutputFile(file)
+    if not os.path.exists(compilerOutputFile):
+        return f"Could not find file `{compilerOutputFile}`"
+    actualLlvmCode = readFile(compilerOutputFile)
+
+    result: list[str] = list()
+    result.extend(makeDiff(expectedLlvmCode, actualLlvmCode, "LLVM code output"))
+
+    if update:
+        with open(expectedFile, "w") as f:
+            f.write("\n".join(actualLlvmCode) + "\n")
+
+    def cleanupAndGetResult() -> str:
+        os.remove(compilerOutputFile)
+        return "\n".join(result)
+
+    exitCodeFile: str = f"{file}.executed"
+    if not os.path.exists(exitCodeFile):
+        return cleanupAndGetResult()
+
+    expectedExitCode = readFile(exitCodeFile)
+    try:
+        expectedExitCode = int("\n".join(expectedExitCode))
+    except ValueError:
+        result.append("Warning: Cannot get exit code from file " + exitCodeFile)
+        cleanupAndGetResult()
+
+    exitCode = executeLlvmFile(compilerOutputFile)
+    if exitCode == None:
+        result.append("An error occurred while trying to interpret the generated LLVM file")
+    elif exitCode != expectedExitCode:
+        result.append(f"Incorrect output of generated LLVM file: Should be {expectedExitCode}, is {exitCode}")
+
+    return cleanupAndGetResult()
 
 successCount, failedCount, skippedCount = 0, 0, 0
 
@@ -147,8 +211,9 @@ def runTest(file: str):
     tokenizeResult: "None | str" = runTokenizeTest(file)
     parseResult: "None | str" = runParseTest(file)
     formatResult: "None | str" = runFormatTest(file)
+    compileResult: "None | str" = runCompileTest(file)
 
-    if tokenizeResult == None and parseResult == None and formatResult == None:
+    if tokenizeResult == None and parseResult == None and formatResult == None and compileResult == None:
         print("\033[93mSKIPPED\033[0m")
         skippedCount += 1
     elif tokenizeResult != None and tokenizeResult != "":
@@ -165,6 +230,11 @@ def runTest(file: str):
         print("\033[91mFAILED (format)\033[0m")
         if verbose or fullDiff:
             print(formatResult)
+        failedCount += 1
+    elif compileResult != None and compileResult != "":
+        print("\033[91mFAILED (compile)\033[0m")
+        if verbose or fullDiff:
+            print(compileResult)
         failedCount += 1
     else:
         print("\033[92mOK\033[0m")

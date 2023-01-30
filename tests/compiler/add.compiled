@@ -1,0 +1,17 @@
+; ModuleID = 'tests/compiler/add.c4'
+source_filename = "tests/compiler/add.c4"
+
+define i32 @main() {
+entry:
+  %0 = alloca i32, align 4
+  %1 = alloca i32, align 4
+  store i32 42, ptr %1, align 4
+  store i32 123, ptr %0, align 4
+  %2 = load i32, ptr %1, align 4
+  %3 = load i32, ptr %0, align 4
+  %4 = add i32 %2, %3
+  ret i32 %4
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}
