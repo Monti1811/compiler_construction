@@ -28,7 +28,6 @@ struct FunctionDefinition {
     Declaration _declaration;
     private:
     std::unordered_set<Symbol> _labels;
-    // TODO: add this while typechecking
     std::optional<std::shared_ptr<FunctionType>> type;
 };
 

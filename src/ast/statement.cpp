@@ -41,6 +41,14 @@ void LabeledStatement::typecheck(ScopePtr &scope)
 void LabeledStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
 {
     // TODO
+    llvm::BasicBlock *labeledBlock = llvm::BasicBlock::Create(
+        CompileScopePtr->_Ctx,
+        *(this->_name) + "_BLOCK",
+        CompileScopePtr->_ParentFunction.value()            );
+    CompileScopePtr->addLabeledBlock(this->_name, labeledBlock);
+    CompileScopePtr->_Builder.SetInsertPoint(labeledBlock);
+    auto inner_compile_scope_ptr = std::make_shared<CompileScope>(CompileScopePtr);
+    this->_inner->compile(inner_compile_scope_ptr);
 }
 
 void BlockStatement::print(std::ostream &stream)
@@ -250,11 +258,8 @@ void IfStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
         CompileScopePtr->_Builder.CreateBr(IfEndBlock);
         /* Set the header of the IfAlternativeBlock as the new insert point */
         CompileScopePtr->_Builder.SetInsertPoint(IfAlternativeBlock);
-        if (this->_else_statement.has_value())
-        {
-            auto alternative_compile_scope_ptr = std::make_shared<CompileScope>(CompileScopePtr);
-            this->_else_statement.value()->compile(alternative_compile_scope_ptr);
-        }
+        auto alternative_compile_scope_ptr = std::make_shared<CompileScope>(CompileScopePtr);
+        this->_else_statement.value()->compile(alternative_compile_scope_ptr);
         /* Insert the jump to the if end block */
         CompileScopePtr->_Builder.CreateBr(IfEndBlock);
         /* Continue in the if end block */
@@ -351,6 +356,8 @@ void WhileStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
     /* Start inserting in the while body block */
     CompileScopePtr->_Builder.SetInsertPoint(WhileBodyBlock);
     auto inner_compile_scope_ptr = std::make_shared<CompileScope>(CompileScopePtr);
+    inner_compile_scope_ptr->setBreakBlock(WhileEndBlock);
+    inner_compile_scope_ptr->setContinueBlock(WhileHeaderBlock);
     this->_body->compile(inner_compile_scope_ptr);
     /* Insert the back loop edge (the branch back to the header) */
     CompileScopePtr->_Builder.CreateBr(WhileHeaderBlock);
@@ -389,6 +396,10 @@ void GotoStatement::typecheck(ScopePtr &scope)
 void GotoStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
 {
     // TODO
+    std::optional<llvm::BasicBlock*> labeledBlock = CompileScopePtr->getLabeledBlock(this->_ident);
+    if (labeledBlock.has_value()) {
+        CompileScopePtr->_Builder.CreateBr(labeledBlock.value());
+    }
 }
 
 void ContinueStatement::typecheck(ScopePtr &scope)
@@ -402,6 +413,10 @@ void ContinueStatement::typecheck(ScopePtr &scope)
 void ContinueStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
 {
     // TODO
+    std::optional<llvm::BasicBlock*> ContinueBlock = CompileScopePtr->getContinueBlock();
+    if (ContinueBlock.has_value()) {
+        CompileScopePtr->_Builder.CreateBr(ContinueBlock.value());
+    }
 }
 
 void BreakStatement::typecheck(ScopePtr &scope)
@@ -415,6 +430,10 @@ void BreakStatement::typecheck(ScopePtr &scope)
 void BreakStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
 {
     // TODO
+    std::optional<llvm::BasicBlock*> BreakBlock = CompileScopePtr->getBreakBlock();
+    if (BreakBlock.has_value()) {
+        CompileScopePtr->_Builder.CreateBr(BreakBlock.value());
+    }
 }
 
 void ReturnStatement::print(std::ostream &stream)
