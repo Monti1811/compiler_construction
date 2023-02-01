@@ -574,12 +574,13 @@ llvm::Value* IndexExpression::compileLValue(std::shared_ptr<CompileScope> Compil
 
 llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     // TODO get name of function
-    llvm::Function* fun = CompileScopePtr->_Module.getFunction("f");
+    std::string name(*(static_cast<IdentExpression*>(this->_expression.get())->_ident));
+    llvm::Function* fun = CompileScopePtr->_Module.getFunction(name);
     std::vector<llvm::Value*> args;
     for (size_t i = 0; i < this->_arguments.size(); i++) {
         llvm::Value* val = this->_arguments[i]->compileRValue(CompileScopePtr);
     }
-    return llvm::CallInst::Create(fun, llvm::makeArrayRef(args));
+    return CompileScopePtr->_Builder.CreateCall(fun, llvm::makeArrayRef(args));
 }
 
 llvm::Value* CallExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {

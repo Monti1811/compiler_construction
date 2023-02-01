@@ -164,35 +164,76 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                 error("Internal error: Tried to read non-existent declaration");
             }
             // does not declare a variable
-            // TODO: compile abstract function declaration
             if (decl_iter.base()->_declarator->isAbstract()) {
                 continue;
             }
-            std::shared_ptr<Type> type = decl_iter.base()->getTypeDecl().type;
-            auto llvm_type = 
-                type->kind != TY_STRUCT
+            // The same thing as for concrete function definitions
+            if (decl_iter.base()->_declarator->kind == DeclaratorKind::FUNCTION) {
+                TypeDecl type_decl = decl_iter.base()->getTypeDecl();
+                TypePtr _type = type_decl.type;
+                std::shared_ptr<FunctionType> func_type_ptr = std::static_pointer_cast<FunctionType>(_type);
+                
+                auto llvm_type = 
+                !func_type_ptr->has_params 
                 ?
-                type->toLLVMType(Builder, Ctx)
-                : 
-                std::static_pointer_cast<CompleteStructType>(type)->toLLVMType(Builder, Ctx);
-            auto name = decl_iter.base()->_declarator->getName().value();
+                func_type_ptr->toLLVMType(Builder, Ctx) 
+                :
+                std::static_pointer_cast<ParamFunctionType>(func_type_ptr)->toLLVMType(Builder, Ctx);
 
-            compile_scope_ptr->addType(name, llvm_type);
+                auto name = decl_iter.base()->_declarator->getName().value();
+                std::string _name(*name);
+                llvm::Function *Func = llvm::Function::Create(
+                    llvm_type                                       /* FunctionType *Ty */,
+                    llvm::GlobalValue::ExternalLinkage              /* LinkageType */,
+                    _name                                           /* const Twine &N="" */,
+                    &M                                              /* Module *M=0 */);
 
-            /* Create a global variable */
-            new llvm::GlobalVariable(
-                M                                               /* Module & */,
-                llvm_type                                       /* Type * */,
-                false                                           /* bool isConstant */,
-                llvm::GlobalValue::CommonLinkage                /* LinkageType */,
-                llvm::Constant::getNullValue(llvm_type)         /* Constant * Initializer */,
-                *name                                            /* const Twine &Name = "" */,
-                /* --------- We do not need this part (=> use defaults) ---------- */
-                0                                               /* GlobalVariable *InsertBefore = 0 */,
-                llvm::GlobalVariable::NotThreadLocal            /* ThreadLocalMode TLMode = NotThreadLocal */,
-                0                                               /* unsigned AddressSpace = 0 */,
-                false                                           /* bool isExternallyInitialized = false */);
-            decl_iter++;
+            
+                    
+                llvm::Function::arg_iterator FuncArgIt = Func->arg_begin();
+                if (func_type_ptr->has_params) {
+                    int count = 0;
+                    auto param_func_type = std::static_pointer_cast<ParamFunctionType>(func_type_ptr);
+                    while (FuncArgIt != Func->arg_end()) {
+                        llvm::Argument *Arg = FuncArgIt;
+                        if (param_func_type->params[count].name.has_value()) {
+                            Arg->setName(*(param_func_type->params[count].name.value()));
+                        } else {
+                            Arg->setName("");
+                        }
+                        FuncArgIt++;
+                        count++;
+                    }
+                }
+                
+            } else {
+
+                std::shared_ptr<Type> type = decl_iter.base()->getTypeDecl().type;
+                auto llvm_type = 
+                    type->kind != TY_STRUCT
+                    ?
+                    type->toLLVMType(Builder, Ctx)
+                    : 
+                    std::static_pointer_cast<CompleteStructType>(type)->toLLVMType(Builder, Ctx);
+                auto name = decl_iter.base()->_declarator->getName().value();
+
+                compile_scope_ptr->addType(name, llvm_type);
+
+                /* Create a global variable */
+                new llvm::GlobalVariable(
+                    M                                               /* Module & */,
+                    llvm_type                                       /* Type * */,
+                    false                                           /* bool isConstant */,
+                    llvm::GlobalValue::CommonLinkage                /* LinkageType */,
+                    llvm::Constant::getNullValue(llvm_type)         /* Constant * Initializer */,
+                    *name                                            /* const Twine &Name = "" */,
+                    /* --------- We do not need this part (=> use defaults) ---------- */
+                    0                                               /* GlobalVariable *InsertBefore = 0 */,
+                    llvm::GlobalVariable::NotThreadLocal            /* ThreadLocalMode TLMode = NotThreadLocal */,
+                    0                                               /* unsigned AddressSpace = 0 */,
+                    false                                           /* bool isExternallyInitialized = false */);
+                decl_iter++;
+            }
         } else {
             if (func_iter == this->_functions.end()) {
                 error("Internal error: Tried to read non-existent function definition");
@@ -204,14 +245,19 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                 func_type_ptr->toLLVMType(Builder, Ctx) 
                 :
                 std::static_pointer_cast<ParamFunctionType>(func_type_ptr)->toLLVMType(Builder, Ctx);
-            auto name = func_iter.base()->_declaration._declarator->getName().value();
-            llvm::Function *Func = llvm::Function::Create(
-                llvm_type                                       /* FunctionType *Ty */,
-                llvm::GlobalValue::ExternalLinkage              /* LinkageType */,
-                *name                                           /* const Twine &N="" */,
-                &M                                              /* Module *M=0 */);
-            llvm::Function::arg_iterator FuncArgIt = Func->arg_begin();
+            std::string name(*(func_iter.base()->_declaration._declarator->getName().value()));
+            // Check if function was already declared, if yes, choose it, otherwise create a new one
+            llvm::Function *Func = M.getFunction(name);
+            if (Func == nullptr) {
+                Func = llvm::Function::Create(
+                    llvm_type                                       /* FunctionType *Ty */,
+                    llvm::GlobalValue::ExternalLinkage              /* LinkageType */,
+                    name                                           /* const Twine &N="" */,
+                    &M                                              /* Module *M=0 */);
+    
+            }
 
+            llvm::Function::arg_iterator FuncArgIt = Func->arg_begin();
             auto inner_compile_scope_ptr = std::make_shared<CompileScope>(compile_scope_ptr, Func);
 
             int count = 0;
