@@ -579,6 +579,7 @@ llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> Compile
     std::vector<llvm::Value*> args;
     for (size_t i = 0; i < this->_arguments.size(); i++) {
         llvm::Value* val = this->_arguments[i]->compileRValue(CompileScopePtr);
+        args.push_back(val);
     }
     return CompileScopePtr->_Builder.CreateCall(fun, llvm::makeArrayRef(args));
 }
@@ -588,30 +589,47 @@ llvm::Value* CallExpression::compileLValue(std::shared_ptr<CompileScope> Compile
 }
 
 llvm::Value* DotExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO get name of struct 
-    llvm::Type* struct_type = CompileScopePtr->getType(Symbol("my_struct")).value();
-    llvm::Value* get_alloca = CompileScopePtr->getAlloca(Symbol("my_struct")).value();
-    // TODO: get index according to _ident
-    llvm::Value* index = CompileScopePtr->_Builder.getInt32(1);
+    Symbol name = static_cast<IdentExpression*>(this->_expression.get())->_ident;
+    Symbol field_name = static_cast<IdentExpression*>(this->_ident.get())->_ident;
+    llvm::Type* struct_type = CompileScopePtr->getType(name).value();
+    auto struct_name = static_cast<std::string>(struct_type->getStructName());
+    // Remove "struct." of the name of the saved struct
+    struct_name = struct_name.substr(7);
+    // no idea if this is correct as we also need to remove the number after the struct name
+    auto pos = struct_name.find('.');
+    struct_name = pos == std::string::npos ? struct_name : struct_name.substr(0,pos);
+    llvm::Value* get_alloca = CompileScopePtr->getAlloca(name).value();
+    std::optional<llvm::Value*> index = CompileScopePtr->getStructIndex(struct_name, field_name);
+    if (!index) {
+        errorloc(this->_ident->loc, "This should not happen, an index for a struct didn't exist");
+    }
     std::vector<llvm::Value *> ElementIndexes;
     ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(0));
-    ElementIndexes.push_back(index);
+    ElementIndexes.push_back(index.value());
     llvm::Value* indexed_alloca = CompileScopePtr->_Builder.CreateInBoundsGEP(struct_type, get_alloca, ElementIndexes);
     return CompileScopePtr->_Builder.CreateLoad(CompileScopePtr->_Builder.getInt32Ty(), indexed_alloca);
 }
 
-llvm::Value* DotExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO get name of struct   
-    std::cout << "1\n";
-    llvm::Type* struct_type = CompileScopePtr->getType(Symbol("my_struct")).value();
-    std::cout << "2\n";
-    llvm::Value* get_alloca = CompileScopePtr->getAlloca(Symbol("my_struct")).value();
-    std::cout << "3\n";
-    // TODO: get index according to _ident
-    llvm::Value* index = CompileScopePtr->_Builder.getInt32(1);
+llvm::Value* DotExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) { 
+    Symbol name = static_cast<IdentExpression*>(this->_expression.get())->_ident;
+    Symbol field_name = static_cast<IdentExpression*>(this->_ident.get())->_ident;
+    llvm::Type* struct_type = CompileScopePtr->getType(name).value();
+    auto struct_name = static_cast<std::string>(struct_type->getStructName());
+    // Remove "struct." of the name of the saved struct
+    struct_name = struct_name.substr(7);
+    // no idea if this is correct as we also need to remove the number after the struct name
+    auto pos = struct_name.find('.');
+    struct_name = pos == std::string::npos ? struct_name : struct_name.substr(0,pos);
+    llvm::Value* get_alloca = CompileScopePtr->getAlloca(name).value();
+
+    std::optional<llvm::Value*> index = CompileScopePtr->getStructIndex(struct_name, field_name);
+    if (!index) {
+        errorloc(this->_ident->loc, "This should not happen, an index for a struct didn't exist");
+    }
+ 
     std::vector<llvm::Value *> ElementIndexes;
     ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(0));
-    ElementIndexes.push_back(index);
+    ElementIndexes.push_back(index.value());
     return CompileScopePtr->_Builder.CreateInBoundsGEP(struct_type, get_alloca, ElementIndexes);
 }
 
