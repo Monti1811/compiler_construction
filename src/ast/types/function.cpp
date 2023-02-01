@@ -30,6 +30,11 @@ bool ParamFunctionType::strong_equals(TypePtr const& other) {
         return false;
     }
 
+    auto other_type_func = std::static_pointer_cast<ParamFunctionType>(other);
+    if (!other_type_func->has_params) {
+        return this->params.size() == 0;
+    }
+
     auto other_type = std::static_pointer_cast<ParamFunctionType>(other);
 
     if (this->params.size() != other_type->params.size()) {
