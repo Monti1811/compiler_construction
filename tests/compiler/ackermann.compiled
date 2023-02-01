@@ -1,0 +1,89 @@
+; ModuleID = 'tests/compiler/ackermann.c4'
+source_filename = "tests/compiler/ackermann.c4"
+
+define i32 @ack(i32 %m, i32 %n) {
+entry:
+  %0 = alloca i32, align 4
+  %1 = alloca i32, align 4
+  store i32 %m, ptr %1, align 4
+  store i32 %n, ptr %0, align 4
+  br label %if-header
+
+if-header:                                        ; preds = %entry
+  %2 = load i32, ptr %1, align 4
+  %if-condition = icmp eq i32 %2, 0
+  br i1 %if-condition, label %if-consequence, label %if-alternative
+
+if-consequence:                                   ; preds = %if-header
+  %3 = load i32, ptr %0, align 4
+  %4 = add i32 %3, 1
+  ret i32 %4
+
+if-alternative:                                   ; preds = %if-header
+  br label %if-header1
+
+if-end:                                           ; preds = %if-end5, %DEAD_BLOCK
+  ret i32 0
+
+DEAD_BLOCK:                                       ; No predecessors!
+  br label %if-end
+
+if-header1:                                       ; preds = %if-alternative
+  %5 = load i32, ptr %1, align 4
+  %6 = icmp ult i32 0, %5
+  %7 = load i32, ptr %0, align 4
+  %8 = icmp eq i32 %7, 0
+  %if-condition2 = select i1 %6, i1 %8, i1 false
+  br i1 %if-condition2, label %if-consequence3, label %if-alternative4
+
+if-consequence3:                                  ; preds = %if-header1
+  %9 = load i32, ptr %1, align 4
+  %10 = sub i32 %9, 1
+  %11 = call i32 @ack(i32 %10, i32 1)
+  ret i32 %11
+
+if-alternative4:                                  ; preds = %if-header1
+  br label %if-header7
+
+if-end5:                                          ; preds = %if-end10, %DEAD_BLOCK6
+  br label %if-end
+
+DEAD_BLOCK6:                                      ; No predecessors!
+  br label %if-end5
+
+if-header7:                                       ; preds = %if-alternative4
+  %12 = load i32, ptr %1, align 4
+  %13 = icmp ult i32 0, %12
+  %14 = load i32, ptr %0, align 4
+  %15 = icmp ult i32 0, %14
+  %if-condition8 = select i1 %13, i1 %15, i1 false
+  br i1 %if-condition8, label %if-consequence9, label %if-end10
+
+if-consequence9:                                  ; preds = %if-header7
+  %16 = load i32, ptr %1, align 4
+  %17 = sub i32 %16, 1
+  %18 = load i32, ptr %1, align 4
+  %19 = load i32, ptr %0, align 4
+  %20 = sub i32 %19, 1
+  %21 = call i32 @ack(i32 %18, i32 %20)
+  %22 = call i32 @ack(i32 %17, i32 %21)
+  ret i32 %22
+
+if-end10:                                         ; preds = %DEAD_BLOCK11, %if-header7
+  br label %if-end5
+
+DEAD_BLOCK11:                                     ; No predecessors!
+  br label %if-end10
+}
+
+define i32 @main() {
+entry:
+  %0 = alloca i32, align 4
+  %1 = call i32 @ack(i32 3, i32 4)
+  store i32 %1, ptr %0, align 4
+  %2 = load i32, ptr %0, align 4
+  ret i32 %2
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}
