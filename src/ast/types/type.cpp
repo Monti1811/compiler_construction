@@ -175,6 +175,15 @@ llvm::Type* Type::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx)
             return Builder.getInt32Ty();
         case TY_CHAR:
             return Builder.getInt8Ty();
+        case TY_STRUCT:
+            if (this->isComplete()) {
+                return (static_cast<CompleteStructType*>(this))->toLLVMType(Builder, Ctx);
+            } else {
+                return (static_cast<StructType*>(this))->toLLVMType(Builder, Ctx);
+            }
+            
+        case TY_FUNCTION:
+            return (static_cast<FunctionType*>(this))->toLLVMType(Builder, Ctx);
         case TY_NULLPTR:
         case TY_POINTER:
             return Builder.getPtrTy();
