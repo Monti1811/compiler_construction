@@ -82,6 +82,31 @@ struct CompileScope {
         return this->_ContinueBlock;
     }
 
+    void addStructIndexes(std::shared_ptr<CompleteStructType> struct_type) {
+        std::vector<Symbol> symbols;
+        for (auto& comp : struct_type->fields) {
+            symbols.push_back(comp.name.value());
+        }
+        std::string tag = *(struct_type->tag.value());
+        this->_struct_indexes.insert({tag, symbols});
+    }
+
+    std::optional<llvm::Value*> getStructIndex(std::string struct_name, Symbol index_name) {
+        if (this->_struct_indexes.find(struct_name) == this->_struct_indexes.end()) {
+            if (!this->_Parent.has_value()) {
+                return std::nullopt;
+            }
+            return this->_Parent.value()->getStructIndex(struct_name, index_name);
+        }
+        std::vector<Symbol> symbols = this->_struct_indexes.at(struct_name);
+        std::vector<Symbol>::iterator found = std::find(symbols.begin(), symbols.end(), index_name);
+        if (found == symbols.end()) {
+            return std::nullopt;
+        }
+        auto index = std::distance(symbols.begin(), found);
+        return std::make_optional(_Builder.getInt32(index));
+    }
+
     std::optional<std::shared_ptr<CompileScope>> _Parent;
     llvm::IRBuilder<>& _Builder;
     llvm::IRBuilder<>& _AllocaBuilder;
@@ -94,6 +119,8 @@ struct CompileScope {
     std::unordered_map<Symbol, llvm::BasicBlock*> _LabeledBlocks;
     std::optional<llvm::BasicBlock*> _BreakBlock;
     std::optional<llvm::BasicBlock*> _ContinueBlock;
+    // needs a string instead of symbol as the address would not be the same
+    std::unordered_map<std::string, std::vector<Symbol>> _struct_indexes;
 };
 
 // std::shared_ptr<CompileScope> CompileScopePtr;

@@ -18,6 +18,5 @@ struct StructSpecifier: public TypeSpecifier {
 
     std::optional<Symbol> _tag;
 
-    private:
     std::optional<std::vector<Declaration>> _components;
 };

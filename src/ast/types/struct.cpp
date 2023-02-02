@@ -25,6 +25,18 @@ llvm::StructType* StructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMC
 }
 
 bool CompleteStructType::isComplete() {
+    // TODO: if struct is placed in itself as a field and afterwards that field is accessed, 
+    // error: Cannot access a field of an incomplete type
+    /*
+    struct S {
+        int c;
+        struct S *d;
+    } GS;
+    int f(struct S *AS) {
+        struct S LS;
+        return LS.c + LS.d->c;
+    }
+    */
     return true;
 }
 
