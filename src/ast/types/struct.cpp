@@ -18,7 +18,12 @@ bool StructType::strong_equals(TypePtr const& other) {
 
 llvm::StructType* StructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
     // declarations of structs should have CompleteStructType already, so this shouldn't get called at all
-    llvm::StructType *StructXType = llvm::StructType::create(Ctx, "struct." + *tag.value());
+    auto struct_name = "struct." + *tag.value();
+    auto def_structtype = llvm::StructType::getTypeByName(Ctx, struct_name);
+    if (def_structtype) {
+        return def_structtype;
+    }
+    llvm::StructType *StructXType = llvm::StructType::create(Ctx, struct_name);
     std::vector<llvm::Type *> StructMemberTypes;
     StructXType->setBody(StructMemberTypes);
     return StructXType;
