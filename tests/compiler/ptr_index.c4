@@ -1,0 +1,9 @@
+int f(int* x) {
+    return x[0] * 2;
+}
+
+int main(void) {
+    int x;
+    x = 21;
+    return f(&x);
+}
