@@ -1,0 +1,17 @@
+struct S {
+    int a;
+    int b;
+    int c;
+    struct Z *d;
+} GS;
+
+struct Z {
+    int b;
+};
+
+int main(struct S *AS) {
+    struct S LS;
+    int z;
+    z = GS.a + AS->b + LS.c + AS->d->b;
+    return 0;
+}
