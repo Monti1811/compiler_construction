@@ -22,6 +22,7 @@ void Declaration::typecheck(ScopePtr& scope) {
         if (decl.type->kind != TypeKind::TY_STRUCT) {
             errorloc(this->_loc, "Declaration without declarator");
         }
+        this->_typeDecl = decl;
         return;
     }
     if (scope->addDeclaration(decl)) {
