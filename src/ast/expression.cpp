@@ -674,7 +674,7 @@ llvm::Value* DotExpression::compileLValue(std::shared_ptr<CompileScope> CompileS
     ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(0));
     ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(index));
 
-    llvm::Type* struct_type = this->_expression->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    llvm::Type* struct_type = complete_struct_ty->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
     llvm::Value* struct_alloca = this->_expression->compileLValue(CompileScopePtr);
 
     return CompileScopePtr->_Builder.CreateInBoundsGEP(struct_type, struct_alloca, ElementIndexes);
@@ -711,9 +711,9 @@ llvm::Value* ArrowExpression::compileLValue(std::shared_ptr<CompileScope> Compil
     ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(0));
     ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(index));
 
-    llvm::Type* struct_type = this->_expression->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-    llvm::Value* struct_alloca_ptr = this->_expression->compileLValue(CompileScopePtr);
-    llvm::Value* struct_alloca = CompileScopePtr->_Builder.CreateLoad(CompileScopePtr->_Builder.getPtrTy(), struct_alloca_ptr);
+    llvm::Type* struct_type = complete_struct_ty->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    llvm::Value* struct_alloca = this->_expression->compileRValue(CompileScopePtr);
+    // llvm::Value* struct_alloca = CompileScopePtr->_Builder.CreateLoad(struct_type, struct_alloca_ptr);
 
     return CompileScopePtr->_Builder.CreateInBoundsGEP(struct_type, struct_alloca, ElementIndexes);
 }
