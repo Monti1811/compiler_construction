@@ -209,15 +209,8 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
             } else {
 
                 std::shared_ptr<Type> type = decl_iter.base()->getTypeDecl().type;
-                llvm::Type* llvm_type;
-                if (type->kind == TY_STRUCT) {
-                    auto struct_type = std::static_pointer_cast<CompleteStructType>(type);
-                    llvm_type = struct_type->toLLVMType(Builder, Ctx);
-                    compile_scope_ptr->addStructIndexes(struct_type);
-                } else {
-                    llvm_type = type->toLLVMType(Builder, Ctx);
-                }
-                    
+                llvm::Type* llvm_type = type->toLLVMType(Builder, Ctx);;
+  
                 auto name = decl_iter.base()->_declarator->getName().value();
 
                 compile_scope_ptr->addType(name, llvm_type);

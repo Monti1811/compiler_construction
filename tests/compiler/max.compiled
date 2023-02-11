@@ -1,5 +1,6 @@
 ; ModuleID = 'tests/compiler/max.c4'
 source_filename = "tests/compiler/max.c4"
+
 define i32 @max(i32 %a, i32 %b) {
 entry:
   %0 = alloca i32, align 4

@@ -136,10 +136,6 @@ void DeclarationStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr
         // fill compilescope
         CompileScopePtr->addAlloca(name.value(), LocalVarPtr);
         CompileScopePtr->addType(name.value(), llvm_type);
-        if (type_dcl->kind == TY_STRUCT) {
-            auto struct_type = std::static_pointer_cast<CompleteStructType>(type_dcl);
-            CompileScopePtr->addStructIndexes(struct_type);
-        }
     }
 }
 
