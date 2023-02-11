@@ -1,0 +1,22 @@
+struct S {
+	int a;
+	int b;
+	int c;
+	int d;
+	int e;
+};
+
+int main(int y, int z, int a, int b, int c) {
+	int x;
+	x = sizeof(z);
+	y = sizeof(5);
+	// z = sizeof(struct S); // not sure if we need to be able to do that
+	struct S s;
+	a = sizeof(s);
+	char abc;
+	abc = 'y';
+	b = sizeof(abc);
+	int* pt;
+	c = sizeof(pt);
+	return x + y + a + b + c;
+}

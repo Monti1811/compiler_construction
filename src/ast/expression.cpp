@@ -621,16 +621,15 @@ llvm::Value* StringLiteralExpression::compileLValue(std::shared_ptr<CompileScope
 }
 
 llvm::Value* IndexExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO: gleiche vorgehensweise wie bei dotexpression?
-    llvm::Value* array_alloca = this->_expression->compileLValue(CompileScopePtr);
-    llvm::Value* index_value = this->_index->compileRValue(CompileScopePtr);
-    llvm::Value* alloca_here = CompileScopePtr->_Builder.CreateInBoundsGEP(array_alloca->getType(), array_alloca, index_value);
-    return CompileScopePtr->_Builder.CreateLoad(CompileScopePtr->_Builder.getInt32Ty(), alloca_here);
+    auto expr_value = this->compileLValue(CompileScopePtr);
+    return CompileScopePtr->_Builder.CreateLoad(CompileScopePtr->_Builder.getInt32Ty(), expr_value);
 }
 
 llvm::Value* IndexExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO
-    errorloc(this->loc,"cannot compute l-value of this expression");
+    // TODO: gleiche vorgehensweise wie bei dotexpression?
+    llvm::Value* array_alloca = this->_expression->compileLValue(CompileScopePtr);
+    llvm::Value* index_value = this->_index->compileRValue(CompileScopePtr);
+    return CompileScopePtr->_Builder.CreateInBoundsGEP(array_alloca->getType(), array_alloca, index_value); 
 }
 
 llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -719,8 +718,9 @@ llvm::Value* ArrowExpression::compileLValue(std::shared_ptr<CompileScope> Compil
 }
 
 llvm::Value* SizeofExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO
-    return CompileScopePtr->_Builder.getInt32(1);
+    auto inner_type = this->_inner->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    auto size = CompileScopePtr->_Module.getDataLayout().getTypeAllocSize(inner_type);
+    return CompileScopePtr->_Builder.getInt32(size);
 }
 
 llvm::Value* SizeofExpression::compileLValue(std::shared_ptr<CompileScope>) {
@@ -728,13 +728,16 @@ llvm::Value* SizeofExpression::compileLValue(std::shared_ptr<CompileScope>) {
 }
 
 llvm::Value* SizeofTypeExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO
     switch (this->_type->_kind) {
         case TY_INT: return CompileScopePtr->_Builder.getInt32(4);
         case TY_CHAR: return CompileScopePtr->_Builder.getInt32(1);
         case TY_VOID: return CompileScopePtr->_Builder.getInt32(1);
         case TY_POINTER: return CompileScopePtr->_Builder.getInt32(8);
         case TY_NULLPTR: return CompileScopePtr->_Builder.getInt32(8);
+        case TY_STRUCT: {
+            auto inner_type = this->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+            return CompileScopePtr->_Builder.getInt32(CompileScopePtr->_Module.getDataLayout().getTypeAllocSize(inner_type));
+        }
         default:
             error("sizeof type cannot be compiled");
     }
