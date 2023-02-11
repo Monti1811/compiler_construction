@@ -16,7 +16,7 @@ bool StructType::strong_equals(TypePtr const& other) {
     return this->equals(other);
 }
 
-llvm::StructType* StructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+llvm::Type* StructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
     // declarations of structs should have CompleteStructType already, so this shouldn't get called at all
     auto struct_name = "struct." + *tag.value();
     auto def_structtype = llvm::StructType::getTypeByName(Ctx, struct_name);
@@ -78,8 +78,13 @@ std::optional<TypePtr> CompleteStructType::typeOfField(Symbol& ident) {
     return this->fields.at(this->_field_names.at(ident)).type;
 }
 
-llvm::StructType* CompleteStructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
-    llvm::StructType *StructXType = llvm::StructType::create(Ctx, "struct." + *tag.value());
+llvm::Type* CompleteStructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+    auto struct_name = "struct." + *tag.value();
+    auto def_structtype = llvm::StructType::getTypeByName(Ctx, struct_name);
+    if (def_structtype) {
+        return def_structtype;
+    }
+    llvm::StructType *StructXType = llvm::StructType::create(Ctx, struct_name);
     std::vector<llvm::Type *> StructMemberTypes;
     for (auto field : this->fields) {
         StructMemberTypes.push_back(field.type->toLLVMType(Builder, Ctx));

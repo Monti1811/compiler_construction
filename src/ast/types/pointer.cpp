@@ -24,6 +24,7 @@ bool PointerType::strong_equals(TypePtr const& other) {
     return this->inner->strong_equals(other_pointer->inner);
 }
 
-llvm::PointerType* PointerType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
-    return Builder.getPtrTy();
+llvm::Type* PointerType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+    auto inner_type = this->inner->toLLVMType(Builder, Ctx);
+    return llvm::PointerType::getUnqual(inner_type);
 }
