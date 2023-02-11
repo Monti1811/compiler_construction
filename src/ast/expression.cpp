@@ -644,7 +644,7 @@ llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> Compile
     return CompileScopePtr->_Builder.CreateCall(fun, llvm::makeArrayRef(args));
 }
 
-llvm::Value* CallExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* CallExpression::compileLValue(std::shared_ptr<CompileScope>) {
     errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
@@ -723,7 +723,7 @@ llvm::Value* SizeofExpression::compileRValue(std::shared_ptr<CompileScope> Compi
     return CompileScopePtr->_Builder.getInt32(1);
 }
 
-llvm::Value* SizeofExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* SizeofExpression::compileLValue(std::shared_ptr<CompileScope>) {
     errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
@@ -740,7 +740,7 @@ llvm::Value* SizeofTypeExpression::compileRValue(std::shared_ptr<CompileScope> C
     }
 }
 
-llvm::Value* SizeofTypeExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* SizeofTypeExpression::compileLValue(std::shared_ptr<CompileScope>) {
     errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
@@ -748,12 +748,20 @@ llvm::Value* ReferenceExpression::compileRValue(std::shared_ptr<CompileScope> Co
     return this->_inner->compileLValue(CompileScopePtr);
 }
 
-llvm::Value* ReferenceExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* ReferenceExpression::compileLValue(std::shared_ptr<CompileScope>) {
     errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
 llvm::Value* DerefExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    return this->_inner->compileLValue(CompileScopePtr);
+    auto expr_value = this->compileLValue(CompileScopePtr);
+    auto expr_type = this->_inner->type;
+    if (expr_type->kind != TY_POINTER) {
+        errorloc(this->loc, "Tried to dereference non-pointer during codegen");
+    }
+
+    auto ptr_ty = std::static_pointer_cast<PointerType>(expr_type);
+    auto inner_expr_type = ptr_ty->inner->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    return CompileScopePtr->_Builder.CreateLoad(inner_expr_type, expr_value);
 }
 
 llvm::Value* DerefExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -767,7 +775,7 @@ llvm::Value* NegationExpression::compileRValue(std::shared_ptr<CompileScope> Com
     return CompileScopePtr->_Builder.CreateMul(CompileScopePtr->_Builder.getInt32(-1), inner_value);
 }
 
-llvm::Value* NegationExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* NegationExpression::compileLValue(std::shared_ptr<CompileScope>) {
     errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
@@ -776,11 +784,11 @@ llvm::Value* LogicalNegationExpression::compileRValue(std::shared_ptr<CompileSco
     return CompileScopePtr->_Builder.CreateICmpEQ(CompileScopePtr->_Builder.getInt32(0), inner_value);
 }
 
-llvm::Value* LogicalNegationExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* LogicalNegationExpression::compileLValue(std::shared_ptr<CompileScope>) {
     errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
-llvm::Value* BinaryExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* BinaryExpression::compileLValue(std::shared_ptr<CompileScope>) {
     errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
@@ -839,7 +847,7 @@ llvm::Value* TernaryExpression::compileRValue(std::shared_ptr<CompileScope> Comp
     return CompileScopePtr->_Builder.CreateSelect(condition_value, true_value, false_value);
 }
 
-llvm::Value* TernaryExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* TernaryExpression::compileLValue(std::shared_ptr<CompileScope>) {
     errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
@@ -850,6 +858,6 @@ llvm::Value* AssignExpression::compileRValue(std::shared_ptr<CompileScope> Compi
     return value_to_be_stored;
 }
 
-llvm::Value* AssignExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* AssignExpression::compileLValue(std::shared_ptr<CompileScope>) {
     errorloc(this->loc,"cannot compute l-value of this expression");
 }
