@@ -17,7 +17,6 @@ struct Expression {
     Expression(Locatable loc)
         : loc(loc) {};
     virtual ~Expression() = default;
-    Locatable loc;
 
     virtual TypePtr typecheck(ScopePtr& scope) = 0;
 
@@ -37,6 +36,9 @@ struct Expression {
 
     virtual void print(std::ostream& stream) = 0;
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Expression>& expr);
+
+    Locatable loc;
+    TypePtr type;
 };
 
 typedef std::unique_ptr<Expression> ExpressionPtr;

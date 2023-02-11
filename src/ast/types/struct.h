@@ -38,6 +38,7 @@ struct CompleteStructType: public StructType {
     llvm::StructType* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
 
     std::optional<TypePtr> typeOfField(Symbol& ident);
+    size_t getIndexOfField(Symbol field);
 
     std::vector<StructField> fields;
 
