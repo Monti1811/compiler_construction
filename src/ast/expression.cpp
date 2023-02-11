@@ -569,6 +569,11 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
 
 
 llvm::Value* IdentExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // If it's a function, don't load the function
+    auto fun = CompileScopePtr->_Module.getFunction(*(this->_ident));
+    if (fun != NULL) {
+        return fun;
+    }
     // identifier should always exist since we typechecked the program already
     llvm::Value* saved_alloca = CompileScopePtr->getAlloca(this->_ident).value();
     llvm::Type* var_type = CompileScopePtr->getType(this->_ident).value();
@@ -633,8 +638,16 @@ llvm::Value* IndexExpression::compileLValue(std::shared_ptr<CompileScope> Compil
 }
 
 llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    std::string name(*(static_cast<IdentExpression*>(this->_expression.get())->_ident));
-    llvm::Function* fun = CompileScopePtr->_Module.getFunction(name);
+    Symbol name(static_cast<IdentExpression*>(this->_expression.get())->_ident);
+    llvm::Function* fun = CompileScopePtr->_Module.getFunction(*name);
+    if (fun == NULL) {
+        //fun = std::static_pointer_cast<llvm::Function*>(CompileScopePtr->getAlloca(name).value());
+        llvm::Value* fun_ptr = CompileScopePtr->getAlloca(name).value();
+        llvm::Value* fun_val = CompileScopePtr->_Builder.CreateLoad(fun_ptr->getType(), fun_ptr);
+        fun = static_cast<llvm::Function*>(fun_val);
+    }
+    auto type = fun->getType();
+    auto test = type->isFunctionTy();
     std::vector<llvm::Value*> args;
     for (size_t i = 0; i < this->_arguments.size(); i++) {
         llvm::Value* val = this->_arguments[i]->compileRValue(CompileScopePtr);
