@@ -9,9 +9,21 @@ struct Z {
     int b;
 };
 
-int main(struct S *AS) {
+int f(struct Z *AZ) {
     struct S LS;
+    LS.c = 4;
+    LS.d = AZ;
+    LS.d->b = 3;
     int z;
-    z = GS.a + AS->b + LS.c + AS->d->b;
-    return 0;
+    z = GS.a + AZ->b + LS.c + LS.d->b;
+    return z;
+}
+
+int main() {
+    struct Z az;
+    struct Z* AZ;
+    AZ = &az;
+    AZ->b = 3;
+    GS.a = 3;
+    return f(AZ);
 }

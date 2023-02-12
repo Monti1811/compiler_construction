@@ -9,9 +9,9 @@ struct S {
 
 int main(void) {
     s.a = 1;
-    s.b.x = 10;
-    s.b.y = 100;
-    s.c = 1000;
+    s.b.x = 2;
+    s.b.y = 3;
+    s.c = 4;
 
     return s.a + s.b.x + s.b.y + s.c;
 }
