@@ -1,7 +1,8 @@
-; ModuleID = 'tests/compiler/struct/dot.c4'
-source_filename = "tests/compiler/struct/dot.c4"
+; ModuleID = 'tests/compiler/struct/dot_collision.c4'
+source_filename = "tests/compiler/struct/dot_collision.c4"
 
-%struct.S = type { i32 }
+%struct.S = type { %struct.T }
+%struct.T = type { i32 }
 
 @s = common global %struct.S zeroinitializer
 

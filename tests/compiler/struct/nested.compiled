@@ -1,23 +1,23 @@
 ; ModuleID = 'tests/compiler/struct/nested.c4'
 source_filename = "tests/compiler/struct/nested.c4"
 
-%S = type { i32, %S.b, i32 }
-%S.b = type { i32, i32 }
+%struct.S = type { i32, %struct.S.b, i32 }
+%struct.S.b = type { i32, i32 }
 
-@s = common global %S zeroinitializer
+@s = common global %struct.S zeroinitializer
 
 define i32 @main() {
 entry:
   store i32 1, ptr @s, align 4
-  store i32 10, ptr getelementptr inbounds (%S, ptr @s, i32 0, i32 1), align 4
-  store i32 100, ptr getelementptr inbounds (%S, ptr @s, i32 0, i32 1, i32 1), align 4
-  store i32 1000, ptr getelementptr inbounds (%S, ptr @s, i32 0, i32 2), align 4
+  store i32 10, ptr getelementptr inbounds (%struct.S, ptr @s, i32 0, i32 1), align 4
+  store i32 100, ptr getelementptr inbounds (%struct.S, ptr @s, i32 0, i32 1, i32 1), align 4
+  store i32 1000, ptr getelementptr inbounds (%struct.S, ptr @s, i32 0, i32 2), align 4
   %0 = load i32, ptr @s, align 4
-  %1 = load i32, ptr getelementptr inbounds (%S, ptr @s, i32 0, i32 1), align 4
+  %1 = load i32, ptr getelementptr inbounds (%struct.S, ptr @s, i32 0, i32 1), align 4
   %2 = add i32 %0, %1
-  %3 = load i32, ptr getelementptr inbounds (%S, ptr @s, i32 0, i32 1, i32 1), align 4
+  %3 = load i32, ptr getelementptr inbounds (%struct.S, ptr @s, i32 0, i32 1, i32 1), align 4
   %4 = add i32 %2, %3
-  %5 = load i32, ptr getelementptr inbounds (%S, ptr @s, i32 0, i32 2), align 4
+  %5 = load i32, ptr getelementptr inbounds (%struct.S, ptr @s, i32 0, i32 2), align 4
   %6 = add i32 %4, %5
   ret i32 %6
 

@@ -82,7 +82,7 @@ llvm::Type* CompleteStructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLV
     if (!tag.has_value()) {
         return this->toLLVMTypeAnonymous(Builder, Ctx);
     }
-    std::string struct_name = *tag.value(); 
+    std::string struct_name = "struct." + *tag.value(); 
     
     // Check if struct already exists
     auto def_structtype = llvm::StructType::getTypeByName(Ctx, struct_name);
