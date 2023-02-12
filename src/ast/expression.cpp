@@ -583,7 +583,6 @@ llvm::Value* IdentExpression::compileRValue(std::shared_ptr<CompileScope> Compil
 }
 
 llvm::Value* IdentExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO: bug
     llvm::Value* saved_alloca = CompileScopePtr->getAlloca(this->_ident).value();
     return saved_alloca;
 }
@@ -628,13 +627,20 @@ llvm::Value* StringLiteralExpression::compileLValue(std::shared_ptr<CompileScope
 }
 
 llvm::Value* IndexExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // Get the pointer to the index that should be used
     auto expr_value = this->compileLValue(CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateLoad(CompileScopePtr->_Builder.getInt32Ty(), expr_value);
+    // Get the type of the index by checking the type saved in the pointer of the array
+    auto expr_type = this->_expression->type;
+    auto pointer_ty = std::static_pointer_cast<PointerType>(expr_type);
+    llvm::Type* index_type = pointer_ty->inner->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    // Load the value at the index
+    return CompileScopePtr->_Builder.CreateLoad(index_type, expr_value);
 }
 
 llvm::Value* IndexExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO: gleiche vorgehensweise wie bei dotexpression?
+    // Get the pointer of the array
     llvm::Value* array_alloca = this->_expression->compileLValue(CompileScopePtr);
+    // Get the value of the index that should be used
     llvm::Value* index_value = this->_index->compileRValue(CompileScopePtr);
     return CompileScopePtr->_Builder.CreateInBoundsGEP(array_alloca->getType(), array_alloca, index_value); 
 }
@@ -648,13 +654,16 @@ llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> Compile
         llvm::Value* fun_val = CompileScopePtr->_Builder.CreateLoad(fun_ptr->getType(), fun_ptr);
         fun = static_cast<llvm::Function*>(fun_val);
     }
-    auto type = fun->getType();
-    auto test = type->isFunctionTy();
     std::vector<llvm::Value*> args;
     for (size_t i = 0; i < this->_arguments.size(); i++) {
         llvm::Value* val = this->_arguments[i]->compileRValue(CompileScopePtr);
         args.push_back(val);
+        auto fn_type = fun->getFunctionType()->getParamType(i);
+        auto arg_type = args[i]->getType();
+        auto test = fun->getFunctionType()->getParamType(i) == args[i]->getType();
+        int x = 1;
     }
+    
     return CompileScopePtr->_Builder.CreateCall(fun, llvm::makeArrayRef(args));
 }
 
