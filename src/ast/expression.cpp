@@ -251,6 +251,8 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
             if (struct_type->tag.has_value()) {
                 std::optional<std::shared_ptr<StructType>> complete_type = scope->getStructType(struct_type->tag.value());
                 if (complete_type.has_value() && complete_type.value()->isComplete()) {
+                    // Replace the struct type with the complete type
+                    pointer_type->inner = complete_type.value();
                     // Replace the struct that should be used to calculate the type with the complete definition
                     struct_type_to_use = complete_type.value();
                 }

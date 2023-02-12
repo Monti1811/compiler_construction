@@ -5,8 +5,11 @@ struct S {
     struct S *d;
 } GS;
 
-int main(struct S *AS) {
+int main() {
     struct S LS;
+    struct S as;
+    struct S* AS;
+    AS = &as;
     LS.c = 4;
     AS->b = 3;
     GS.a = 3;
