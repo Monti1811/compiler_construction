@@ -1,0 +1,16 @@
+struct T {
+    int t;
+    int r;
+};
+
+struct S {
+    int e;
+    int f;
+    int g;
+    struct T a;
+} s;
+
+int main(void) {
+    s.a.r = 42;
+    return s.a.r;
+}

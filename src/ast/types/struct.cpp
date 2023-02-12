@@ -79,7 +79,12 @@ std::optional<TypePtr> CompleteStructType::typeOfField(Symbol& ident) {
 }
 
 llvm::Type* CompleteStructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
-    auto struct_name = "struct." + *tag.value();
+    if (!tag.has_value()) {
+        return this->toLLVMTypeAnonymous(Builder, Ctx);
+    }
+    std::string struct_name = *tag.value(); 
+    
+    // Check if struct already exists
     auto def_structtype = llvm::StructType::getTypeByName(Ctx, struct_name);
     if (def_structtype) {
         return def_structtype;
@@ -87,6 +92,37 @@ llvm::Type* CompleteStructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLV
     llvm::StructType *StructXType = llvm::StructType::create(Ctx, struct_name);
     std::vector<llvm::Type *> StructMemberTypes;
     for (auto field : this->fields) {
+        if (field.type->kind == TY_STRUCT) {
+            auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(field.type);
+            complete_struct_ty->alt_tag = struct_name + '.' +  *field.name.value();
+            if (!complete_struct_ty->tag.has_value()) {
+                StructMemberTypes.push_back(complete_struct_ty->toLLVMTypeAnonymous(Builder, Ctx));
+                continue;
+            }
+        }
+        StructMemberTypes.push_back(field.type->toLLVMType(Builder, Ctx));
+    }
+    StructXType->setBody(StructMemberTypes);
+    return StructXType;
+}
+
+llvm::Type* CompleteStructType::toLLVMTypeAnonymous(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+    // Check if struct already exists
+    auto def_structtype = llvm::StructType::getTypeByName(Ctx, this->alt_tag);
+    if (def_structtype) {
+        return def_structtype;
+    }
+    llvm::StructType *StructXType = llvm::StructType::create(Ctx, this->alt_tag);
+    std::vector<llvm::Type *> StructMemberTypes;
+    for (auto field : this->fields) {
+        if (field.type->kind == TY_STRUCT) {
+            auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(field.type);
+            complete_struct_ty->alt_tag = this->alt_tag + '.' +  *field.name.value();
+            if (!complete_struct_ty->tag.has_value()) {
+                StructMemberTypes.push_back(complete_struct_ty->toLLVMTypeAnonymous(Builder, Ctx));
+                continue;
+            }
+        }
         StructMemberTypes.push_back(field.type->toLLVMType(Builder, Ctx));
     }
     StructXType->setBody(StructMemberTypes);

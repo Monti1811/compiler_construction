@@ -13,6 +13,7 @@ struct StructType: public Type {
     llvm::Type* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
 
     std::optional<Symbol> tag;
+    std::string alt_tag;
 };
 
 struct CompleteStructType: public StructType {
@@ -36,6 +37,7 @@ struct CompleteStructType: public StructType {
     bool validateFields();
 
     llvm::Type* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
+    llvm::Type* toLLVMTypeAnonymous(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
 
     std::optional<TypePtr> typeOfField(Symbol& ident);
     size_t getIndexOfField(Symbol field);
