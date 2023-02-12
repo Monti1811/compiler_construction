@@ -1,0 +1,17 @@
+struct S {
+    int a;
+    struct {
+        int x;
+        int y;
+    } b;
+    int c;
+} s;
+
+int main(void) {
+    s.a = 1;
+    s.b.x = 2;
+    s.b.y = 3;
+    s.c = 4;
+
+    return s.a + s.b.x + s.b.y + s.c;
+}

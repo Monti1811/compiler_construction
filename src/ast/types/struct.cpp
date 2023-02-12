@@ -16,27 +16,20 @@ bool StructType::strong_equals(TypePtr const& other) {
     return this->equals(other);
 }
 
-llvm::StructType* StructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+llvm::Type* StructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
     // declarations of structs should have CompleteStructType already, so this shouldn't get called at all
-    llvm::StructType *StructXType = llvm::StructType::create(Ctx, "struct." + *tag.value());
+    auto struct_name = "struct." + *tag.value();
+    auto def_structtype = llvm::StructType::getTypeByName(Ctx, struct_name);
+    if (def_structtype) {
+        return def_structtype;
+    }
+    llvm::StructType *StructXType = llvm::StructType::create(Ctx, struct_name);
     std::vector<llvm::Type *> StructMemberTypes;
     StructXType->setBody(StructMemberTypes);
     return StructXType;
 }
 
 bool CompleteStructType::isComplete() {
-    // TODO: if struct is placed in itself as a field and afterwards that field is accessed, 
-    // error: Cannot access a field of an incomplete type
-    /*
-    struct S {
-        int c;
-        struct S *d;
-    } GS;
-    int f(struct S *AS) {
-        struct S LS;
-        return LS.c + LS.d->c;
-    }
-    */
     return true;
 }
 
@@ -85,12 +78,62 @@ std::optional<TypePtr> CompleteStructType::typeOfField(Symbol& ident) {
     return this->fields.at(this->_field_names.at(ident)).type;
 }
 
-llvm::StructType* CompleteStructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
-    llvm::StructType *StructXType = llvm::StructType::create(Ctx, "struct." + *tag.value());
+llvm::Type* CompleteStructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+    if (!tag.has_value()) {
+        return this->toLLVMTypeAnonymous(Builder, Ctx);
+    }
+    std::string struct_name = "struct." + *tag.value(); 
+    
+    // Check if struct already exists
+    auto def_structtype = llvm::StructType::getTypeByName(Ctx, struct_name);
+    if (def_structtype) {
+        return def_structtype;
+    }
+    llvm::StructType *StructXType = llvm::StructType::create(Ctx, struct_name);
     std::vector<llvm::Type *> StructMemberTypes;
     for (auto field : this->fields) {
+        if (field.type->kind == TY_STRUCT) {
+            auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(field.type);
+            complete_struct_ty->alt_tag = struct_name + '.' +  *field.name.value();
+            if (!complete_struct_ty->tag.has_value()) {
+                StructMemberTypes.push_back(complete_struct_ty->toLLVMTypeAnonymous(Builder, Ctx));
+                continue;
+            }
+        }
         StructMemberTypes.push_back(field.type->toLLVMType(Builder, Ctx));
     }
     StructXType->setBody(StructMemberTypes);
     return StructXType;
+}
+
+llvm::Type* CompleteStructType::toLLVMTypeAnonymous(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+    // Check if struct already exists
+    auto def_structtype = llvm::StructType::getTypeByName(Ctx, this->alt_tag);
+    if (def_structtype) {
+        return def_structtype;
+    }
+    llvm::StructType *StructXType = llvm::StructType::create(Ctx, this->alt_tag);
+    std::vector<llvm::Type *> StructMemberTypes;
+    for (auto field : this->fields) {
+        if (field.type->kind == TY_STRUCT) {
+            auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(field.type);
+            complete_struct_ty->alt_tag = this->alt_tag + '.' +  *field.name.value();
+            if (!complete_struct_ty->tag.has_value()) {
+                StructMemberTypes.push_back(complete_struct_ty->toLLVMTypeAnonymous(Builder, Ctx));
+                continue;
+            }
+        }
+        StructMemberTypes.push_back(field.type->toLLVMType(Builder, Ctx));
+    }
+    StructXType->setBody(StructMemberTypes);
+    return StructXType;
+}
+
+size_t CompleteStructType::getIndexOfField(Symbol name) {
+    std::cerr << "looking for name " << *name << std::endl;
+    if (this->_field_names.find(name) == this->_field_names.end()) {
+        std::cerr << "could not find field" << std::endl;
+        return 0;
+    }
+    return this->_field_names.at(name);
 }

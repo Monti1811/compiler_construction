@@ -1,0 +1,29 @@
+struct S {
+    int a;
+    int b;
+    int c;
+    struct Z *d;
+} GS;
+
+struct Z {
+    int b;
+};
+
+int f(struct Z *AZ) {
+    struct S LS;
+    LS.c = 4;
+    LS.d = AZ;
+    LS.d->b = 3;
+    int z;
+    z = GS.a + AZ->b + LS.c + LS.d->b;
+    return z;
+}
+
+int main() {
+    struct Z az;
+    struct Z* AZ;
+    AZ = &az;
+    AZ->b = 3;
+    GS.a = 3;
+    return f(AZ);
+}

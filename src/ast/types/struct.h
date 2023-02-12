@@ -10,9 +10,10 @@ struct StructType: public Type {
 
     bool equals(TypePtr const& other) override;
     bool strong_equals(TypePtr const& other) override;
-    llvm::StructType* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
+    llvm::Type* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
 
     std::optional<Symbol> tag;
+    std::string alt_tag;
 };
 
 struct CompleteStructType: public StructType {
@@ -35,9 +36,11 @@ struct CompleteStructType: public StructType {
     // Returns false if the constraints for named fields are not satisfied, true otherwise.
     bool validateFields();
 
-    llvm::StructType* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
+    llvm::Type* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
+    llvm::Type* toLLVMTypeAnonymous(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
 
     std::optional<TypePtr> typeOfField(Symbol& ident);
+    size_t getIndexOfField(Symbol field);
 
     std::vector<StructField> fields;
 

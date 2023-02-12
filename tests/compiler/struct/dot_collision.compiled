@@ -1,0 +1,17 @@
+; ModuleID = 'tests/compiler/struct/dot_collision.c4'
+source_filename = "tests/compiler/struct/dot_collision.c4"
+
+%struct.S = type { %struct.T }
+%struct.T = type { i32 }
+
+@s = common global %struct.S zeroinitializer
+
+define i32 @main() {
+entry:
+  store i32 42, ptr @s, align 4
+  %0 = load i32, ptr @s, align 4
+  ret i32 %0
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}

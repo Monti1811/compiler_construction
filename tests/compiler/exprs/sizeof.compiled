@@ -1,0 +1,41 @@
+; ModuleID = 'tests/compiler/exprs/sizeof.c4'
+source_filename = "tests/compiler/exprs/sizeof.c4"
+
+%struct.S = type { i32, i32, i32, i32, i32 }
+
+define i32 @main(i32 %y, i32 %z, i32 %a, i32 %b, i32 %c) {
+entry:
+  %0 = alloca ptr, align 8
+  %1 = alloca i8, align 1
+  %2 = alloca %struct.S, align 8
+  %3 = alloca i32, align 4
+  %4 = alloca i32, align 4
+  %5 = alloca i32, align 4
+  %6 = alloca i32, align 4
+  %7 = alloca i32, align 4
+  %8 = alloca i32, align 4
+  store i32 %y, ptr %8, align 4
+  store i32 %z, ptr %7, align 4
+  store i32 %a, ptr %6, align 4
+  store i32 %b, ptr %5, align 4
+  store i32 %c, ptr %3, align 4
+  store i32 4, ptr %4, align 4
+  store i32 4, ptr %8, align 4
+  store i32 20, ptr %6, align 4
+  store i8 39, ptr %1, align 1
+  store i32 1, ptr %5, align 4
+  store i32 8, ptr %3, align 4
+  %9 = load i32, ptr %4, align 4
+  %10 = load i32, ptr %8, align 4
+  %11 = add i32 %9, %10
+  %12 = load i32, ptr %6, align 4
+  %13 = add i32 %11, %12
+  %14 = load i32, ptr %5, align 4
+  %15 = add i32 %13, %14
+  %16 = load i32, ptr %3, align 4
+  %17 = add i32 %15, %16
+  ret i32 %17
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}

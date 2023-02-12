@@ -126,34 +126,16 @@ void DeclarationStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr
     // do nothing if it is abstract
     if (name.has_value())
     {
-        // If it's a struct, check if it was already defined and take the defined type
-        // Otherwise there will be multiple definitions of the same struct
-        std::optional<llvm::Type*> llvm_type = std::nullopt;
-        if (type_dcl->kind == TY_STRUCT) {
-            auto struct_name = "struct." + *((static_cast<StructSpecifier*>(this->_declaration._specifier.get()))->_tag.value());
-            for (auto structtype : CompileScopePtr->_Module.getIdentifiedStructTypes()) {
-               if (std::string(structtype->getName()) == struct_name) {
-                    llvm_type = std::make_optional(structtype);
-                    break;
-               }
-            }
-        }
-
-        if (!llvm_type.has_value()) {
-            llvm_type = type_dcl->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-        } 
+        
+        llvm::Type* llvm_type = type_dcl->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
         /* Allocate stack space for the variable */
-        llvm::Value *LocalVarPtr = CompileScopePtr->_AllocaBuilder.CreateAlloca(llvm_type.value());
+        llvm::Value *LocalVarPtr = CompileScopePtr->_AllocaBuilder.CreateAlloca(llvm_type);
         /* Reset the alloca builder each time before using it */
         CompileScopePtr->_AllocaBuilder.SetInsertPoint(CompileScopePtr->_AllocaBuilder.GetInsertBlock(),
                                                        CompileScopePtr->_AllocaBuilder.GetInsertBlock()->begin());
         // fill compilescope
         CompileScopePtr->addAlloca(name.value(), LocalVarPtr);
-        CompileScopePtr->addType(name.value(), llvm_type.value());
-        if (type_dcl->kind == TY_STRUCT) {
-            auto struct_type = std::static_pointer_cast<CompleteStructType>(type_dcl);
-            CompileScopePtr->addStructIndexes(struct_type);
-        }
+        CompileScopePtr->addType(name.value(), llvm_type);
     }
 }
 

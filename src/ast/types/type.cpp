@@ -186,7 +186,7 @@ llvm::Type* Type::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx)
             return (static_cast<FunctionType*>(this))->toLLVMType(Builder, Ctx);
         case TY_NULLPTR:
         case TY_POINTER:
-            return Builder.getPtrTy();
+            return (static_cast<PointerType*>(this))->toLLVMType(Builder, Ctx);
         default:
             // TODO: to be done
             return Builder.getVoidTy();

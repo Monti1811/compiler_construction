@@ -1,0 +1,9 @@
+int f(int x, int y, int z) {
+	int a;
+	a = x < 0 ? 5 : (2*(y+z));
+	return a;
+}
+
+int main(void) {
+	return f(1,2,3);
+}

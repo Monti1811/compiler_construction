@@ -1,5 +1,5 @@
-; ModuleID = 'tests/compiler/add.c4'
-source_filename = "tests/compiler/add.c4"
+; ModuleID = 'tests/compiler/exprs/add.c4'
+source_filename = "tests/compiler/exprs/add.c4"
 
 define i32 @main() {
 entry:

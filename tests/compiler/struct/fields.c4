@@ -1,0 +1,21 @@
+struct S {
+    int a;
+    int b;
+    int c;
+    struct S *d;
+} GS;
+
+int main() {
+    struct S LS;
+    struct S as;
+    struct S* AS;
+    AS = &as;
+    LS.c = 4;
+    AS->b = 3;
+    GS.a = 3;
+    LS.d = AS;
+    LS.d->c = 3;
+    int abc;
+    abc = GS.a + AS->b + LS.c + LS.d->c;
+    return abc;
+}

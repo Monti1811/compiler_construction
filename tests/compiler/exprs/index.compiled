@@ -1,0 +1,50 @@
+; ModuleID = 'tests/compiler/exprs/index.c4'
+source_filename = "tests/compiler/exprs/index.c4"
+
+@Format = common global ptr null
+@0 = private unnamed_addr constant [7 x i8] c"\22%s\\n\22\00", align 1
+
+declare i32 @printf(ptr, ptr)
+
+define i32 @main(i32 %argc, ptr %argv) {
+entry:
+  %0 = alloca ptr, align 8
+  %1 = alloca ptr, align 8
+  %2 = alloca i32, align 4
+  %3 = alloca i32, align 4
+  store i32 %argc, ptr %3, align 4
+  store ptr %argv, ptr %1, align 8
+  store ptr @0, ptr @Format, align 8
+  store i32 1, ptr %2, align 4
+  br label %while-header
+
+while-header:                                     ; preds = %while-body, %entry
+  %4 = load i32, ptr %2, align 4
+  %5 = load i32, ptr %3, align 4
+  %6 = icmp ult i32 %4, %5
+  br i1 %6, label %while-body, label %while-end
+
+while-body:                                       ; preds = %while-header
+  %7 = load i32, ptr %2, align 4
+  %8 = getelementptr inbounds ptr, ptr %1, i32 %7
+  %9 = load ptr, ptr %8, align 8
+  store ptr %9, ptr %0, align 8
+  %10 = load ptr, ptr @Format, align 8
+  %11 = load ptr, ptr %0, align 8
+  %12 = call i32 @printf(ptr %10, ptr %11)
+  %13 = load ptr, ptr @Format, align 8
+  %14 = load i32, ptr %2, align 4
+  %15 = getelementptr inbounds ptr, ptr %1, i32 %14
+  %16 = load ptr, ptr %15, align 8
+  %17 = call i32 @printf(ptr %13, ptr %16)
+  %18 = load i32, ptr %2, align 4
+  %19 = add i32 %18, 1
+  store i32 %19, ptr %2, align 4
+  br label %while-header
+
+while-end:                                        ; preds = %while-header
+  ret i32 10
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}

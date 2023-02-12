@@ -1,0 +1,12 @@
+struct T {
+    int a;
+};
+
+struct S {
+    struct T a;
+} s;
+
+int main(void) {
+    s.a.a = 42;
+    return s.a.a;
+}

@@ -77,3 +77,4 @@ test.c4
 test.c
 test.ll
 test
+test_*.sh

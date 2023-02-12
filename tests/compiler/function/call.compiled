@@ -1,0 +1,23 @@
+; ModuleID = 'tests/compiler/function/call.c4'
+source_filename = "tests/compiler/function/call.c4"
+
+define i32 @f(i32 %a) {
+entry:
+  %0 = alloca i32, align 4
+  store i32 %a, ptr %0, align 4
+  %1 = load i32, ptr %0, align 4
+  %2 = mul i32 %1, 2
+  ret i32 %2
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}
+
+define i32 @main() {
+entry:
+  %0 = call i32 @f(i32 21)
+  ret i32 %0
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}

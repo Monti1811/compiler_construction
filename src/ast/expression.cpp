@@ -93,7 +93,8 @@ TypePtr IdentExpression::typecheck(ScopePtr& scope) {
         if (!type.has_value()) {
             errorloc(this->loc, "Variable ", *this->_ident, " is not defined");
         }
-        return type.value();
+        this->type = type.value();
+        return this->type;
     }
 
 bool IdentExpression::isLvalue(ScopePtr& scope) {
@@ -104,13 +105,25 @@ bool IdentExpression::isLvalue(ScopePtr& scope) {
     return !scope->isFunctionDesignator(this->_ident);
 }
 
-TypePtr IntConstantExpression::typecheck(ScopePtr&) { return INT_TYPE; }
+TypePtr IntConstantExpression::typecheck(ScopePtr&) {
+    this->type = INT_TYPE;
+    return this->type;
+}
 
-TypePtr NullPtrExpression::typecheck(ScopePtr&) { return NULLPTR_TYPE; }
+TypePtr NullPtrExpression::typecheck(ScopePtr&) {
+    this->type = NULLPTR_TYPE;
+    return this->type;
+}
 
-TypePtr CharConstantExpression::typecheck(ScopePtr&) { return CHAR_TYPE; }
+TypePtr CharConstantExpression::typecheck(ScopePtr&) {
+    this->type = CHAR_TYPE;
+    return this->type;
+}
 
-TypePtr StringLiteralExpression::typecheck(ScopePtr&) { return STRING_TYPE; }
+TypePtr StringLiteralExpression::typecheck(ScopePtr&) { 
+    this->type = STRING_TYPE;
+    return this->type;
+}
 
 bool StringLiteralExpression::isLvalue(ScopePtr&) {
     // 6.5.1.0.4:
@@ -146,7 +159,8 @@ TypePtr IndexExpression::typecheck(ScopePtr& scope) {
             errorloc(this->loc, "Cannot index an incomplete or non-object type");
         }
         
-        return indexed_type;
+        this->type = indexed_type;
+        return this->type;
     }
 
 bool IndexExpression::isLvalue(ScopePtr&) {
@@ -171,8 +185,8 @@ TypePtr CallExpression::typecheck(ScopePtr& scope) {
             for (auto& arg : this->_arguments) {
                 arg->typecheckWrap(scope);
             }
-
-            return function_type->return_type;
+            this->type = function_type->return_type;
+            return this->type ;
         }
 
         auto param_function_type = std::static_pointer_cast<ParamFunctionType>(function_type);
@@ -189,7 +203,8 @@ TypePtr CallExpression::typecheck(ScopePtr& scope) {
             }
         }
 
-        return function_type->return_type;
+        this->type = function_type->return_type;
+        return this->type;
     }
 
 TypePtr DotExpression::typecheck(ScopePtr& scope) {
@@ -208,7 +223,8 @@ TypePtr DotExpression::typecheck(ScopePtr& scope) {
         if (!field_type.has_value()) {
             errorloc(this->loc, "Field " + *ident + " does not exist on this struct");
         }
-        return field_type.value();
+        this->type = field_type.value();
+        return this->type;
     }
 
 bool DotExpression::isLvalue(ScopePtr& scope) {
@@ -227,10 +243,25 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
         if (pointer_type->inner->kind != TypeKind::TY_STRUCT) {
             errorloc(this->loc, "Cannot access a field of a non-struct expression");
         }
-        if (!pointer_type->inner->isComplete()) {
+        auto struct_type_to_use = pointer_type->inner;
+        // Check if the struct has a pointer to a struct as a field
+        if (struct_type_to_use->kind == TY_STRUCT && !struct_type_to_use->isComplete()) {
+            auto struct_type = std::static_pointer_cast<StructType>(struct_type_to_use);
+            // If yes, check the scope to see if it was defined and use this definition to define the type
+            if (struct_type->tag.has_value()) {
+                std::optional<std::shared_ptr<StructType>> complete_type = scope->getStructType(struct_type->tag.value());
+                if (complete_type.has_value() && complete_type.value()->isComplete()) {
+                    // Replace the struct type with the complete type
+                    pointer_type->inner = complete_type.value();
+                    // Replace the struct that should be used to calculate the type with the complete definition
+                    struct_type_to_use = complete_type.value();
+                }
+            } 
+        }
+        if (!struct_type_to_use->isComplete()) {
             errorloc(this->loc, "Cannot access a field of an incomplete type");
         }
-        auto struct_type = std::static_pointer_cast<CompleteStructType>(pointer_type->inner);
+        auto struct_type = std::static_pointer_cast<CompleteStructType>(struct_type_to_use);
 
         auto ident = this->_ident->_ident;
         auto field_type = struct_type->typeOfField(ident);
@@ -238,7 +269,8 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
         if (!field_type.has_value()) {
             errorloc(this->loc, "Field " + *ident + " does not exist on this struct");
         }
-        return field_type.value();
+        this->type = field_type.value();
+        return this->type;
     }
 
 bool ArrowExpression::isLvalue(ScopePtr&) {
@@ -259,12 +291,14 @@ TypePtr SizeofExpression::typecheck(ScopePtr& scope) {
                 errorloc(this->_inner->loc, "inner of sizeof expression must not have incomplete type");
             }
         }
-        return INT_TYPE;
+        this->type = INT_TYPE;
+        return this->type;
     }
 
 TypePtr SizeofTypeExpression::typecheck(ScopePtr&) {
         // TODO: Additional checks
-        return INT_TYPE;
+        this->type = INT_TYPE;
+        return this->type;
     }
 
 TypePtr ReferenceExpression::typecheck(ScopePtr& scope) {
@@ -276,7 +310,8 @@ TypePtr ReferenceExpression::typecheck(ScopePtr& scope) {
 
         // IndexExpression and DerefExpression are always lvalues
         if (this->_inner->isLvalue(scope) || inner_type->kind == TypeKind::TY_FUNCTION) {
-            return std::make_shared<PointerType>(inner_type);
+            this->type = std::make_shared<PointerType>(inner_type);
+            return this->type;
         }
 
         errorloc(this->loc, "expression to be referenced must be a function designator or an lvalue");
@@ -288,7 +323,8 @@ TypePtr DerefExpression::typecheck(ScopePtr& scope) {
             errorloc(this->loc, "Cannot dereference a non-pointer");
         }
         auto pointer_type = std::static_pointer_cast<PointerType>(inner_type);
-        return pointer_type->inner;
+        this->type = pointer_type->inner;
+        return this->type;
     }
 
 bool DerefExpression::isLvalue(ScopePtr&) {
@@ -307,7 +343,8 @@ TypePtr NegationExpression::typecheck(ScopePtr& scope) {
         if (!inner_type->isArithmetic()) {
             errorloc(this->loc, "type to be negated has to be arithmetic");
         }
-        return INT_TYPE;
+        this->type = INT_TYPE;
+        return this->type;
     }
 
 TypePtr LogicalNegationExpression::typecheck(ScopePtr& scope) {
@@ -315,7 +352,8 @@ TypePtr LogicalNegationExpression::typecheck(ScopePtr& scope) {
         if (!inner_type->isScalar()) {
             errorloc(this->loc, "type to be logcially negated has to be scalar");
         }
-        return INT_TYPE;
+        this->type = INT_TYPE;
+        return this->type;
     }
 
 TypePtr BinaryExpression::typecheck(ScopePtr& scope) {
@@ -325,7 +363,8 @@ TypePtr BinaryExpression::typecheck(ScopePtr& scope) {
         if (!left_type->isArithmetic() || !right_type->isArithmetic()) {
             errorloc(this->loc, "both sides of an arithmetic binary expression must be of arithemic type");
         }
-        return INT_TYPE;
+        this->type = INT_TYPE;
+        return this->type;
     }
 
 TypePtr AddExpression::typecheck(ScopePtr& scope) {
@@ -333,13 +372,16 @@ TypePtr AddExpression::typecheck(ScopePtr& scope) {
     auto right_type = _right->typecheckWrap(scope);
 
     if (left_type->isArithmetic() && right_type->isArithmetic()) {
-        return INT_TYPE;
+        this->type = INT_TYPE;
+        return this->type;
     }
     if (left_type->kind == TY_POINTER && right_type->isArithmetic()) {
-        return left_type;
+        this->type = left_type;
+        return this->type;
     }
     if (left_type->isArithmetic() && right_type->kind == TY_POINTER) {
-        return right_type;
+        this->type = right_type;
+        return this->type;
     }
 
     errorloc(this->loc, "Illegal addition operation");
@@ -350,7 +392,8 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
     auto right_type = _right->typecheckWrap(scope);
 
     if (left_type->isArithmetic() && right_type->isArithmetic()) {
-        return INT_TYPE;
+        this->type = INT_TYPE;
+        return this->type;
     }
     if (left_type->kind == TY_POINTER && right_type->kind == TY_POINTER && left_type->equals(right_type)) {
         auto left_pointer = std::static_pointer_cast<PointerType>(left_type);
@@ -365,7 +408,8 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
                 errorloc(this->loc, "both pointers have to point to object complete types");
             }
         }
-        return INT_TYPE;
+        this->type = INT_TYPE;
+        return this->type;
     }
     // left side must be complete object type
     if (left_type->kind == TY_POINTER && right_type->isArithmetic()) {
@@ -381,7 +425,8 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
                  errorloc(this->loc, "Illegal substraction operation");
             }
         }
-        return left_type;
+        this->type = left_type;
+        return this->type;
     }
 
     errorloc(this->loc, "Illegal substraction operation");
@@ -394,7 +439,8 @@ TypePtr LessThanExpression::typecheck(ScopePtr& scope) {
         if (!left_type->equals(right_type)) {
             errorloc(this->loc, "Cannot compare two values of different types");
         }
-        return INT_TYPE;
+        this->type = INT_TYPE;
+        return this->type;
     }
 
 TypePtr EqualExpression::typecheck(ScopePtr& scope) {
@@ -404,7 +450,8 @@ TypePtr EqualExpression::typecheck(ScopePtr& scope) {
         if (!left_type->equals(right_type)) {
             errorloc(this->loc, "Cannot compare two values of different types");
         }
-        return INT_TYPE;
+        this->type = INT_TYPE;
+        return this->type;
     }
 
 TypePtr UnequalExpression::typecheck(ScopePtr& scope) {
@@ -414,21 +461,24 @@ TypePtr UnequalExpression::typecheck(ScopePtr& scope) {
         if (!left_type->equals(right_type)) {
             errorloc(this->loc, "Cannot compare two values of different types");
         }
-        return INT_TYPE;
+        this->type = INT_TYPE;
+        return this->type;
     }
 
 TypePtr AndExpression::typecheck(ScopePtr& scope) {
         if (!this->_left->typecheckWrap(scope)->isScalar() || !this->_right->typecheckWrap(scope)->isScalar()) {
             errorloc(this->loc, "Both sides of a logical and expression must be scalar types");
         }
-        return INT_TYPE;
+        this->type = INT_TYPE;
+        return this->type;
     }
 
 TypePtr OrExpression::typecheck(ScopePtr& scope) {
         if (!this->_left->typecheckWrap(scope)->isScalar() || !this->_right->typecheckWrap(scope)->isScalar()) {
             errorloc(this->loc, "Both sides of a logical or expression must be scalar types");
         }
-        return INT_TYPE;
+        this->type = INT_TYPE;
+        return this->type;
     }
 
 TypePtr TernaryExpression::typecheck(ScopePtr& scope) {
@@ -441,7 +491,8 @@ TypePtr TernaryExpression::typecheck(ScopePtr& scope) {
         if (!left_type->equals(right_type)) {
             errorloc(this->loc, "Left and right type of ternary expression must be equal");
         }
-        return left_type;
+        this->type = left_type;
+        return this->type;
     }
 
 TypePtr AssignExpression::typecheck(ScopePtr& scope) {
@@ -470,13 +521,15 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
         // the left operand has [...] arithmetic type,
         // and the right has arithmetic type;
         if (left_type->isArithmetic() && right_type->isArithmetic()) {
-            return left_type;
+            this->type = left_type;
+            return this->type;
         }
 
         // the left operand has [...] structure or union type compatible with the type of the right;
         if (left_type->kind == TY_STRUCT) {
             if (left_type->equals(right_type)) {
-                return left_type;
+                this->type = left_type;
+                return this->type;
             }
             errorloc(this->loc, "left and right struct of an assign expression must be of compatible type");
         }
@@ -486,7 +539,8 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
         // both operands are pointers to [...] compatible types [...];
         if (left_type->kind == TY_POINTER && right_type->kind == TY_POINTER) {
             if (left_type->equals(right_type)) {
-                return left_type;
+                this->type = left_type;
+                return this->type;
             }
         }
 
@@ -501,13 +555,15 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
                 (left->isObjectType() && right->kind == TypeKind::TY_VOID)
                 || (left->kind == TypeKind::TY_VOID && right->isObjectType())
             ) {
-                return left_type;
+                this->type = left_type;
+                return this->type;
             }
         }
 
         // the left operand is a [...] pointer, and the right is a null pointer constant [...]
         if (left_type->kind == TY_POINTER && right_type->kind == TY_NULLPTR) {
-            return left_type;
+            this->type = left_type;
+            return this->type;
         }
 
         errorloc(this->loc, "wrong assign");
@@ -515,6 +571,11 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
 
 
 llvm::Value* IdentExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // If it's a function, don't load the function
+    auto fun = CompileScopePtr->_Module.getFunction(*(this->_ident));
+    if (fun != NULL) {
+        return fun;
+    }
     // identifier should always exist since we typechecked the program already
     llvm::Value* saved_alloca = CompileScopePtr->getAlloca(this->_ident).value();
     llvm::Type* var_type = CompileScopePtr->getType(this->_ident).value();
@@ -531,16 +592,22 @@ llvm::Value* IntConstantExpression::compileRValue(std::shared_ptr<CompileScope> 
 }
 
 llvm::Value* IntConstantExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    error("cannot compute l-value of this expression");
+    errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
 llvm::Value* NullPtrExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO
+    // TODO: Currently type is NULLPTR so isPointer will always give back true
+    /*if (this->type->isPointer()) {
+        auto type = CompileScopePtr->_Builder.getPtrTy();
+        return llvm::ConstantPointerNull::get(type);
+    } else {
+        return CompileScopePtr->_Builder.getInt32(0);
+    }*/
     return CompileScopePtr->_Builder.getInt32(0);
 }
 
 llvm::Value* NullPtrExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    error("cannot compute l-value of this expression");
+    errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
 llvm::Value* CharConstantExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -548,7 +615,7 @@ llvm::Value* CharConstantExpression::compileRValue(std::shared_ptr<CompileScope>
 }
 
 llvm::Value* CharConstantExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    error("cannot compute l-value of this expression");
+    errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
 llvm::Value* StringLiteralExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -556,136 +623,178 @@ llvm::Value* StringLiteralExpression::compileRValue(std::shared_ptr<CompileScope
 }
 
 llvm::Value* StringLiteralExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    error("cannot compute l-value of this expression");
+    errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
 llvm::Value* IndexExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO: gleiche vorgehensweise wie bei dotexpression?
-    llvm::Value* array_alloca = this->_expression->compileLValue(CompileScopePtr);
-    llvm::Value* index_value = this->_index->compileRValue(CompileScopePtr);
-    llvm::Value* alloca_here = CompileScopePtr->_Builder.CreateInBoundsGEP(array_alloca->getType(), array_alloca, index_value);
-    return CompileScopePtr->_Builder.CreateLoad(CompileScopePtr->_Builder.getInt32Ty(), alloca_here);
+    // Get the pointer to the index that should be used
+    auto expr_value = this->compileLValue(CompileScopePtr);
+    // Get the type of the index by checking the type saved in the pointer of the array
+    auto expr_type = this->_expression->type;
+    auto pointer_ty = std::static_pointer_cast<PointerType>(expr_type);
+    llvm::Type* index_type = pointer_ty->inner->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    // Load the value at the index
+    return CompileScopePtr->_Builder.CreateLoad(index_type, expr_value);
 }
 
 llvm::Value* IndexExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO
-    error("cannot compute l-value of this expression");
+    // Get the pointer of the array
+    llvm::Value* array_alloca = this->_expression->compileLValue(CompileScopePtr);
+    // Get the value of the index that should be used
+    llvm::Value* index_value = this->_index->compileRValue(CompileScopePtr);
+    return CompileScopePtr->_Builder.CreateInBoundsGEP(array_alloca->getType(), array_alloca, index_value); 
 }
 
 llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO get name of function
-    std::string name(*(static_cast<IdentExpression*>(this->_expression.get())->_ident));
-    llvm::Function* fun = CompileScopePtr->_Module.getFunction(name);
+    Symbol name(static_cast<IdentExpression*>(this->_expression.get())->_ident);
+    llvm::Function* fun = CompileScopePtr->_Module.getFunction(*name);
+    if (fun == NULL) {
+        //fun = std::static_pointer_cast<llvm::Function*>(CompileScopePtr->getAlloca(name).value());
+        llvm::Value* fun_ptr = CompileScopePtr->getAlloca(name).value();
+        llvm::Value* fun_val = CompileScopePtr->_Builder.CreateLoad(fun_ptr->getType(), fun_ptr);
+        fun = static_cast<llvm::Function*>(fun_val);
+    }
     std::vector<llvm::Value*> args;
     for (size_t i = 0; i < this->_arguments.size(); i++) {
         llvm::Value* val = this->_arguments[i]->compileRValue(CompileScopePtr);
         args.push_back(val);
+        auto fn_type = fun->getFunctionType()->getParamType(i);
+        auto arg_type = args[i]->getType();
+        auto test = fun->getFunctionType()->getParamType(i) == args[i]->getType();
+        int x = 1;
     }
+    
     return CompileScopePtr->_Builder.CreateCall(fun, llvm::makeArrayRef(args));
 }
 
-llvm::Value* CallExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    error("cannot compute l-value of this expression");
+llvm::Value* CallExpression::compileLValue(std::shared_ptr<CompileScope>) {
+    errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
 llvm::Value* DotExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    Symbol name = static_cast<IdentExpression*>(this->_expression.get())->_ident;
-    Symbol field_name = static_cast<IdentExpression*>(this->_ident.get())->_ident;
-    llvm::Type* struct_type = CompileScopePtr->getType(name).value();
-    auto struct_name = static_cast<std::string>(struct_type->getStructName());
-    // Remove "struct." of the name of the saved struct
-    struct_name = struct_name.substr(7);
-    // no idea if this is correct as we also need to remove the number after the struct name
-    auto pos = struct_name.find('.');
-    struct_name = pos == std::string::npos ? struct_name : struct_name.substr(0,pos);
-    llvm::Value* get_alloca = CompileScopePtr->getAlloca(name).value();
-    std::optional<llvm::Value*> index = CompileScopePtr->getStructIndex(struct_name, field_name);
-    if (!index) {
-        errorloc(this->_ident->loc, "This should not happen, an index for a struct didn't exist");
-    }
-    std::vector<llvm::Value *> ElementIndexes;
-    ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(0));
-    ElementIndexes.push_back(index.value());
-    llvm::Value* indexed_alloca = CompileScopePtr->_Builder.CreateInBoundsGEP(struct_type, get_alloca, ElementIndexes);
-    return CompileScopePtr->_Builder.CreateLoad(CompileScopePtr->_Builder.getInt32Ty(), indexed_alloca);
+    llvm::Value* field_alloca = this->compileLValue(CompileScopePtr);
+    // Get type of the element
+    llvm::Type* index_type = this->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    return CompileScopePtr->_Builder.CreateLoad(index_type, field_alloca);
 }
 
-llvm::Value* DotExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) { 
-    Symbol name = static_cast<IdentExpression*>(this->_expression.get())->_ident;
-    Symbol field_name = static_cast<IdentExpression*>(this->_ident.get())->_ident;
-    llvm::Type* struct_type = CompileScopePtr->getType(name).value();
-    auto struct_name = static_cast<std::string>(struct_type->getStructName());
-    // Remove "struct." of the name of the saved struct
-    struct_name = struct_name.substr(7);
-    // no idea if this is correct as we also need to remove the number after the struct name
-    auto pos = struct_name.find('.');
-    struct_name = pos == std::string::npos ? struct_name : struct_name.substr(0,pos);
-    llvm::Value* get_alloca = CompileScopePtr->getAlloca(name).value();
+llvm::Value* DotExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    auto expr_type = this->_expression->type;
 
-    std::optional<llvm::Value*> index = CompileScopePtr->getStructIndex(struct_name, field_name);
-    if (!index) {
-        errorloc(this->_ident->loc, "This should not happen, an index for a struct didn't exist");
+    if (expr_type->kind != TY_STRUCT) {
+        errorloc(this->loc, "Tried to access field of non-struct during codegen");
     }
+
+    auto struct_ty = std::static_pointer_cast<StructType>(expr_type);
+    if (!struct_ty->isComplete()) {
+        errorloc(this->loc, "Tried to access field of incomplete struct during codegen");
+    }
+    
+    auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(struct_ty);
+    auto index = complete_struct_ty->getIndexOfField(this->_ident->_ident);
  
     std::vector<llvm::Value *> ElementIndexes;
     ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(0));
-    ElementIndexes.push_back(index.value());
-    return CompileScopePtr->_Builder.CreateInBoundsGEP(struct_type, get_alloca, ElementIndexes);
+    ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(index));
+
+    llvm::Type* struct_type = complete_struct_ty->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    llvm::Value* struct_alloca = this->_expression->compileLValue(CompileScopePtr);
+
+    return CompileScopePtr->_Builder.CreateInBoundsGEP(struct_type, struct_alloca, ElementIndexes);
 }
 
 llvm::Value* ArrowExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO
-    return CompileScopePtr->_Builder.getInt32(1);
+    llvm::Value* field_alloca = this->compileLValue(CompileScopePtr);
+    // Get type of the element
+    llvm::Type* index_type = this->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    return CompileScopePtr->_Builder.CreateLoad(index_type, field_alloca);
 }
 
 llvm::Value* ArrowExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO
-    error("cannot compute l-value of this expression");
+    auto expr_type = this->_expression->type;
+
+    if (expr_type->kind != TY_POINTER) {
+        errorloc(this->loc, "Tried to access field of non-pointer during codegen");
+    }
+
+    auto struct_ptr_ty = std::static_pointer_cast<PointerType>(expr_type);
+    if (struct_ptr_ty->inner->kind != TY_STRUCT) {
+        errorloc(this->loc, "Tried to access field of non-struct during codegen");
+    }
+    auto struct_ty = std::static_pointer_cast<StructType>(struct_ptr_ty->inner);
+    if (!struct_ty->isComplete()) {
+        // TODO: Structs that declare themselves as pointers in their fields are incomplete
+        errorloc(this->loc, "Tried to access field of incomplete struct during codegen");
+    }
+    
+    auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(struct_ty);
+    auto index = complete_struct_ty->getIndexOfField(this->_ident->_ident);
+ 
+    std::vector<llvm::Value *> ElementIndexes;
+    ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(0));
+    ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(index));
+
+    llvm::Type* struct_type = complete_struct_ty->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    llvm::Value* struct_alloca = this->_expression->compileRValue(CompileScopePtr);
+    // llvm::Value* struct_alloca = CompileScopePtr->_Builder.CreateLoad(struct_type, struct_alloca_ptr);
+
+    return CompileScopePtr->_Builder.CreateInBoundsGEP(struct_type, struct_alloca, ElementIndexes);
 }
 
 llvm::Value* SizeofExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO
-    return CompileScopePtr->_Builder.getInt32(1);
+    auto inner_type = this->_inner->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    auto size = CompileScopePtr->_Module.getDataLayout().getTypeAllocSize(inner_type);
+    return CompileScopePtr->_Builder.getInt32(size);
 }
 
-llvm::Value* SizeofExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    error("cannot compute l-value of this expression");
+llvm::Value* SizeofExpression::compileLValue(std::shared_ptr<CompileScope>) {
+    errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
 llvm::Value* SizeofTypeExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO
     switch (this->_type->_kind) {
         case TY_INT: return CompileScopePtr->_Builder.getInt32(4);
         case TY_CHAR: return CompileScopePtr->_Builder.getInt32(1);
         case TY_VOID: return CompileScopePtr->_Builder.getInt32(1);
         case TY_POINTER: return CompileScopePtr->_Builder.getInt32(8);
         case TY_NULLPTR: return CompileScopePtr->_Builder.getInt32(8);
+        case TY_STRUCT: {
+            auto inner_type = this->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+            return CompileScopePtr->_Builder.getInt32(CompileScopePtr->_Module.getDataLayout().getTypeAllocSize(inner_type));
+        }
         default:
             error("sizeof type cannot be compiled");
     }
 }
 
-llvm::Value* SizeofTypeExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    error("cannot compute l-value of this expression");
+llvm::Value* SizeofTypeExpression::compileLValue(std::shared_ptr<CompileScope>) {
+    errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
 llvm::Value* ReferenceExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO
-    return CompileScopePtr->_Builder.getInt32(1);
+    return this->_inner->compileLValue(CompileScopePtr);
 }
 
-llvm::Value* ReferenceExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    error("cannot compute l-value of this expression");
+llvm::Value* ReferenceExpression::compileLValue(std::shared_ptr<CompileScope>) {
+    errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
 llvm::Value* DerefExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO
-    return CompileScopePtr->_Builder.getInt32(1);
+    auto expr_value = this->compileLValue(CompileScopePtr);
+    auto expr_type = this->_inner->type;
+    if (expr_type->kind != TY_POINTER) {
+        errorloc(this->loc, "Tried to dereference non-pointer during codegen");
+    }
+
+    auto ptr_ty = std::static_pointer_cast<PointerType>(expr_type);
+    auto inner_expr_type = ptr_ty->inner->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    return CompileScopePtr->_Builder.CreateLoad(inner_expr_type, expr_value);
 }
 
 llvm::Value* DerefExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO
-    error("cannot compute l-value of this expression");
+    auto expr_value = this->_inner->compileLValue(CompileScopePtr);
+    auto expr_type = this->_inner->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    return CompileScopePtr->_Builder.CreateLoad(expr_type, expr_value);
 }
 
 llvm::Value* NegationExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -693,8 +802,8 @@ llvm::Value* NegationExpression::compileRValue(std::shared_ptr<CompileScope> Com
     return CompileScopePtr->_Builder.CreateMul(CompileScopePtr->_Builder.getInt32(-1), inner_value);
 }
 
-llvm::Value* NegationExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    error("cannot compute l-value of this expression");
+llvm::Value* NegationExpression::compileLValue(std::shared_ptr<CompileScope>) {
+    errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
 llvm::Value* LogicalNegationExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -702,12 +811,12 @@ llvm::Value* LogicalNegationExpression::compileRValue(std::shared_ptr<CompileSco
     return CompileScopePtr->_Builder.CreateICmpEQ(CompileScopePtr->_Builder.getInt32(0), inner_value);
 }
 
-llvm::Value* LogicalNegationExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    error("cannot compute l-value of this expression");
+llvm::Value* LogicalNegationExpression::compileLValue(std::shared_ptr<CompileScope>) {
+    errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
-llvm::Value* BinaryExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    error("cannot compute l-value of this expression");
+llvm::Value* BinaryExpression::compileLValue(std::shared_ptr<CompileScope>) {
+    errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
 llvm::Value* MultiplyExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -759,12 +868,14 @@ llvm::Value* OrExpression::compileRValue(std::shared_ptr<CompileScope> CompileSc
 }
 
 llvm::Value* TernaryExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO
-    return CompileScopePtr->_Builder.getInt32(1);
+    auto condition_value = this->_condition->compileRValue(CompileScopePtr);
+    auto true_value = this->_left->compileRValue(CompileScopePtr);
+    auto false_value = this->_right->compileRValue(CompileScopePtr);
+    return CompileScopePtr->_Builder.CreateSelect(condition_value, true_value, false_value);
 }
 
-llvm::Value* TernaryExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    error("cannot compute l-value of this expression");
+llvm::Value* TernaryExpression::compileLValue(std::shared_ptr<CompileScope>) {
+    errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
 llvm::Value* AssignExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -774,6 +885,6 @@ llvm::Value* AssignExpression::compileRValue(std::shared_ptr<CompileScope> Compi
     return value_to_be_stored;
 }
 
-llvm::Value* AssignExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    error("cannot compute l-value of this expression");
+llvm::Value* AssignExpression::compileLValue(std::shared_ptr<CompileScope>) {
+    errorloc(this->loc,"cannot compute l-value of this expression");
 }

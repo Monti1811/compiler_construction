@@ -8,7 +8,7 @@ import sys
 from typing import Tuple
 
 COMPILER_PATH = "./build/debug/c4"
-LLI_PATH = "./llvm/install/bin/lli"
+LLVM_BIN_PATH = "./llvm/install/bin/"
 
 verbose = False
 fullDiff = False
@@ -68,7 +68,7 @@ def runCompiler(arg: str, file: str) -> "Tuple[list[str], list[str], int]":
 
 def executeLlvmFile(file: str) -> "None | int":
     try:
-        result = subprocess.run([LLI_PATH, file])
+        result = subprocess.run([LLVM_BIN_PATH + "lli", file])
         return result.returncode
     except subprocess.CalledProcessError as e:
         return None
@@ -158,7 +158,18 @@ def runCompileTest(file: str) -> "None | str":
         return None
 
     expectedLlvmCode = readFile(expectedFile)
-    runCompiler("--compile", file)
+    compilerResult = runCompiler("--compile", file)
+
+    result: list[str] = list()
+    def cleanupAndGetResult() -> str:
+        try:
+            os.remove(compilerOutputFile)
+        finally:
+            return "\n".join(result)
+
+    if compilerResult[2] != 0:
+        result.append(f"Incorrect compiler exit code: Should be 0, is {compilerResult[2]}")
+        result.extend(compilerResult[1])
 
     def getLlvmOutputFile(file: str) -> str:
         slash = file.rfind("/")
@@ -168,19 +179,16 @@ def runCompileTest(file: str) -> "None | str":
 
     compilerOutputFile = getLlvmOutputFile(file)
     if not os.path.exists(compilerOutputFile):
-        return f"Could not find file `{compilerOutputFile}`"
+        result.append(f"Could not find file `{compilerOutputFile}`")
+        return cleanupAndGetResult()
+
     actualLlvmCode = readFile(compilerOutputFile)
 
-    result: list[str] = list()
     result.extend(makeDiff(expectedLlvmCode, actualLlvmCode, "LLVM code output"))
 
     if update:
         with open(expectedFile, "w") as f:
             f.write("\n".join(actualLlvmCode) + "\n")
-
-    def cleanupAndGetResult() -> str:
-        os.remove(compilerOutputFile)
-        return "\n".join(result)
 
     exitCodeFile: str = f"{file}.executed"
     if not os.path.exists(exitCodeFile):
