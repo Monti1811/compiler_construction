@@ -1,0 +1,9 @@
+int main() {
+	int x;
+label:
+	x = x + 1;
+	if (x < 10)
+		goto label;
+	else
+		return x;
+}
