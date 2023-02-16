@@ -174,10 +174,11 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                 continue;
             }
             // The same thing as for concrete function definitions
-            if (decl_iter.base()->_declarator->kind == DeclaratorKind::FUNCTION) {
-                TypeDecl type_decl = decl_iter.base()->getTypeDecl();
-                TypePtr _type = type_decl.type;
-                std::shared_ptr<FunctionType> func_type_ptr = std::static_pointer_cast<FunctionType>(_type);
+            std::shared_ptr<Type> type = decl_iter.base()->getTypeDecl().type;
+            llvm::Type* llvm_type = type->toLLVMType(Builder, Ctx);
+            auto isFunction = decl_iter.base()->_declarator->kind == DeclaratorKind::FUNCTION || llvm_type->isFunctionTy();
+            if (isFunction) {
+                std::shared_ptr<FunctionType> func_type_ptr = std::static_pointer_cast<FunctionType>(type);
                 
                 auto llvm_type = 
                 !func_type_ptr->has_params 
@@ -211,11 +212,10 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                         count++;
                     }
                 }
-                
+
             } else {
 
-                std::shared_ptr<Type> type = decl_iter.base()->getTypeDecl().type;
-                llvm::Type* llvm_type = type->toLLVMType(Builder, Ctx);
+                
   
                 auto name = decl_iter.base()->_declarator->getName().value();
 
@@ -234,8 +234,9 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                     llvm::GlobalVariable::NotThreadLocal            /* ThreadLocalMode TLMode = NotThreadLocal */,
                     0                                               /* unsigned AddressSpace = 0 */,
                     false                                           /* bool isExternallyInitialized = false */);
-                decl_iter++;
             }
+            // Go to the next declaration
+            decl_iter++;
         } else {
             if (func_iter == this->_functions.end()) {
                 error("Internal error: Tried to read non-existent function definition");
