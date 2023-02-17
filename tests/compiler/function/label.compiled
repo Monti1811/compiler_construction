@@ -1,5 +1,6 @@
 ; ModuleID = 'tests/compiler/function/label.c4'
 source_filename = "tests/compiler/function/label.c4"
+
 define i32 @main() {
 entry:
   %0 = alloca i32, align 4
