@@ -2,6 +2,6 @@ int main() {
     int* a;
     char* b;
     if (a == b) {
-        return;
+        return 42;
     }
 }

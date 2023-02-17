@@ -1,0 +1,32 @@
+; ModuleID = 'tests/compiler/function/label.c4'
+source_filename = "tests/compiler/function/label.c4"
+
+define i32 @main() {
+entry:
+  %0 = alloca i32, align 4
+
+label_BLOCK:                                      ; preds = %if-consequence
+  %1 = load i32, ptr %0, align 4
+  %2 = add i32 %1, 1
+  store i32 %2, ptr %0, align 4
+  br label %if-header
+
+if-header:                                        ; preds = %label_BLOCK
+  %3 = load i32, ptr %0, align 4
+  %if-condition = icmp ult i32 %3, 10
+  br i1 %if-condition, label %if-consequence, label %if-alternative
+
+if-consequence:                                   ; preds = %if-header
+  br label %label_BLOCK
+  br label %if-end
+
+if-alternative:                                   ; preds = %if-header
+  %4 = load i32, ptr %0, align 4
+  ret i32 %4
+
+if-end:                                           ; preds = %DEAD_BLOCK, %if-consequence
+  ret i32 0
+
+DEAD_BLOCK:                                       ; No predecessors!
+  br label %if-end
+}

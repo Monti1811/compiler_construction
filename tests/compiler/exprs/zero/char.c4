@@ -1,0 +1,8 @@
+int main(void) {
+    char c;
+    c = 0;
+    char* cp;
+    cp = 0;
+    *cp = c;
+    return 42;
+}
