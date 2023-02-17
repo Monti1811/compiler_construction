@@ -66,12 +66,12 @@ def runCompiler(arg: str, file: str) -> "Tuple[list[str], list[str], int]":
     except subprocess.CalledProcessError as e:
         return e.stdout.splitlines(), e.stderr.splitlines(), e.returncode
 
-def executeLlvmFile(file: str) -> "None | int":
+def executeLlvmFile(file: str) -> "Tuple[list[str], None | int]":
     try:
-        result = subprocess.run([LLVM_BIN_PATH + "lli", file])
-        return result.returncode
+        result = subprocess.run([LLVM_BIN_PATH + "lli", file], capture_output=True, text=True)
+        return result.stderr.splitlines(), result.returncode
     except subprocess.CalledProcessError as e:
-        return None
+        return list(), None
 
 def readFile(file: str) -> "list[str]":
     return open(file, encoding="ISO-8859-1").read().splitlines()
@@ -201,11 +201,16 @@ def runCompileTest(file: str) -> "None | str":
         result.append("Warning: Cannot get exit code from file " + exitCodeFile)
         cleanupAndGetResult()
 
-    exitCode = executeLlvmFile(compilerOutputFile)
+    lliStderr, exitCode = executeLlvmFile(compilerOutputFile)
+
     if exitCode == None:
-        result.append("An error occurred while trying to interpret the generated LLVM file")
+        result.append("An error occurred while executing LLI")
     elif exitCode != expectedExitCode:
         result.append(f"Incorrect output of generated LLVM file: Should be {expectedExitCode}, is {exitCode}")
+    
+    if lliStderr:
+        result.append("An error occurred while interpreting the generated LLVM file")
+        result.extend(lliStderr)
 
     return cleanupAndGetResult()
 
