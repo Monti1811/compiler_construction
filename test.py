@@ -10,6 +10,19 @@ from typing import Tuple
 COMPILER_PATH = "./build/debug/c4"
 LLVM_BIN_PATH = "./llvm/install/bin/"
 
+class TColor:
+    WHITE = '\033[97m'
+    GRAY = '\033[90m'
+    BLUE = '\033[94m'
+    SUCCESS = '\033[92m'
+    WARN = '\033[93m'
+    FAIL = '\033[91m'
+    RESET = '\033[0m'
+    BOLD = '\033[1m'
+
+def warnStr(str: str) -> "str":
+    return f"{TColor.BOLD}{TColor.WARN}{str}{TColor.RESET}"
+
 verbose = False
 fullDiff = False
 ci = False
@@ -91,10 +104,18 @@ def compareResults(expected: "Tuple[list[str], list[str], int]", actual: "Tuple[
     result: list[str] = list()
 
     if success != expectedSuccess:
-        result.append(f"Incorrect exit code: Should be {expectedSuccess}, is {success}")
+        result.append(warnStr("Incorrect exit code"))
+        result.append(f"Should be {expectedSuccess}, is {success}")
 
-    result.extend(makeDiff(expectedStdout, stdout, "stdout"))
-    result.extend(makeDiff(expectedStderr, stderr, "stderr"))
+    stdoutDiff = makeDiff(expectedStdout, stdout, "stdout")
+    if stdoutDiff:
+        result.append(warnStr("Stdout differs"))
+        result.extend(stdoutDiff)
+
+    stderrDiff = makeDiff(expectedStderr, stderr, "stderr")
+    if stderrDiff:
+        result.append(warnStr("Stderr differs"))
+        result.extend(stderrDiff)
 
     return "\n".join(result)
 
@@ -168,8 +189,11 @@ def runCompileTest(file: str) -> "None | str":
             return "\n".join(result)
 
     if compilerResult[2] != 0:
-        result.append(f"Incorrect compiler exit code: Should be 0, is {compilerResult[2]}")
-        result.extend(compilerResult[1])
+        result.append(warnStr("Incorrect compiler exit code"))
+        result.append(f"Should be 0, is {compilerResult[2]}")
+        if compilerResult[1]:
+            result.append(warnStr("Compiler stderr:"))
+            result.extend(compilerResult[1])
 
     def getLlvmOutputFile(file: str) -> str:
         slash = file.rfind("/")
@@ -179,12 +203,15 @@ def runCompileTest(file: str) -> "None | str":
 
     compilerOutputFile = getLlvmOutputFile(file)
     if not os.path.exists(compilerOutputFile):
-        result.append(f"Could not find file `{compilerOutputFile}`")
+        result.append(warnStr(f"Could not find file {compilerOutputFile}"))
         return cleanupAndGetResult()
 
     actualLlvmCode = readFile(compilerOutputFile)
 
-    result.extend(makeDiff(expectedLlvmCode, actualLlvmCode, "LLVM code output"))
+    llvmDiff = makeDiff(expectedLlvmCode, actualLlvmCode, "LLVM code output")
+    if llvmDiff:
+        result.append(warnStr("Generated LLVM file differs"))
+        result.extend(llvmDiff)
 
     if update:
         with open(expectedFile, "w") as f:
@@ -198,18 +225,19 @@ def runCompileTest(file: str) -> "None | str":
     try:
         expectedExitCode = int("\n".join(expectedExitCode))
     except ValueError:
-        result.append("Warning: Cannot get exit code from file " + exitCodeFile)
+        result.append(warnStr(f"Warning: Cannot get exit code from file {exitCodeFile}"))
         cleanupAndGetResult()
 
     lliStderr, exitCode = executeLlvmFile(compilerOutputFile)
 
     if exitCode == None:
-        result.append("An error occurred while executing LLI")
+        result.append(warnStr("An error occurred while executing LLI"))
     elif exitCode != expectedExitCode:
-        result.append(f"Incorrect output of generated LLVM file: Should be {expectedExitCode}, is {exitCode}")
+        result.append(warnStr("Incorrect output of generated LLVM file"))
+        result.append(f"Should be {expectedExitCode}, is {exitCode}")
     
     if lliStderr:
-        result.append("An error occurred while interpreting the generated LLVM file")
+        result.append(warnStr("An error occurred while interpreting the generated LLVM file"))
         result.extend(lliStderr)
 
     return cleanupAndGetResult()
@@ -219,7 +247,7 @@ successCount, failedCount, skippedCount = 0, 0, 0
 def runTest(file: str):
     global successCount, failedCount, skippedCount
     os.system('')
-    print(f"\033[94m{file[6:]}\033[90m ... \033[0m", end = "")
+    print(f"{TColor.BLUE}{file[6:]}{TColor.GRAY} ... {TColor.RESET}", end = "")
 
     tokenizeResult: "None | str" = runTokenizeTest(file)
     parseResult: "None | str" = runParseTest(file)
@@ -227,30 +255,30 @@ def runTest(file: str):
     compileResult: "None | str" = runCompileTest(file)
 
     if tokenizeResult == None and parseResult == None and formatResult == None and compileResult == None:
-        print("\033[93mSKIPPED\033[0m")
+        print(f"{TColor.WARN}SKIPPED{TColor.RESET}")
         skippedCount += 1
     elif tokenizeResult != None and tokenizeResult != "":
-        print("\033[91mFAILED (tokenize)\033[0m")
+        print(f"{TColor.FAIL}FAILED (tokenize){TColor.RESET}")
         if verbose or fullDiff:
             print(tokenizeResult)
         failedCount += 1
     elif parseResult != None and parseResult != "":
-        print("\033[91mFAILED (parse)\033[0m")
+        print(f"{TColor.FAIL}FAILED (parse){TColor.RESET}")
         if verbose or fullDiff:
             print(parseResult)
         failedCount += 1
     elif formatResult != None and formatResult != "":
-        print("\033[91mFAILED (format)\033[0m")
+        print(f"{TColor.FAIL}FAILED (format){TColor.RESET}")
         if verbose or fullDiff:
             print(formatResult)
         failedCount += 1
     elif compileResult != None and compileResult != "":
-        print("\033[91mFAILED (compile)\033[0m")
+        print(f"{TColor.FAIL}FAILED (compile){TColor.RESET}")
         if verbose or fullDiff:
             print(compileResult)
         failedCount += 1
     else:
-        print("\033[92mOK\033[0m")
+        print(f"{TColor.SUCCESS}OK{TColor.RESET}")
         successCount += 1
 
 if not ci:
@@ -260,10 +288,10 @@ for test in tests:
     result = runTest(test)
 
 os.system('')
-print(f"""\033[97m{len(tests)} tests executed: \
-\033[92m{successCount} ok\033[97m, \
-\033[91m{failedCount} failed\033[97m, \
-\033[93m{skippedCount} skipped\033[97m.\033[0m""")
+print(f"""{TColor.WHITE}{len(tests)} tests executed: \
+{TColor.SUCCESS}{successCount} ok{TColor.WHITE}, \
+{TColor.FAIL}{failedCount} failed{TColor.WHITE}, \
+{TColor.WARN}{skippedCount} skipped{TColor.WHITE}.{TColor.RESET}""")
 
 if failedCount > 0:
     exit(1)
