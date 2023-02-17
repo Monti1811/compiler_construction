@@ -478,6 +478,9 @@ void ReturnStatement::typecheck(ScopePtr &scope)
     {
         errorloc(this->loc, "return type and type of return expr did not match");
     }
+    if (expr_type->kind == TY_NULLPTR && return_type->kind == TypeKind::TY_INT) {
+        _expr.value()->type = INT_TYPE;
+    }
 }
 
 void ReturnStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)

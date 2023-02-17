@@ -862,9 +862,7 @@ llvm::Value* DerefExpression::compileRValue(std::shared_ptr<CompileScope> Compil
 }
 
 llvm::Value* DerefExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    auto expr_value = this->_inner->compileLValue(CompileScopePtr);
-    auto expr_type = this->_inner->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-    return CompileScopePtr->_Builder.CreateLoad(expr_type, expr_value);
+    return this->_inner->compileRValue(CompileScopePtr);
 }
 
 llvm::Value* NegationExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -898,6 +896,13 @@ llvm::Value* MultiplyExpression::compileRValue(std::shared_ptr<CompileScope> Com
 llvm::Value* AddExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
     llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+    // If one of them is pointer, get the pointer shifted by the value of the second operand
+    if (value_lhs->getType()->isPointerTy()) {
+        return CompileScopePtr->_Builder.CreateInBoundsGEP(CompileScopePtr->_Builder.getInt32Ty(), value_lhs, value_rhs);
+    }
+    if (value_rhs->getType()->isPointerTy()) {
+        return CompileScopePtr->_Builder.CreateInBoundsGEP(CompileScopePtr->_Builder.getInt32Ty(), value_rhs, value_lhs);
+    }
     return CompileScopePtr->_Builder.CreateAdd(value_lhs, value_rhs);
 }
 
