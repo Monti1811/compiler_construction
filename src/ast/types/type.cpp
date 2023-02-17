@@ -84,7 +84,7 @@ void Type::print(std::ostream& stream) {
 bool Type::equals(TypePtr const& other) {
     if (this->kind != other->kind) {
         if (
-            (this->isArithmetic() && other->isArithmetic())
+            (this->isInteger() && other->isInteger())
             || (this->kind == TY_NULLPTR && other->kind == TY_POINTER)
             || (this->kind == TY_POINTER && other->kind == TY_NULLPTR)
         ) {
