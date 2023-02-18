@@ -118,7 +118,7 @@ struct StringLiteralExpression: public Expression {
 
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
-    private:
+
     std::string _value;
 };
 
