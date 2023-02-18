@@ -1,0 +1,16 @@
+; ModuleID = 'tests/compiler/exprs/zero/int.c4'
+source_filename = "tests/compiler/exprs/zero/int.c4"
+
+define i32 @main() {
+entry:
+  %0 = alloca ptr, align 8
+  %1 = alloca i32, align 4
+  %2 = alloca ptr, align 8
+  store i32 0, ptr %1, align 4
+  store ptr null, ptr %2, align 8
+  %3 = load ptr, ptr %2, align 8
+  %4 = load i32, ptr %1, align 4
+  %5 = getelementptr inbounds i32, ptr %3, i32 %4
+  store ptr %5, ptr %0, align 8
+  ret i32 0
+}
