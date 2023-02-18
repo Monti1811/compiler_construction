@@ -482,7 +482,7 @@ TypePtr EqualExpression::typecheck(ScopePtr& scope) {
     if (left_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
         _left->type = INT_TYPE;
     }
-    if (right_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
+    if (right_type->kind == TY_NULLPTR && left_type->kind != TY_POINTER) {
         _right->type = INT_TYPE;
     }
     this->type = INT_TYPE;
@@ -500,7 +500,7 @@ TypePtr UnequalExpression::typecheck(ScopePtr& scope) {
     if (left_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
         _left->type = INT_TYPE;
     }
-    if (right_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
+    if (right_type->kind == TY_NULLPTR && left_type->kind != TY_POINTER) {
         _right->type = INT_TYPE;
     }
     this->type = INT_TYPE;
@@ -517,7 +517,7 @@ TypePtr AndExpression::typecheck(ScopePtr& scope) {
     if (left_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
         _left->type = INT_TYPE;
     }
-    if (right_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
+    if (right_type->kind == TY_NULLPTR && left_type->kind != TY_POINTER) {
         _right->type = INT_TYPE;
     }
     this->type = INT_TYPE;
@@ -534,7 +534,7 @@ TypePtr OrExpression::typecheck(ScopePtr& scope) {
     if (left_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
         _left->type = INT_TYPE;
     }
-    if (right_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
+    if (right_type->kind == TY_NULLPTR && left_type->kind != TY_POINTER) {
         _right->type = INT_TYPE;
     }
     this->type = INT_TYPE;
@@ -555,7 +555,7 @@ TypePtr TernaryExpression::typecheck(ScopePtr& scope) {
     if (left_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
         _left->type = INT_TYPE;
     }
-    if (right_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
+    if (right_type->kind == TY_NULLPTR && left_type->kind != TY_POINTER) {
         _right->type = INT_TYPE;
     }
     this->type = left_type;
@@ -812,9 +812,24 @@ llvm::Value* ArrowExpression::compileLValue(std::shared_ptr<CompileScope> Compil
 }
 
 llvm::Value* SizeofExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    auto inner_type = this->_inner->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-    auto size = CompileScopePtr->_Module.getDataLayout().getTypeAllocSize(inner_type);
-    return CompileScopePtr->_Builder.getInt32(size);
+    if (this->_inner->type == STRING_TYPE) {
+        // TODO: Strings that are like this: *&"foos"
+        auto string = static_cast<StringLiteralExpression*>(this->_inner.get());
+        return CompileScopePtr->_Builder.getInt32(string->_value.length()-1);
+    }
+    switch (this->_inner->type->kind) {
+        case TY_INT: return CompileScopePtr->_Builder.getInt32(4);
+        case TY_CHAR: return CompileScopePtr->_Builder.getInt32(1);
+        case TY_VOID: return CompileScopePtr->_Builder.getInt32(1);
+        case TY_POINTER: return CompileScopePtr->_Builder.getInt32(8);
+        case TY_NULLPTR: return CompileScopePtr->_Builder.getInt32(8);
+        case TY_STRUCT: {
+            auto inner_type = this->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+            return CompileScopePtr->_Builder.getInt32(CompileScopePtr->_Module.getDataLayout().getTypeAllocSize(inner_type));
+        }
+        default:
+            error("sizeof type cannot be compiled");
+    }
 }
 
 llvm::Value* SizeofExpression::compileLValue(std::shared_ptr<CompileScope>) {
@@ -909,6 +924,12 @@ llvm::Value* AddExpression::compileRValue(std::shared_ptr<CompileScope> CompileS
 llvm::Value* SubstractExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
     llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+    if (value_lhs->getType()->isPointerTy() && value_rhs->getType()->isPointerTy()) {
+        value_lhs = CompileScopePtr->_Builder.CreatePtrToInt(value_lhs, CompileScopePtr->_Builder.getInt32Ty());
+        value_rhs = CompileScopePtr->_Builder.CreatePtrToInt(value_rhs, CompileScopePtr->_Builder.getInt32Ty());
+        llvm::Value* sub_exp = CompileScopePtr->_Builder.CreateSub(value_lhs, value_rhs);
+        return CompileScopePtr->_Builder.CreateExactSDiv(sub_exp, CompileScopePtr->_Builder.getInt32(4));
+    }
     return CompileScopePtr->_Builder.CreateSub(value_lhs, value_rhs);
 }
 
@@ -927,7 +948,7 @@ llvm::Value* EqualExpression::compileRValue(std::shared_ptr<CompileScope> Compil
 llvm::Value* UnequalExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
     llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateICmpULT(value_lhs, value_rhs);
+    return CompileScopePtr->_Builder.CreateICmpNE(value_lhs, value_rhs);
 }
 
 llvm::Value* AndExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {

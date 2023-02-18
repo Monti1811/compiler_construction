@@ -4,8 +4,9 @@ source_filename = "tests/compiler/function/label.c4"
 define i32 @main() {
 entry:
   %0 = alloca i32, align 4
+  br label %label_BLOCK
 
-label_BLOCK:                                      ; preds = %if-consequence
+label_BLOCK:                                      ; preds = %if-consequence, %entry
   %1 = load i32, ptr %0, align 4
   %2 = add i32 %1, 1
   store i32 %2, ptr %0, align 4
@@ -18,15 +19,17 @@ if-header:                                        ; preds = %label_BLOCK
 
 if-consequence:                                   ; preds = %if-header
   br label %label_BLOCK
-  br label %if-end
 
 if-alternative:                                   ; preds = %if-header
   %4 = load i32, ptr %0, align 4
   ret i32 %4
 
-if-end:                                           ; preds = %DEAD_BLOCK, %if-consequence
+if-end:                                           ; preds = %DEAD_BLOCK1, %DEAD_BLOCK
   ret i32 0
 
 DEAD_BLOCK:                                       ; No predecessors!
+  br label %if-end
+
+DEAD_BLOCK1:                                      ; No predecessors!
   br label %if-end
 }

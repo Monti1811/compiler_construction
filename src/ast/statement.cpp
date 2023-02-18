@@ -46,6 +46,7 @@ void LabeledStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
         CompileScopePtr->_Ctx,
         *(this->_name) + "_BLOCK",
         CompileScopePtr->_ParentFunction.value()            );
+    CompileScopePtr->_Builder.CreateBr(labeledBlock);
     CompileScopePtr->addLabeledBlock(this->_name, labeledBlock);
     CompileScopePtr->_Builder.SetInsertPoint(labeledBlock);
     auto inner_compile_scope_ptr = std::make_shared<CompileScope>(CompileScopePtr);
@@ -229,6 +230,10 @@ void IfStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
     /* Set the header of the IfStmt as the new insert point */
     CompileScopePtr->_Builder.SetInsertPoint(IfHeaderBlock);
     llvm::Value *value_condition = this->_condition->compileRValue(CompileScopePtr);
+    // If the condition is an int32 (int1 are bools), make a check if it's not equal 0 (true) or equal 0 (false)
+    if (value_condition->getType()->isIntegerTy(32)) {
+        value_condition = CompileScopePtr->_Builder.CreateICmpNE(value_condition, CompileScopePtr->_Builder.getInt32(0));
+    }
     /* Change the name of the IfStmt condition (after the creation) */
     value_condition->setName("if-condition");
     /* Add a basic block for the consequence of the IfStmt */
@@ -339,6 +344,10 @@ void WhileStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
     CompileScopePtr->_Builder.SetInsertPoint(WhileHeaderBlock);
 
     llvm::Value *while_condition = this->_condition->compileRValue(CompileScopePtr);
+    // If the condition is an int32 (int1 are bools), make a check if it's not equal 0 (true) or equal 0 (false)
+    if (while_condition->getType()->isIntegerTy(32)) {
+        while_condition = CompileScopePtr->_Builder.CreateICmpNE(while_condition, CompileScopePtr->_Builder.getInt32(0));
+    }
 
     /* Add a basic block for the consequence of the WhileStmt */
     llvm::BasicBlock *WhileBodyBlock = llvm::BasicBlock::Create(
@@ -403,6 +412,12 @@ void GotoStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
     if (labeledBlock.has_value()) {
         CompileScopePtr->_Builder.CreateBr(labeledBlock.value());
     }
+    llvm::BasicBlock *ReturnDeadBlock = llvm::BasicBlock::Create(
+        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        "DEAD_BLOCK" /* const Twine &Name="" */,
+        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        0 /* BasicBlock *InsertBefore=0 */);
+    CompileScopePtr->_Builder.SetInsertPoint(ReturnDeadBlock);
 }
 
 void ContinueStatement::typecheck(ScopePtr &scope)
@@ -420,6 +435,12 @@ void ContinueStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
     if (ContinueBlock.has_value()) {
         CompileScopePtr->_Builder.CreateBr(ContinueBlock.value());
     }
+    llvm::BasicBlock *ReturnDeadBlock = llvm::BasicBlock::Create(
+        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        "DEAD_BLOCK" /* const Twine &Name="" */,
+        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        0 /* BasicBlock *InsertBefore=0 */);
+    CompileScopePtr->_Builder.SetInsertPoint(ReturnDeadBlock);
 }
 
 void BreakStatement::typecheck(ScopePtr &scope)
@@ -437,6 +458,12 @@ void BreakStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
     if (BreakBlock.has_value()) {
         CompileScopePtr->_Builder.CreateBr(BreakBlock.value());
     }
+    llvm::BasicBlock *ReturnDeadBlock = llvm::BasicBlock::Create(
+        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        "DEAD_BLOCK" /* const Twine &Name="" */,
+        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        0 /* BasicBlock *InsertBefore=0 */);
+    CompileScopePtr->_Builder.SetInsertPoint(ReturnDeadBlock);
 }
 
 void ReturnStatement::print(std::ostream &stream)
