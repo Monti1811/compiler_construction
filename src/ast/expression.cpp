@@ -681,8 +681,46 @@ llvm::Value* CharConstantExpression::compileLValue(std::shared_ptr<CompileScope>
     errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
+std::string StringLiteralExpression::getString() {
+    auto result = std::string("");
+
+    // Loop through all chars, except for the first and last one (those are always double quotes)
+    for (int i = 1; i < this->_value.length() - 1; i++) {
+        auto ch = this->_value[i];
+        if (ch != '\\') {
+            result += ch;
+            continue;
+        }
+        // Escape codes
+        i++;
+        ch = this->_value[i];
+
+        const std::unordered_map<char, char> ESCAPE_CHARS = {
+            {'\'', '\''},
+            {'"', '"'},
+            {'?', '?'},
+            {'\\', '\\'},
+            {'a', '\a'},
+            {'b', '\b'},
+            {'f', '\f'},
+            {'n', '\n'},
+            {'r', '\r'},
+            {'t', '\t'},
+            {'v', '\v'}
+        };
+
+        if (ESCAPE_CHARS.find(ch) == ESCAPE_CHARS.end()) {
+            errorloc(this->loc, "Unknown escape code \\", ch);
+        }
+
+        result += ESCAPE_CHARS.at(ch);
+    }
+
+    return result;
+}
+
 llvm::Value* StringLiteralExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    return CompileScopePtr->_Builder.CreateGlobalStringPtr(this->_value);
+    return CompileScopePtr->_Builder.CreateGlobalStringPtr(this->getString());
 }
 
 llvm::Value* StringLiteralExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {

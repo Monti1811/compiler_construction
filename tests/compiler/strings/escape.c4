@@ -1,0 +1,16 @@
+int main(void) {
+    char* str;
+    str = "\r\n\b\\\"\'";
+
+    int result;
+    result = 0;
+
+    int i;
+    i = 0;
+    while (i < 6) {
+        result = result + str[i];
+        i = i + 1;
+    }
+
+    return result;
+}

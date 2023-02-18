@@ -1,0 +1,8 @@
+int main(void) {
+    int x;
+    char* s;
+    s = "Hi";
+    // H = 72, i = 105
+    x = s[0] + s[1] * 256;
+    return x;
+}
