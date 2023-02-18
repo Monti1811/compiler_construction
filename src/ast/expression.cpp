@@ -927,7 +927,7 @@ llvm::Value* EqualExpression::compileRValue(std::shared_ptr<CompileScope> Compil
 llvm::Value* UnequalExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
     llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateICmpULT(value_lhs, value_rhs);
+    return CompileScopePtr->_Builder.CreateICmpNE(value_lhs, value_rhs);
 }
 
 llvm::Value* AndExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
