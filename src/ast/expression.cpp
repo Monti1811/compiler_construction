@@ -74,6 +74,10 @@ void TernaryExpression::print(std::ostream& stream) {
     stream << '(' << this->_condition << " ? " << this->_left << " : " << this->_right << ')';
 }
 
+void CastExpression::print(std::ostream& stream) {
+    stream << this->_inner;
+}
+
 // typecheck functions
 
 TypePtr Expression::typecheckWrap(ScopePtr& scope) {
@@ -363,14 +367,12 @@ TypePtr BinaryExpression::typecheck(ScopePtr& scope) {
     if (!left_type->isArithmetic() || !right_type->isArithmetic()) {
         errorloc(this->loc, "both sides of an arithmetic binary expression must be of arithemic type");
     }
+
     this->type = INT_TYPE;
-    // Set correct type for nullptr
-    if (left_type->kind == TY_NULLPTR) {
-        _left->type = INT_TYPE;
-    }
-    if (right_type->kind == TY_NULLPTR) {
-        _right->type = INT_TYPE;
-    }
+
+    this->_left = castExpression(std::move(this->_left), INT_TYPE);
+    this->_right = castExpression(std::move(this->_right), INT_TYPE);
+
     return this->type;
 }
 
@@ -379,22 +381,25 @@ TypePtr AddExpression::typecheck(ScopePtr& scope) {
     auto right_type = _right->typecheckWrap(scope);
 
     if (left_type->isArithmetic() && right_type->isArithmetic()) {
-        // Set correct type for nullptr
-        if (left_type->kind == TY_NULLPTR) {
-            _left->type = INT_TYPE;
-        }
-        if (right_type->kind == TY_NULLPTR) {
-            _right->type = INT_TYPE;
-        }
         this->type = INT_TYPE;
+
+        this->_left = castExpression(std::move(this->_left), INT_TYPE);
+        this->_right = castExpression(std::move(this->_right), INT_TYPE);
+
         return this->type;
     }
+
     if (left_type->kind == TY_POINTER && right_type->isArithmetic()) {
         this->type = left_type;
+        this->_right = castExpression(std::move(this->_right), INT_TYPE);
+
         return this->type;
     }
+
     if (left_type->isArithmetic() && right_type->kind == TY_POINTER) {
         this->type = right_type;
+        this->_left = castExpression(std::move(this->_left), INT_TYPE);
+
         return this->type;
     }
 
@@ -406,14 +411,11 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
     auto right_type = _right->typecheckWrap(scope);
 
     if (left_type->isArithmetic() && right_type->isArithmetic()) {
-        // Set correct type for nullptr
-        if (left_type->kind == TY_NULLPTR) {
-            _left->type = INT_TYPE;
-        }
-        if (right_type->kind == TY_NULLPTR) {
-            _right->type = INT_TYPE;
-        }
         this->type = INT_TYPE;
+
+        this->_left = castExpression(std::move(this->_left), INT_TYPE);
+        this->_right = castExpression(std::move(this->_right), INT_TYPE);
+
         return this->type;
     }
     if (left_type->kind == TY_POINTER && right_type->kind == TY_POINTER && left_type->equals(right_type)) {
@@ -460,14 +462,12 @@ TypePtr LessThanExpression::typecheck(ScopePtr& scope) {
     if (!left_type->equals(right_type)) {
         errorloc(this->loc, "Cannot compare two values of different types");
     }
-    // Set correct type for nullptr
-    if (left_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
-        _left->type = INT_TYPE;
-    }
-    if (right_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
-        _right->type = INT_TYPE;
-    }
+
     this->type = INT_TYPE;
+
+    this->_left = castExpression(std::move(this->_left), INT_TYPE);
+    this->_right = castExpression(std::move(this->_right), INT_TYPE);
+
     return this->type;
 }
 
@@ -478,14 +478,13 @@ TypePtr EqualExpression::typecheck(ScopePtr& scope) {
     if (!left_type->equals(right_type)) {
         errorloc(this->loc, "Cannot compare two values of different types");
     }
-    // Set correct type for nullptr
-    if (left_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
-        _left->type = INT_TYPE;
-    }
-    if (right_type->kind == TY_NULLPTR && left_type->kind != TY_POINTER) {
-        _right->type = INT_TYPE;
-    }
+
     this->type = INT_TYPE;
+
+    // TODO: incorrect for the general case!
+    this->_left = castExpression(std::move(this->_left), INT_TYPE);
+    this->_right = castExpression(std::move(this->_right), INT_TYPE);
+
     return this->type;
 }
 
@@ -496,14 +495,13 @@ TypePtr UnequalExpression::typecheck(ScopePtr& scope) {
     if (!left_type->equals(right_type)) {
         errorloc(this->loc, "Cannot compare two values of different types");
     }
-    // Set correct type for nullptr
-    if (left_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
-        _left->type = INT_TYPE;
-    }
-    if (right_type->kind == TY_NULLPTR && left_type->kind != TY_POINTER) {
-        _right->type = INT_TYPE;
-    }
+
     this->type = INT_TYPE;
+
+    // TODO: incorrect for the general case!
+    this->_left = castExpression(std::move(this->_left), INT_TYPE);
+    this->_right = castExpression(std::move(this->_right), INT_TYPE);
+
     return this->type;
 }
 
@@ -513,14 +511,12 @@ TypePtr AndExpression::typecheck(ScopePtr& scope) {
     if (!left_type->isScalar() || !right_type->isScalar()) {
         errorloc(this->loc, "Both sides of a logical and expression must be scalar types");
     }
-    // Set correct type for nullptr
-    if (left_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
-        _left->type = INT_TYPE;
-    }
-    if (right_type->kind == TY_NULLPTR && left_type->kind != TY_POINTER) {
-        _right->type = INT_TYPE;
-    }
+
     this->type = INT_TYPE;
+
+    this->_left = castExpression(std::move(this->_left), INT_TYPE);
+    this->_right = castExpression(std::move(this->_right), INT_TYPE);
+
     return this->type;
 }
 
@@ -530,14 +526,12 @@ TypePtr OrExpression::typecheck(ScopePtr& scope) {
     if (!left_type->isScalar() || !right_type->isScalar()) {
         errorloc(this->loc, "Both sides of a logical and expression must be scalar types");
     }
-    // Set correct type for nullptr
-    if (left_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
-        _left->type = INT_TYPE;
-    }
-    if (right_type->kind == TY_NULLPTR && left_type->kind != TY_POINTER) {
-        _right->type = INT_TYPE;
-    }
+
     this->type = INT_TYPE;
+
+    this->_left = castExpression(std::move(this->_left), INT_TYPE);
+    this->_right = castExpression(std::move(this->_right), INT_TYPE);
+
     return this->type;
 }
 
@@ -551,14 +545,12 @@ TypePtr TernaryExpression::typecheck(ScopePtr& scope) {
     if (!left_type->equals(right_type)) {
         errorloc(this->loc, "Left and right type of ternary expression must be equal");
     }
-    // Set correct type for nullptr
-    if (left_type->kind == TY_NULLPTR && right_type->kind != TY_POINTER) {
-        _left->type = INT_TYPE;
-    }
-    if (right_type->kind == TY_NULLPTR && left_type->kind != TY_POINTER) {
-        _right->type = INT_TYPE;
-    }
+
     this->type = left_type;
+
+    this->_left = castExpression(std::move(this->_left), left_type);
+    this->_right = castExpression(std::move(this->_right), left_type);
+
     return this->type;
 }
 
@@ -589,13 +581,10 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
     // and the right has arithmetic type;
     if (left_type->isArithmetic() && right_type->isArithmetic()) {
         this->type = left_type;
-        // Set correct type for nullptr
-        if (left_type->kind == TY_NULLPTR) {
-            _left->type = INT_TYPE;
-        }
-        if (right_type->kind == TY_NULLPTR) {
-            _right->type = INT_TYPE;
-        }
+
+        this->_left = castExpression(std::move(this->_left), INT_TYPE);
+        this->_right = castExpression(std::move(this->_right), INT_TYPE);
+
         return this->type;
     }
 
@@ -643,6 +632,11 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
     errorloc(this->loc, "wrong assign");
 }
 
+TypePtr CastExpression::typecheck(ScopePtr& scope) {
+    // Cast Expression does not exist during typecheck phase, so just return type that is being cast to
+    return this->type;
+}
+
 
 llvm::Value* IdentExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     // If it's a function, don't load the function
@@ -670,14 +664,9 @@ llvm::Value* IntConstantExpression::compileLValue(std::shared_ptr<CompileScope> 
 }
 
 llvm::Value* NullPtrExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO: Currently type is NULLPTR so isPointer will always give back true
-    if (this->type->isPointer()) {
-        auto type = CompileScopePtr->_Builder.getPtrTy();
-        return llvm::ConstantPointerNull::get(type);
-    } else {
-        return CompileScopePtr->_Builder.getInt32(0);
-    }
-    //return CompileScopePtr->_Builder.getInt32(0);
+    // We assume that all null pointer constants that are of type int or char have already been cast
+    auto type = CompileScopePtr->_Builder.getPtrTy();
+    return llvm::ConstantPointerNull::get(type);
 }
 
 llvm::Value* NullPtrExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -983,4 +972,45 @@ llvm::Value* AssignExpression::compileRValue(std::shared_ptr<CompileScope> Compi
 
 llvm::Value* AssignExpression::compileLValue(std::shared_ptr<CompileScope>) {
     errorloc(this->loc,"cannot compute l-value of this expression");
+}
+
+llvm::Value* CastExpression::compileRValue(std::shared_ptr<CompileScope> compile_scope) {
+    auto converted_expr = this->convertNullptrs(compile_scope);
+    if (converted_expr.has_value()) {
+        return converted_expr.value();
+    }
+    // TODO: Properly cast (i.e. from int to char and vice-versa)
+    // we can use compile_scope->_Builder.Create[*]Cast() methods for that
+    return this->_inner->compileRValue(compile_scope);
+}
+
+llvm::Value* CastExpression::compileLValue(std::shared_ptr<CompileScope> compile_scope) {
+    auto converted_expr = this->convertNullptrs(compile_scope);
+    if (converted_expr.has_value()) {
+        return converted_expr.value();
+    }
+    // TODO: Properly cast (i.e. from int to char and vice-versa)
+    // we can use compile_scope->_Builder.Create[*]Cast() methods for that
+    return this->_inner->compileLValue(compile_scope);
+}
+
+std::optional<llvm::Value*> CastExpression::convertNullptrs(std::shared_ptr<CompileScope> compile_scope) {
+    if (this->_inner->type->kind != TypeKind::TY_NULLPTR) {
+        return std::nullopt;
+    }
+
+    if (this->type->kind == TypeKind::TY_INT) {
+        return compile_scope->_Builder.getInt32(0);
+    } else if (this->type->kind == TypeKind::TY_CHAR) {
+        return compile_scope->_Builder.getInt8(0);
+    } else {
+        errorloc(this->loc, "Invalid usage of null pointer constant");
+    }
+}
+
+ExpressionPtr castExpression(ExpressionPtr expr, TypePtr type) {
+    auto loc = expr->loc;
+    auto cast = std::make_unique<CastExpression>(loc, std::move(expr));
+    cast->type = type;
+    return cast;
 }

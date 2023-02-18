@@ -505,8 +505,9 @@ void ReturnStatement::typecheck(ScopePtr &scope)
     {
         errorloc(this->loc, "return type and type of return expr did not match");
     }
-    if (expr_type->kind == TY_NULLPTR && return_type->kind == TypeKind::TY_INT) {
-        _expr.value()->type = INT_TYPE;
+
+    if (this->_expr.has_value()) {
+        this->_expr.value() = castExpression(std::move(this->_expr.value()), return_type);
     }
 }
 
