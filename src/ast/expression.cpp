@@ -368,10 +368,15 @@ TypePtr BinaryExpression::typecheck(ScopePtr& scope) {
         errorloc(this->loc, "both sides of an arithmetic binary expression must be of arithemic type");
     }
 
-    this->type = INT_TYPE;
+    auto unified_type = unifyTypes(left_type, right_type);
+    if (unified_type.has_value()) {
+        this->type = unified_type.value();
 
-    this->_left = castExpression(std::move(this->_left), INT_TYPE);
-    this->_right = castExpression(std::move(this->_right), INT_TYPE);
+        this->_left = castExpression(std::move(this->_left), unified_type.value());
+        this->_right = castExpression(std::move(this->_right), unified_type.value());
+    } else {
+        this->type = INT_TYPE;
+    }
 
     return this->type;
 }
@@ -381,10 +386,15 @@ TypePtr AddExpression::typecheck(ScopePtr& scope) {
     auto right_type = _right->typecheckWrap(scope);
 
     if (left_type->isArithmetic() && right_type->isArithmetic()) {
-        this->type = INT_TYPE;
+        auto unified_type = unifyTypes(left_type, right_type);
+        if (unified_type.has_value()) {
+            this->type = unified_type.value();
 
-        this->_left = castExpression(std::move(this->_left), INT_TYPE);
-        this->_right = castExpression(std::move(this->_right), INT_TYPE);
+            this->_left = castExpression(std::move(this->_left), unified_type.value());
+            this->_right = castExpression(std::move(this->_right), unified_type.value());
+        } else {
+            this->type = left_type;
+        }
 
         return this->type;
     }
@@ -411,10 +421,15 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
     auto right_type = _right->typecheckWrap(scope);
 
     if (left_type->isArithmetic() && right_type->isArithmetic()) {
-        this->type = INT_TYPE;
+        auto unified_type = unifyTypes(left_type, right_type);
+        if (unified_type.has_value()) {
+            this->type = unified_type.value();
 
-        this->_left = castExpression(std::move(this->_left), INT_TYPE);
-        this->_right = castExpression(std::move(this->_right), INT_TYPE);
+            this->_left = castExpression(std::move(this->_left), unified_type.value());
+            this->_right = castExpression(std::move(this->_right), unified_type.value());
+        } else {
+            this->type = left_type;
+        }
 
         return this->type;
     }
@@ -459,14 +474,15 @@ TypePtr LessThanExpression::typecheck(ScopePtr& scope) {
     auto left_type = this->_left->typecheckWrap(scope);
     auto right_type = this->_right->typecheckWrap(scope);
 
-    if (!left_type->equals(right_type)) {
-        errorloc(this->loc, "Cannot compare two values of different types");
-    }
-
     this->type = INT_TYPE;
 
-    this->_left = castExpression(std::move(this->_left), INT_TYPE);
-    this->_right = castExpression(std::move(this->_right), INT_TYPE);
+    auto unified_type = unifyTypes(left_type, right_type);
+    if (unified_type.has_value()) {
+        this->_left = castExpression(std::move(this->_left), unified_type.value());
+        this->_right = castExpression(std::move(this->_right), unified_type.value());
+    } else if (!left_type->equals(right_type)) {
+        errorloc(this->loc, "Cannot compare two values of different types");
+    }
 
     return this->type;
 }
@@ -475,15 +491,15 @@ TypePtr EqualExpression::typecheck(ScopePtr& scope) {
     auto left_type = this->_left->typecheckWrap(scope);
     auto right_type = this->_right->typecheckWrap(scope);
 
-    if (!left_type->equals(right_type)) {
-        errorloc(this->loc, "Cannot compare two values of different types");
-    }
-
     this->type = INT_TYPE;
 
-    // TODO: incorrect for the general case!
-    this->_left = castExpression(std::move(this->_left), INT_TYPE);
-    this->_right = castExpression(std::move(this->_right), INT_TYPE);
+    auto unified_type = unifyTypes(left_type, right_type);
+    if (unified_type.has_value()) {
+        this->_left = castExpression(std::move(this->_left), unified_type.value());
+        this->_right = castExpression(std::move(this->_right), unified_type.value());
+    } else if (!left_type->equals(right_type)) {
+        errorloc(this->loc, "Cannot compare two values of different types");
+    }
 
     return this->type;
 }
@@ -492,15 +508,15 @@ TypePtr UnequalExpression::typecheck(ScopePtr& scope) {
     auto left_type = this->_left->typecheckWrap(scope);
     auto right_type = this->_right->typecheckWrap(scope);
 
-    if (!left_type->equals(right_type)) {
-        errorloc(this->loc, "Cannot compare two values of different types");
-    }
-
     this->type = INT_TYPE;
 
-    // TODO: incorrect for the general case!
-    this->_left = castExpression(std::move(this->_left), INT_TYPE);
-    this->_right = castExpression(std::move(this->_right), INT_TYPE);
+    auto unified_type = unifyTypes(left_type, right_type);
+    if (unified_type.has_value()) {
+        this->_left = castExpression(std::move(this->_left), unified_type.value());
+        this->_right = castExpression(std::move(this->_right), unified_type.value());
+    } else if (!left_type->equals(right_type)) {
+        errorloc(this->loc, "Cannot compare two values of different types");
+    }
 
     return this->type;
 }
@@ -514,8 +530,13 @@ TypePtr AndExpression::typecheck(ScopePtr& scope) {
 
     this->type = INT_TYPE;
 
-    this->_left = castExpression(std::move(this->_left), INT_TYPE);
-    this->_right = castExpression(std::move(this->_right), INT_TYPE);
+    auto unified_type = unifyTypes(left_type, right_type);
+    if (unified_type.has_value()) {
+        this->_left = castExpression(std::move(this->_left), unified_type.value());
+        this->_right = castExpression(std::move(this->_right), unified_type.value());
+    } else if (!left_type->equals(right_type)) {
+        errorloc(this->loc, "Cannot compare two values of different types");
+    }
 
     return this->type;
 }
@@ -529,8 +550,13 @@ TypePtr OrExpression::typecheck(ScopePtr& scope) {
 
     this->type = INT_TYPE;
 
-    this->_left = castExpression(std::move(this->_left), INT_TYPE);
-    this->_right = castExpression(std::move(this->_right), INT_TYPE);
+    auto unified_type = unifyTypes(left_type, right_type);
+    if (unified_type.has_value()) {
+        this->_left = castExpression(std::move(this->_left), unified_type.value());
+        this->_right = castExpression(std::move(this->_right), unified_type.value());
+    } else if (!left_type->equals(right_type)) {
+        errorloc(this->loc, "Cannot compare two values of different types");
+    }
 
     return this->type;
 }
@@ -546,10 +572,17 @@ TypePtr TernaryExpression::typecheck(ScopePtr& scope) {
         errorloc(this->loc, "Left and right type of ternary expression must be equal");
     }
 
-    this->type = left_type;
+    auto unified_type = unifyTypes(left_type, right_type);
+    if (unified_type.has_value()) {
+        this->type = unified_type.value();
 
-    this->_left = castExpression(std::move(this->_left), left_type);
-    this->_right = castExpression(std::move(this->_right), left_type);
+        this->_left = castExpression(std::move(this->_left), unified_type.value());
+        this->_right = castExpression(std::move(this->_right), unified_type.value());
+    } else if (left_type->equals(right_type)) {
+        this->type = left_type;
+    } else {
+        errorloc(this->loc, "Cannot compare two values of different types");
+    }
 
     return this->type;
 }
@@ -582,8 +615,9 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
     if (left_type->isArithmetic() && right_type->isArithmetic()) {
         this->type = left_type;
 
-        this->_left = castExpression(std::move(this->_left), INT_TYPE);
-        this->_right = castExpression(std::move(this->_right), INT_TYPE);
+        if (!right_type->equals(left_type)) {
+            this->_right = castExpression(std::move(this->_right), left_type);
+        }
 
         return this->type;
     }
@@ -1017,9 +1051,9 @@ llvm::Value* CastExpression::compileRValue(std::shared_ptr<CompileScope> compile
     if (converted_expr.has_value()) {
         return converted_expr.value();
     }
-    // TODO: Properly cast (i.e. from int to char and vice-versa)
-    // we can use compile_scope->_Builder.Create[*]Cast() methods for that
-    return this->_inner->compileRValue(compile_scope);
+
+    auto value = this->_inner->compileRValue(compile_scope);
+    return this->castArithmetics(compile_scope, value);
 }
 
 llvm::Value* CastExpression::compileLValue(std::shared_ptr<CompileScope> compile_scope) {
@@ -1027,9 +1061,9 @@ llvm::Value* CastExpression::compileLValue(std::shared_ptr<CompileScope> compile
     if (converted_expr.has_value()) {
         return converted_expr.value();
     }
-    // TODO: Properly cast (i.e. from int to char and vice-versa)
-    // we can use compile_scope->_Builder.Create[*]Cast() methods for that
-    return this->_inner->compileLValue(compile_scope);
+
+    auto value = this->_inner->compileLValue(compile_scope);
+    return this->castArithmetics(compile_scope, value);
 }
 
 std::optional<llvm::Value*> CastExpression::convertNullptrs(std::shared_ptr<CompileScope> compile_scope) {
@@ -1044,6 +1078,19 @@ std::optional<llvm::Value*> CastExpression::convertNullptrs(std::shared_ptr<Comp
     } else {
         errorloc(this->loc, "Invalid usage of null pointer constant");
     }
+}
+
+llvm::Value* CastExpression::castArithmetics(std::shared_ptr<CompileScope> compile_scope, llvm::Value* value) {
+    if (this->_inner->type->equals(this->type)) {
+        return value;
+    }
+
+    if (this->type->kind == TypeKind::TY_INT || this->type->kind == TypeKind::TY_CHAR) {
+        auto type = this->type->toLLVMType(compile_scope->_Builder, compile_scope->_Ctx);
+        return compile_scope->_Builder.CreateIntCast(value, type, true);
+    }
+
+    return value;
 }
 
 ExpressionPtr castExpression(ExpressionPtr expr, TypePtr type) {

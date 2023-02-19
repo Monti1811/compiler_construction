@@ -454,6 +454,7 @@ struct CastExpression: public Expression {
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> compile_scope);
 
     std::optional<llvm::Value*> convertNullptrs(std::shared_ptr<CompileScope> compile_scope);
+    llvm::Value* castArithmetics(std::shared_ptr<CompileScope> compile_scope, llvm::Value* value);
 
     ExpressionPtr _inner;
 };
