@@ -8,15 +8,21 @@ std::optional<TypePtr> unifyTypes(TypePtr left_type, TypePtr right_type) {
     auto left = left_type->kind;
     auto right = right_type->kind;
 
-    if (left == TypeKind::TY_CHAR && right == TypeKind::TY_INT) {
-        return INT_TYPE;
-    } else if (left == TypeKind::TY_INT && right == TypeKind::TY_CHAR) {
+    if ((left == TypeKind::TY_CHAR && right == TypeKind::TY_INT)
+        || (left == TypeKind::TY_INT && right == TypeKind::TY_CHAR)
+    ) {
         return INT_TYPE;
     }
 
-    if (left == TypeKind::TY_INT && right == TypeKind::TY_NULLPTR) {
+    if ((left == TypeKind::TY_INT && right == TypeKind::TY_NULLPTR) 
+        || (left == TypeKind::TY_NULLPTR && right == TypeKind::TY_INT)
+    ) {
         return INT_TYPE;
-    } else if (left == TypeKind::TY_NULLPTR && right == TypeKind::TY_INT) {
+    }
+
+    if ((left == TypeKind::TY_CHAR && right == TypeKind::TY_NULLPTR)
+        || (left == TypeKind::TY_NULLPTR && right == TypeKind::TY_CHAR)
+    ) {
         return INT_TYPE;
     }
 
