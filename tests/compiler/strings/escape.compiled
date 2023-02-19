@@ -23,20 +23,21 @@ while-header:                                     ; preds = %while-body, %entry
 
 while-body:                                       ; preds = %while-header
   %7 = load i32, ptr %2, align 4
-  %8 = load i32, ptr %0, align 4
-  %9 = getelementptr inbounds i8, ptr %3, i32 %8
-  %10 = load i8, ptr %9, align 1
-  %11 = sext i8 %10 to i32
-  %12 = add i32 %7, %11
-  store i32 %12, ptr %2, align 4
-  %13 = load i32, ptr %0, align 4
-  %14 = add i32 %13, 1
-  store i32 %14, ptr %0, align 4
+  %8 = load ptr, ptr %3, align 8
+  %9 = load i32, ptr %0, align 4
+  %10 = getelementptr inbounds i8, ptr %8, i32 %9
+  %11 = load i8, ptr %10, align 1
+  %12 = sext i8 %11 to i32
+  %13 = add i32 %7, %12
+  store i32 %13, ptr %2, align 4
+  %14 = load i32, ptr %0, align 4
+  %15 = add i32 %14, 1
+  store i32 %15, ptr %0, align 4
   br label %while-header
 
 while-end:                                        ; preds = %while-header
-  %15 = load i32, ptr %2, align 4
-  ret i32 %15
+  %16 = load i32, ptr %2, align 4
+  ret i32 %16
 
 DEAD_BLOCK:                                       ; No predecessors!
   ret i32 0

@@ -25,21 +25,23 @@ while-header:                                     ; preds = %while-body, %entry
   br i1 %6, label %while-body, label %while-end
 
 while-body:                                       ; preds = %while-header
-  %7 = load i32, ptr %2, align 4
-  %8 = getelementptr inbounds ptr, ptr %1, i32 %7
-  %9 = load ptr, ptr %8, align 8
-  store ptr %9, ptr %0, align 8
-  %10 = load ptr, ptr @Format, align 8
-  %11 = load ptr, ptr %0, align 8
-  %12 = call i32 @printf(ptr %10, ptr %11)
-  %13 = load ptr, ptr @Format, align 8
-  %14 = load i32, ptr %2, align 4
-  %15 = getelementptr inbounds ptr, ptr %1, i32 %14
-  %16 = load ptr, ptr %15, align 8
-  %17 = call i32 @printf(ptr %13, ptr %16)
-  %18 = load i32, ptr %2, align 4
-  %19 = add i32 %18, 1
-  store i32 %19, ptr %2, align 4
+  %7 = load ptr, ptr %1, align 8
+  %8 = load i32, ptr %2, align 4
+  %9 = getelementptr inbounds ptr, ptr %7, i32 %8
+  %10 = load ptr, ptr %9, align 8
+  store ptr %10, ptr %0, align 8
+  %11 = load ptr, ptr @Format, align 8
+  %12 = load ptr, ptr %0, align 8
+  %13 = call i32 @printf(ptr %11, ptr %12)
+  %14 = load ptr, ptr @Format, align 8
+  %15 = load ptr, ptr %1, align 8
+  %16 = load i32, ptr %2, align 4
+  %17 = getelementptr inbounds ptr, ptr %15, i32 %16
+  %18 = load ptr, ptr %17, align 8
+  %19 = call i32 @printf(ptr %14, ptr %18)
+  %20 = load i32, ptr %2, align 4
+  %21 = add i32 %20, 1
+  store i32 %21, ptr %2, align 4
   br label %while-header
 
 while-end:                                        ; preds = %while-header
