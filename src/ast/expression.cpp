@@ -824,7 +824,7 @@ llvm::Value* SizeofExpression::compileRValue(std::shared_ptr<CompileScope> Compi
         case TY_POINTER: return CompileScopePtr->_Builder.getInt32(8);
         case TY_NULLPTR: return CompileScopePtr->_Builder.getInt32(8);
         case TY_STRUCT: {
-            auto inner_type = this->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+            auto inner_type = this->_inner->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
             return CompileScopePtr->_Builder.getInt32(CompileScopePtr->_Module.getDataLayout().getTypeAllocSize(inner_type));
         }
         default:
