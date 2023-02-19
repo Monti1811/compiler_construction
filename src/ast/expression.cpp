@@ -561,7 +561,7 @@ TypePtr OrExpression::typecheck(ScopePtr& scope) {
     auto left_type = this->_left->typecheckWrap(scope);
     auto right_type = this->_right->typecheckWrap(scope);
     if (!left_type->isScalar() || !right_type->isScalar()) {
-        errorloc(this->loc, "Both sides of a logical and expression must be scalar types");
+        errorloc(this->loc, "Both sides of a logical or expression must be scalar types");
     }
 
     this->type = INT_TYPE;
@@ -587,9 +587,6 @@ TypePtr TernaryExpression::typecheck(ScopePtr& scope) {
     }
     auto left_type = this->_left->typecheckWrap(scope);
     auto right_type = this->_right->typecheckWrap(scope);
-    if (!left_type->equals(right_type)) {
-        errorloc(this->loc, "Left and right type of ternary expression must be equal");
-    }
 
     auto unified_type = unifyTypes(left_type, right_type);
     if (!unified_type.has_value()) {
