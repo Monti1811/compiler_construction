@@ -1,16 +1,17 @@
-int main(void) {
-    char* str;
-    str = "\r\n\b\\\"\'";
-
+int count_str(char* str, int len) {
     int result;
     result = 0;
 
     int i;
     i = 0;
-    while (i < 6) {
+    while (i < len) {
         result = result + str[i];
         i = i + 1;
     }
 
     return result;
+}
+
+int main(void) {
+    return count_str("\r\n\b\\\"\'", 6);
 }

@@ -1,8 +1,17 @@
+int count_str(char* str, int len) {
+    int result;
+    result = 0;
+
+    int i;
+    i = 0;
+    while (i < len) {
+        result = result + str[i];
+        i = i + 1;
+    }
+
+    return result;
+}
+
 int main(void) {
-    int x;
-    char* s;
-    s = "Hi";
-    // H = 72, i = 105
-    x = s[0] + s[1] * 256;
-    return x;
+    return count_str("Hi", 2);
 }
