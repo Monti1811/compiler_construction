@@ -144,9 +144,13 @@ TypePtr IndexExpression::typecheck(ScopePtr& scope) {
         if (expr_type->isPointer() && index_type->isInteger()) {
             // Regular index expression: arr[0]
             pointer_type = expr_type;
+            this->_index = castExpression(std::move(this->_index), INT_TYPE);
         } else if (expr_type->isInteger() && index_type->isPointer()) {
             // Swapped index expression: 0[arr]
             pointer_type = index_type;
+            auto expr = std::move(this->_index);
+            this->_index = castExpression(std::move(this->_expression), INT_TYPE);
+            this->_expression = std::move(expr);
         } else {
             errorloc(this->loc, "Index expressions must consist of a pointer and an integer");
         }
@@ -794,22 +798,20 @@ llvm::Value* StringLiteralExpression::compileLValue(std::shared_ptr<CompileScope
 }
 
 llvm::Value* IndexExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // Get the pointer to the index that should be used
-    auto expr_value = this->compileLValue(CompileScopePtr);
-    // Get the type of the index by checking the type saved in the pointer of the array
-    auto expr_type = this->_expression->type;
-    auto pointer_ty = std::static_pointer_cast<PointerType>(expr_type);
-    llvm::Type* index_type = pointer_ty->inner->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    // Get the type of this expression
+    llvm::Type* index_type = this->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    // Get the pointer of the array
+    llvm::Value* array_alloca = this->_expression->compileLValue(CompileScopePtr);
+    // Get the value of the index
+    llvm::Value* index_value = this->_index->compileRValue(CompileScopePtr);
+    // Get a pointer to the element at the index
+    auto offset_ptr = CompileScopePtr->_Builder.CreateInBoundsGEP(index_type, array_alloca, index_value);
     // Load the value at the index
-    return CompileScopePtr->_Builder.CreateLoad(index_type, expr_value);
+    return CompileScopePtr->_Builder.CreateLoad(index_type, offset_ptr);
 }
 
 llvm::Value* IndexExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // Get the pointer of the array
-    llvm::Value* array_alloca = this->_expression->compileLValue(CompileScopePtr);
-    // Get the value of the index that should be used
-    llvm::Value* index_value = this->_index->compileRValue(CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateInBoundsGEP(array_alloca->getType(), array_alloca, index_value); 
+    return this->compileRValue(CompileScopePtr);
 }
 
 llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -1115,21 +1117,24 @@ std::optional<llvm::Value*> CastExpression::convertNullptrs(std::shared_ptr<Comp
 }
 
 llvm::Value* CastExpression::castArithmetics(std::shared_ptr<CompileScope> compile_scope, llvm::Value* value) {
-    if (this->_inner->type->equals(this->type)) {
+    auto from_type = this->_inner->type;
+    auto to_type = this->type;
+
+    if (from_type->equals(to_type)) {
         return value;
     }
 
-    auto llvm_type = this->type->toLLVMType(compile_scope->_Builder, compile_scope->_Ctx);
+    auto llvm_type = to_type->toLLVMType(compile_scope->_Builder, compile_scope->_Ctx);
 
-    if (this->type->kind == TypeKind::TY_INT || this->type->kind == TypeKind::TY_CHAR) {
+    if ((from_type->kind == TypeKind::TY_CHAR && to_type->isInteger())
+        || (from_type->isInteger() && to_type->kind == TypeKind::TY_CHAR)
+    ) {
         return compile_scope->_Builder.CreateIntCast(value, llvm_type, true);
     }
 
-    if (this->type->isPointer() && !this->_inner->type->isPointer()) {
+    if (from_type->isInteger() && to_type->isPointer()) {
         return compile_scope->_Builder.CreateIntToPtr(value, llvm_type);
-    }
-
-    if (this->type->kind == TypeKind::TY_INT && this->_inner->type->isPointer()) {
+    } else if (from_type->isPointer() && to_type->isInteger()) {
         return compile_scope->_Builder.CreatePtrToInt(value, llvm_type);
     }
 
