@@ -707,8 +707,38 @@ llvm::Value* NullPtrExpression::compileLValue(std::shared_ptr<CompileScope> Comp
     errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
+const std::unordered_map<char, char> ESCAPE_CHARS = {
+    {'\'', '\''},
+    {'"', '"'},
+    {'?', '?'},
+    {'\\', '\\'},
+    {'a', '\a'},
+    {'b', '\b'},
+    {'f', '\f'},
+    {'n', '\n'},
+    {'r', '\r'},
+    {'t', '\t'},
+    {'v', '\v'}
+};
+
+char CharConstantExpression::getChar() {
+    // Skip the first char since it is always a single quote
+    auto result = this->_value[1];
+
+    // If the first char is a backslash, we are dealing with an escape sequence
+    if (result == '\\') {
+        auto ch = this->_value[2];
+        if (ESCAPE_CHARS.find(ch) == ESCAPE_CHARS.end()) {
+            errorloc(this->loc, "Unknown escape code \\", ch);
+        }
+        result = ESCAPE_CHARS.at(ch);
+    }
+
+    return result;
+}
+
 llvm::Value* CharConstantExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    return CompileScopePtr->_Builder.getInt8(this->_value[0]);
+    return CompileScopePtr->_Builder.getInt8(this->getChar());
 }
 
 llvm::Value* CharConstantExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -728,20 +758,6 @@ std::string StringLiteralExpression::getString() {
         // Escape codes
         i++;
         ch = this->_value[i];
-
-        const std::unordered_map<char, char> ESCAPE_CHARS = {
-            {'\'', '\''},
-            {'"', '"'},
-            {'?', '?'},
-            {'\\', '\\'},
-            {'a', '\a'},
-            {'b', '\b'},
-            {'f', '\f'},
-            {'n', '\n'},
-            {'r', '\r'},
-            {'t', '\t'},
-            {'v', '\v'}
-        };
 
         if (ESCAPE_CHARS.find(ch) == ESCAPE_CHARS.end()) {
             errorloc(this->loc, "Unknown escape code \\", ch);
