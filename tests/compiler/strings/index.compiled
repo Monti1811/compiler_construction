@@ -1,5 +1,5 @@
-; ModuleID = 'tests/compiler/strings/conv.c4'
-source_filename = "tests/compiler/strings/conv.c4"
+; ModuleID = 'tests/compiler/strings/index.c4'
+source_filename = "tests/compiler/strings/index.c4"
 
 @0 = private unnamed_addr constant [2 x i8] c"@\00", align 1
 

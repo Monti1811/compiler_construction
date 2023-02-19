@@ -2,7 +2,7 @@
 source_filename = "tests/compiler/exprs/index.c4"
 
 @Format = common global ptr null
-@0 = private unnamed_addr constant [7 x i8] c"\22%s\\n\22\00", align 1
+@0 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 
 declare i32 @printf(ptr, ptr)
 
