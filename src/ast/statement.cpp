@@ -501,13 +501,12 @@ void ReturnStatement::typecheck(ScopePtr &scope)
     }
 
     auto expr_type = _expr.value()->typecheckWrap(scope);
-    if (!expr_type->equals(return_type))
-    {
-        errorloc(this->loc, "return type and type of return expr did not match");
-    }
 
-    if (this->_expr.has_value()) {
-        this->_expr.value() = castExpression(std::move(this->_expr.value()), return_type);
+    auto unified_type = unifyTypes(return_type, expr_type);
+    if (unified_type.has_value()) {
+        this->_expr.value() = castExpression(std::move(this->_expr.value()), unified_type.value());
+    } else if (!expr_type->equals(return_type)) {
+        errorloc(this->loc, "return type and type of return expr did not match");
     }
 }
 
