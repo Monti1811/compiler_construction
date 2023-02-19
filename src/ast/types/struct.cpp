@@ -130,9 +130,9 @@ llvm::Type* CompleteStructType::toLLVMTypeAnonymous(llvm::IRBuilder<>& Builder, 
 }
 
 size_t CompleteStructType::getIndexOfField(Symbol name) {
-    std::cerr << "looking for name " << *name << std::endl;
+    // std::cerr << "looking for name " << *name << std::endl;
     if (this->_field_names.find(name) == this->_field_names.end()) {
-        std::cerr << "could not find field" << std::endl;
+        // std::cerr << "could not find field" << std::endl;
         return 0;
     }
     return this->_field_names.at(name);
