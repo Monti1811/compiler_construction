@@ -4,7 +4,7 @@ source_filename = "tests/compiler/exprs/zero/int_simple.c4"
 define i32 @main() {
 entry:
   %0 = alloca i32, align 4
-  store ptr null, ptr %0, align 8
+  store i32 0, ptr %0, align 4
   ret i32 0
 
 DEAD_BLOCK:                                       ; No predecessors!
