@@ -22,7 +22,7 @@ entry:
   store i32 4, ptr %4, align 4
   store i32 4, ptr %8, align 4
   store i32 20, ptr %6, align 4
-  store i8 39, ptr %1, align 1
+  store i8 121, ptr %1, align 1
   store i32 1, ptr %5, align 4
   store i32 8, ptr %3, align 4
   %9 = load i32, ptr %4, align 4
