@@ -20,7 +20,7 @@ if-consequence:                                   ; preds = %if-header
   ret i32 1
 
 if-end:                                           ; preds = %DEAD_BLOCK, %if-header
-  ret ptr null
+  ret i32 0
 
 DEAD_BLOCK:                                       ; No predecessors!
   br label %if-end

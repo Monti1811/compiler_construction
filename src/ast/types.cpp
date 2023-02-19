@@ -1,7 +1,7 @@
 #include "types.h"
 
 std::optional<TypePtr> unifyTypes(TypePtr left_type, TypePtr right_type) {
-    if (left_type->equals(right_type)) {
+    if (left_type->strong_equals(right_type)) {
         return std::nullopt;
     }
 
@@ -11,6 +11,12 @@ std::optional<TypePtr> unifyTypes(TypePtr left_type, TypePtr right_type) {
     if (left == TypeKind::TY_CHAR && right == TypeKind::TY_INT) {
         return INT_TYPE;
     } else if (left == TypeKind::TY_INT && right == TypeKind::TY_CHAR) {
+        return INT_TYPE;
+    }
+
+    if (left == TypeKind::TY_INT && right == TypeKind::TY_NULLPTR) {
+        return INT_TYPE;
+    } else if (left == TypeKind::TY_NULLPTR && right == TypeKind::TY_INT) {
         return INT_TYPE;
     }
 
