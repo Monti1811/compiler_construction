@@ -321,5 +321,5 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
     M.print(stream, nullptr); /* M is a llvm::Module */
 
     /* Dump the final module to std::cerr */
-    M.dump();
+    // M.dump();
 }
