@@ -1063,6 +1063,10 @@ llvm::Value* OrExpression::compileRValue(std::shared_ptr<CompileScope> CompileSc
 
 llvm::Value* TernaryExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     auto condition_value = this->_condition->compileRValue(CompileScopePtr);
+    // If the condition is an int32 (int1 are bools), make a check if it's not equal 0 (true) or equal 0 (false)
+    if (condition_value->getType()->isIntegerTy(32)) {
+        condition_value = CompileScopePtr->_Builder.CreateICmpNE(condition_value, CompileScopePtr->_Builder.getInt32(0));
+    }
     auto true_value = this->_left->compileRValue(CompileScopePtr);
     auto false_value = this->_right->compileRValue(CompileScopePtr);
     return CompileScopePtr->_Builder.CreateSelect(condition_value, true_value, false_value);

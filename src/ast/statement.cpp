@@ -515,6 +515,11 @@ void ReturnStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
     if (this->_expr.has_value())
     {
         llvm::Value *return_value = this->_expr.value()->compileRValue(CompileScopePtr);
+        // If return type is a bool, cast it to int32
+        if (return_value->getType()->isIntegerTy(1)) {
+            return_value = CompileScopePtr->_Builder.CreateIntCast(return_value, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true);
+        }
+            
         CompileScopePtr->_Builder.CreateRet(return_value);
     }
     /* Always create a new block after a return statement
