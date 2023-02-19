@@ -793,22 +793,23 @@ llvm::Value* StringLiteralExpression::compileRValue(std::shared_ptr<CompileScope
     return CompileScopePtr->_Builder.CreateGlobalStringPtr(this->getString());
 }
 
-llvm::Value* StringLiteralExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    errorloc(this->loc,"cannot compute l-value of this expression");
-}
-
 llvm::Value* IndexExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     // Get the type of this expression
     llvm::Type* index_type = this->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-    // Get the pointer of the array
-    llvm::Value* array_alloca = this->_expression->compileLValue(CompileScopePtr);
-    // Get the value of the index
-    llvm::Value* index_value = this->_index->compileRValue(CompileScopePtr);
-    // Get a pointer to the element at the index
-    auto offset_ptr = CompileScopePtr->_Builder.CreateInBoundsGEP(index_type, array_alloca, index_value);
+    llvm::Value* offset_ptr = this->compileLValue(CompileScopePtr);
     // Load the value at the index
     return CompileScopePtr->_Builder.CreateLoad(index_type, offset_ptr);
 }
+
+llvm::Value* IndexExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // Get the type of this expression
+    llvm::Type* index_type = this->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    // Get the pointer of the array
+    llvm::Value* array_alloca = this->_expression->compileRValue(CompileScopePtr);
+    // Get the value of the index
+    llvm::Value* index_value = this->_index->compileRValue(CompileScopePtr);
+    // Get a pointer to the element at the index
+    return CompileScopePtr->_Builder.CreateInBoundsGEP(index_type, array_alloca, index_value);
 
 llvm::Value* IndexExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     return this->compileRValue(CompileScopePtr);
