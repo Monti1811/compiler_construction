@@ -179,7 +179,7 @@ def runCompileTest(file: str) -> "None | str":
         return None
 
     expectedLlvmCode = readFile(expectedFile)
-    compilerResult = runCompiler("--compile", file)
+    _, compilerStderr, compilerExitCode = runCompiler("--compile", file)
 
     result: list[str] = list()
     def cleanupAndGetResult() -> str:
@@ -188,12 +188,12 @@ def runCompileTest(file: str) -> "None | str":
         finally:
             return "\n".join(result)
 
-    if compilerResult[2] != 0:
+    if compilerExitCode != 0:
         result.append(warnStr("Incorrect compiler exit code"))
-        result.append(f"Should be 0, is {compilerResult[2]}")
-        if compilerResult[1]:
-            result.append(warnStr("Compiler stderr:"))
-            result.extend(compilerResult[1])
+        result.append(f"Should be 0, is {compilerExitCode}")
+    if compilerStderr:
+        result.append(warnStr("Compiler stderr:"))
+        result.extend(compilerStderr)
 
     def getLlvmOutputFile(file: str) -> str:
         slash = file.rfind("/")

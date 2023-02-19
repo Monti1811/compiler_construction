@@ -1,0 +1,18 @@
+; ModuleID = 'tests/compiler/strings/index.c4'
+source_filename = "tests/compiler/strings/index.c4"
+
+@0 = private unnamed_addr constant [2 x i8] c"@\00", align 1
+
+define i32 @main() {
+entry:
+  %0 = alloca ptr, align 8
+  store ptr @0, ptr %0, align 8
+  %1 = load ptr, ptr %0, align 8
+  %2 = getelementptr inbounds i8, ptr %1, i32 0
+  %3 = load i8, ptr %2, align 1
+  %4 = sext i8 %3 to i32
+  ret i32 %4
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}

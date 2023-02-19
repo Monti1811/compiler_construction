@@ -1,0 +1,53 @@
+; ModuleID = 'tests/compiler/strings/simple.c4'
+source_filename = "tests/compiler/strings/simple.c4"
+
+@0 = private unnamed_addr constant [3 x i8] c"Hi\00", align 1
+
+define i32 @count_str(ptr %str, i32 %len) {
+entry:
+  %0 = alloca i32, align 4
+  %1 = alloca i32, align 4
+  %2 = alloca i32, align 4
+  %3 = alloca ptr, align 8
+  store ptr %str, ptr %3, align 8
+  store i32 %len, ptr %1, align 4
+  store i32 0, ptr %2, align 4
+  store i32 0, ptr %0, align 4
+  br label %while-header
+
+while-header:                                     ; preds = %while-body, %entry
+  %4 = load i32, ptr %0, align 4
+  %5 = load i32, ptr %1, align 4
+  %6 = icmp ult i32 %4, %5
+  br i1 %6, label %while-body, label %while-end
+
+while-body:                                       ; preds = %while-header
+  %7 = load i32, ptr %2, align 4
+  %8 = load ptr, ptr %3, align 8
+  %9 = load i32, ptr %0, align 4
+  %10 = getelementptr inbounds i8, ptr %8, i32 %9
+  %11 = load i8, ptr %10, align 1
+  %12 = sext i8 %11 to i32
+  %13 = add i32 %7, %12
+  store i32 %13, ptr %2, align 4
+  %14 = load i32, ptr %0, align 4
+  %15 = add i32 %14, 1
+  store i32 %15, ptr %0, align 4
+  br label %while-header
+
+while-end:                                        ; preds = %while-header
+  %16 = load i32, ptr %2, align 4
+  ret i32 %16
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}
+
+define i32 @main() {
+entry:
+  %0 = call i32 @count_str(ptr @0, i32 2)
+  ret i32 %0
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}

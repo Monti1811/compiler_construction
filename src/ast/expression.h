@@ -43,6 +43,8 @@ struct Expression {
 
 typedef std::unique_ptr<Expression> ExpressionPtr;
 
+ExpressionPtr castExpression(ExpressionPtr expr, TypePtr type);
+
 struct IdentExpression: public Expression {
     public:
     IdentExpression(Locatable loc, Symbol ident)
@@ -102,6 +104,9 @@ struct CharConstantExpression: public Expression {
 
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
+
+    char getChar();
+
     std::string _value;
 };
 
@@ -118,6 +123,8 @@ struct StringLiteralExpression: public Expression {
 
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
+
+    std::string getString();
 
     std::string _value;
 };
@@ -432,4 +439,25 @@ struct AssignExpression: public BinaryExpression {
     TypePtr typecheck(ScopePtr& scope);
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
+};
+
+struct CastExpression: public Expression {
+    // Just used for type conversion during typecheck phase
+
+    public:
+    CastExpression(Locatable loc, ExpressionPtr inner)
+        : Expression(loc)
+        , _inner(std::move(inner)) {};
+
+    void print(std::ostream& stream);
+
+    TypePtr typecheck(ScopePtr& scope);
+
+    llvm::Value* compileLValue(std::shared_ptr<CompileScope> compile_scope);
+    llvm::Value* compileRValue(std::shared_ptr<CompileScope> compile_scope);
+
+    std::optional<llvm::Value*> convertNullptrs(std::shared_ptr<CompileScope> compile_scope);
+    llvm::Value* castArithmetics(std::shared_ptr<CompileScope> compile_scope, llvm::Value* value);
+
+    ExpressionPtr _inner;
 };

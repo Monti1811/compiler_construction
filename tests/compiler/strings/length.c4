@@ -1,0 +1,18 @@
+int strlen(char* str) {
+    char c;
+    c = str[0];
+
+    int i;
+    i = 0;
+
+    while (c != 0) {
+        i = i + 1;
+        c = str[i];
+    }
+
+    return i;
+}
+
+int main(void) {
+    return strlen("12345678");
+}

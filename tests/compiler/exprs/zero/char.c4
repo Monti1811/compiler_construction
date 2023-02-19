@@ -3,6 +3,7 @@ int main(void) {
     c = 0;
     char* cp;
     cp = 0;
-    *cp = c;
+    cp = &c;
+    *cp = 0;
     return 42;
 }
