@@ -793,6 +793,10 @@ llvm::Value* StringLiteralExpression::compileRValue(std::shared_ptr<CompileScope
     return CompileScopePtr->_Builder.CreateGlobalStringPtr(this->getString());
 }
 
+llvm::Value* StringLiteralExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    errorloc(this->loc,"cannot compute l-value of this expression");
+}
+
 llvm::Value* IndexExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     // Get the type of this expression
     llvm::Type* index_type = this->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
@@ -810,10 +814,8 @@ llvm::Value* IndexExpression::compileLValue(std::shared_ptr<CompileScope> Compil
     llvm::Value* index_value = this->_index->compileRValue(CompileScopePtr);
     // Get a pointer to the element at the index
     return CompileScopePtr->_Builder.CreateInBoundsGEP(index_type, array_alloca, index_value);
-
-llvm::Value* IndexExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    return this->compileRValue(CompileScopePtr);
 }
+
 
 llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     Symbol name(static_cast<IdentExpression*>(this->_expression.get())->_ident);
