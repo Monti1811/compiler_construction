@@ -80,6 +80,8 @@ class Parser {
     DeclaratorPtr parseDeclarator(DeclKind declKind);
     DeclaratorPtr parseNonFunDeclarator(DeclKind declKind);
 
+    TypeSpecifierPtr parseTypeSpecifier();
+
     /// Parse a type specifier followed by an abstract or non-abstract
     /// declarator (i.e. a typename or a declaration).
     /// The current token is expected to be the first token of the type

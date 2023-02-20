@@ -3,16 +3,15 @@
 #include "declarators.h"
 #include "specifiers.h"
 
-Declaration Parser::parseDeclaration(DeclKind declKind) {
-    TypeSpecifierPtr spec(nullptr);
+TypeSpecifierPtr Parser::parseTypeSpecifier() {
     Locatable loc(getLoc());
 
     if (accept(TK_VOID)) {
-        spec = std::make_unique<TypeSpecifier>(loc, SpecifierKind::VOID);
+        return std::make_unique<TypeSpecifier>(loc, SpecifierKind::VOID);
     } else if (accept(TK_CHAR)) {
-        spec = std::make_unique<TypeSpecifier>(loc, SpecifierKind::CHAR);
+        return std::make_unique<TypeSpecifier>(loc, SpecifierKind::CHAR);
     } else if (accept(TK_INT)) {
-        spec = std::make_unique<TypeSpecifier>(loc, SpecifierKind::INT);
+        return std::make_unique<TypeSpecifier>(loc, SpecifierKind::INT);
     } else if (accept(TK_STRUCT)) {
         std::optional<Symbol> tag = std::nullopt;
         if (check(TK_IDENTIFIER)) {
@@ -33,12 +32,18 @@ Declaration Parser::parseDeclaration(DeclKind declKind) {
                 expect(TK_SEMICOLON, ";");
             } while (!accept(TK_RBRACE));
         }
-        spec = std::move(struct_spec);
 
+        return struct_spec;
     } else {
         errorloc(loc, "Expected type specifier but got `", *peekToken().Text,
                  "'");
     }
+}
+
+Declaration Parser::parseDeclaration(DeclKind declKind) {
+    Locatable loc(getLoc());
+
+    TypeSpecifierPtr spec = this->parseTypeSpecifier();
 
     DeclaratorPtr decl(parseDeclarator(declKind));
 
@@ -281,27 +286,17 @@ ExpressionPtr Parser::parseUnaryExpression() {
             // check wether ( and type-name follows
             if (check(TokenKind::TK_LPAREN)) {
                 // sizeof (type-name)
-                if (checkLookAhead(TokenKind::TK_INT)) {
-                    auto intSpec = std::make_unique<TypeSpecifier>(peekToken(), SpecifierKind::INT);
+                if (
+                    checkLookAhead(TokenKind::TK_INT)
+                    || checkLookAhead(TokenKind::TK_VOID)
+                    || checkLookAhead(TokenKind::TK_CHAR)
+                    || checkLookAhead(TokenKind::TK_STRUCT)
+                ) {
+                    auto loc = this->getLoc();
                     expect(TokenKind::TK_LPAREN, "(");
-                    expect(TokenKind::TK_INT, "int");
-                    auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), std::move(intSpec));
+                    auto spec = this->parseTypeSpecifier();
                     expect(TokenKind::TK_RPAREN, ")");
-                    return expr;
-                } else if (checkLookAhead(TokenKind::TK_VOID)) {
-                    auto voidSpec = std::make_unique<TypeSpecifier>(peekToken(), SpecifierKind::VOID);
-                    expect(TokenKind::TK_LPAREN, "(");
-                    expect(TokenKind::TK_VOID, "void");
-                    auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), std::move(voidSpec));
-                    expect(TokenKind::TK_RPAREN, ")");
-                    return expr;
-                } else if (checkLookAhead(TokenKind::TK_CHAR)) {
-                    auto charSpec = std::make_unique<TypeSpecifier>(peekToken(), SpecifierKind::CHAR);
-                    expect(TokenKind::TK_LPAREN, "(");
-                    expect(TokenKind::TK_CHAR, "char");
-                    auto expr = std::make_unique<SizeofTypeExpression>(getLoc(), std::move(charSpec));
-                    expect(TokenKind::TK_RPAREN, ")");
-                    return expr;
+                    return std::make_unique<SizeofTypeExpression>(loc, std::move(spec));
                 }
             }
             auto expr = std::make_unique<SizeofExpression>(getLoc(), parseUnaryExpression());

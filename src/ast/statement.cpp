@@ -39,15 +39,13 @@ void LabeledStatement::typecheck(ScopePtr &scope)
     this->_inner->typecheck(scope);
 }
 
-void LabeledStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
-{
-    // TODO
-    llvm::BasicBlock *labeledBlock = llvm::BasicBlock::Create(
-        CompileScopePtr->_Ctx,
-        *(this->_name) + "_BLOCK",
-        CompileScopePtr->_ParentFunction.value()            );
+void LabeledStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
+    auto labeledBlockOpt = CompileScopePtr->getLabeledBlock(this->_name);
+    if (!labeledBlockOpt.has_value()) {
+        errorloc(this->loc, "Unknown label ", *this->_name);
+    }
+    auto labeledBlock = labeledBlockOpt.value();
     CompileScopePtr->_Builder.CreateBr(labeledBlock);
-    CompileScopePtr->addLabeledBlock(this->_name, labeledBlock);
     CompileScopePtr->_Builder.SetInsertPoint(labeledBlock);
     auto inner_compile_scope_ptr = std::make_shared<CompileScope>(CompileScopePtr);
     this->_inner->compile(inner_compile_scope_ptr);
@@ -407,7 +405,6 @@ void GotoStatement::typecheck(ScopePtr &scope)
 
 void GotoStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
 {
-    // TODO
     std::optional<llvm::BasicBlock*> labeledBlock = CompileScopePtr->getLabeledBlock(this->_ident);
     if (labeledBlock.has_value()) {
         CompileScopePtr->_Builder.CreateBr(labeledBlock.value());
@@ -521,7 +518,10 @@ void ReturnStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
         }
             
         CompileScopePtr->_Builder.CreateRet(return_value);
+    } else {
+        CompileScopePtr->_Builder.CreateRetVoid();
     }
+
     /* Always create a new block after a return statement
      *
      *  This will prevent you from inserting code after a block terminator (here

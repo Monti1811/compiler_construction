@@ -147,6 +147,7 @@ struct IndexExpression: public Expression {
     private:
     ExpressionPtr _expression;
     ExpressionPtr _index;
+    bool _swapped = false;
 };
 
 struct CallExpression: public Expression {

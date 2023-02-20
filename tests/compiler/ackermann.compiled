@@ -30,7 +30,7 @@ DEAD_BLOCK:                                       ; No predecessors!
 
 if-header1:                                       ; preds = %if-alternative
   %5 = load i32, ptr %1, align 4
-  %6 = icmp ult i32 0, %5
+  %6 = icmp slt i32 0, %5
   %7 = load i32, ptr %0, align 4
   %8 = icmp eq i32 %7, 0
   %if-condition2 = select i1 %6, i1 %8, i1 false
@@ -53,9 +53,9 @@ DEAD_BLOCK6:                                      ; No predecessors!
 
 if-header7:                                       ; preds = %if-alternative4
   %12 = load i32, ptr %1, align 4
-  %13 = icmp ult i32 0, %12
+  %13 = icmp slt i32 0, %12
   %14 = load i32, ptr %0, align 4
-  %15 = icmp ult i32 0, %14
+  %15 = icmp slt i32 0, %14
   %if-condition8 = select i1 %13, i1 %15, i1 false
   br i1 %if-condition8, label %if-consequence9, label %if-end10
 
