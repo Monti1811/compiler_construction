@@ -33,7 +33,11 @@ void StringLiteralExpression::print(std::ostream& stream) {
 }
 
 void IndexExpression::print(std::ostream& stream) {
-    stream << '(' << this->_expression << '[' << this->_index << "])";
+    if (this->_swapped) {
+        stream << '(' << this->_index << '[' << this->_expression << "])";
+    } else {
+        stream << '(' << this->_expression << '[' << this->_index << "])";
+    }
 }
 
 void CallExpression::print(std::ostream& stream) {
@@ -151,6 +155,7 @@ TypePtr IndexExpression::typecheck(ScopePtr& scope) {
             auto expr = std::move(this->_index);
             this->_index = castExpression(std::move(this->_expression), INT_TYPE);
             this->_expression = std::move(expr);
+            this->_swapped = true;
         } else {
             errorloc(this->loc, "Index expressions must consist of a pointer and an integer");
         }
