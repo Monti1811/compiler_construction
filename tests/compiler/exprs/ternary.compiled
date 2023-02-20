@@ -11,7 +11,7 @@ entry:
   store i32 %y, ptr %2, align 4
   store i32 %z, ptr %0, align 4
   %4 = load i32, ptr %3, align 4
-  %5 = icmp ult i32 %4, 0
+  %5 = icmp slt i32 %4, 0
   %6 = load i32, ptr %2, align 4
   %7 = load i32, ptr %0, align 4
   %8 = add i32 %6, %7

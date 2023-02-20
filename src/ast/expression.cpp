@@ -1031,7 +1031,7 @@ llvm::Value* SubstractExpression::compileRValue(std::shared_ptr<CompileScope> Co
 llvm::Value* LessThanExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
     llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateICmpULT(value_lhs, value_rhs);
+    return CompileScopePtr->_Builder.CreateICmpSLT(value_lhs, value_rhs);
 }
 
 llvm::Value* EqualExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {

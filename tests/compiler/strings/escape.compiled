@@ -18,7 +18,7 @@ entry:
 while-header:                                     ; preds = %while-body, %entry
   %4 = load i32, ptr %0, align 4
   %5 = load i32, ptr %1, align 4
-  %6 = icmp ult i32 %4, %5
+  %6 = icmp slt i32 %4, %5
   br i1 %6, label %while-body, label %while-end
 
 while-body:                                       ; preds = %while-header
