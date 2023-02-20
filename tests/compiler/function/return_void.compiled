@@ -1,0 +1,19 @@
+; ModuleID = 'tests/compiler/function/return_void.c4'
+source_filename = "tests/compiler/function/return_void.c4"
+
+define void @f() {
+entry:
+  ret void
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret void
+}
+
+define i32 @main() {
+entry:
+  call void @f()
+  ret i32 42
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}

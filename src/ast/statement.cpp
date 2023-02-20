@@ -518,7 +518,10 @@ void ReturnStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
         }
             
         CompileScopePtr->_Builder.CreateRet(return_value);
+    } else {
+        CompileScopePtr->_Builder.CreateRetVoid();
     }
+
     /* Always create a new block after a return statement
      *
      *  This will prevent you from inserting code after a block terminator (here
