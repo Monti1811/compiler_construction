@@ -1,5 +1,7 @@
 #include "expression.h"
 
+llvm::Value* toBoolTy(ExpressionPtr to_convert, std::shared_ptr<CompileScope> CompileScopePtr);
+
 // print functions
 
 std::ostream& operator<<(std::ostream& stream, const ExpressionPtr& expr) {
@@ -990,8 +992,8 @@ llvm::Value* NegationExpression::compileLValue(std::shared_ptr<CompileScope>) {
 }
 
 llvm::Value* LogicalNegationExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* inner_value = this->_inner->compileRValue(CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateICmpEQ(CompileScopePtr->_Builder.getInt32(0), inner_value);
+    llvm::Value* inner_value = toBoolTy(std::move(_inner), CompileScopePtr);
+    return CompileScopePtr->_Builder.CreateICmpEQ(CompileScopePtr->_Builder.getInt1(0), inner_value);
 }
 
 llvm::Value* LogicalNegationExpression::compileLValue(std::shared_ptr<CompileScope>) {
@@ -1052,23 +1054,19 @@ llvm::Value* UnequalExpression::compileRValue(std::shared_ptr<CompileScope> Comp
 }
 
 llvm::Value* AndExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
-    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+    llvm::Value* value_lhs = toBoolTy(std::move(this->_left), CompileScopePtr);
+    llvm::Value* value_rhs = toBoolTy(std::move(this->_right), CompileScopePtr);
     return CompileScopePtr->_Builder.CreateLogicalAnd(value_lhs, value_rhs);
 }
 
 llvm::Value* OrExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
-    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+    llvm::Value* value_lhs = toBoolTy(std::move(this->_left), CompileScopePtr);
+    llvm::Value* value_rhs = toBoolTy(std::move(this->_right), CompileScopePtr);
     return CompileScopePtr->_Builder.CreateLogicalOr(value_lhs, value_rhs);
 }
 
 llvm::Value* TernaryExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    auto condition_value = this->_condition->compileRValue(CompileScopePtr);
-    // If the condition is an int32 (int1 are bools), make a check if it's not equal 0 (true) or equal 0 (false)
-    if (condition_value->getType()->isIntegerTy(32)) {
-        condition_value = CompileScopePtr->_Builder.CreateICmpNE(condition_value, CompileScopePtr->_Builder.getInt32(0));
-    }
+    auto condition_value = toBoolTy(std::move(this->_condition), CompileScopePtr);
     auto true_value = this->_left->compileRValue(CompileScopePtr);
     auto false_value = this->_right->compileRValue(CompileScopePtr);
     return CompileScopePtr->_Builder.CreateSelect(condition_value, true_value, false_value);
@@ -1155,4 +1153,22 @@ ExpressionPtr castExpression(ExpressionPtr expr, TypePtr type) {
     auto cast = std::make_unique<CastExpression>(loc, std::move(expr));
     cast->type = type;
     return cast;
+}
+
+llvm::Value* toBoolTy(ExpressionPtr expr_to_convert, std::shared_ptr<CompileScope> CompileScopePtr) {
+    llvm::Value* to_convert = expr_to_convert->compileRValue(CompileScopePtr);
+    if (to_convert->getType()->isIntegerTy(32)) {
+        return CompileScopePtr->_Builder.CreateICmpNE(CompileScopePtr->_Builder.getInt32(0), to_convert);
+    } else if (to_convert->getType()->isIntegerTy(8)) {
+        return CompileScopePtr->_Builder.CreateICmpNE(CompileScopePtr->_Builder.getInt8(0), to_convert);
+    } else if (to_convert->getType()->isPointerTy()) {
+        // return 0 if nullptr, 1 otherwise
+        if (expr_to_convert->type->kind == TY_NULLPTR) {
+            return CompileScopePtr->_Builder.getInt1(0);
+        }
+        return CompileScopePtr->_Builder.getInt1(1);
+    }
+    else {
+        return to_convert;
+    }
 }

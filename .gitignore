@@ -78,3 +78,4 @@ test.c
 test.ll
 test
 test*.sh
+testsuite

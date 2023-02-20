@@ -231,6 +231,8 @@ void IfStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
     // If the condition is an int32 (int1 are bools), make a check if it's not equal 0 (true) or equal 0 (false)
     if (value_condition->getType()->isIntegerTy(32)) {
         value_condition = CompileScopePtr->_Builder.CreateICmpNE(value_condition, CompileScopePtr->_Builder.getInt32(0));
+    } else if (value_condition->getType()->isIntegerTy(8)) {
+        value_condition = CompileScopePtr->_Builder.CreateICmpNE(value_condition, CompileScopePtr->_Builder.getInt8(0));
     }
     /* Change the name of the IfStmt condition (after the creation) */
     value_condition->setName("if-condition");
@@ -345,6 +347,8 @@ void WhileStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
     // If the condition is an int32 (int1 are bools), make a check if it's not equal 0 (true) or equal 0 (false)
     if (while_condition->getType()->isIntegerTy(32)) {
         while_condition = CompileScopePtr->_Builder.CreateICmpNE(while_condition, CompileScopePtr->_Builder.getInt32(0));
+    } else if (while_condition->getType()->isIntegerTy(8)) {
+        while_condition = CompileScopePtr->_Builder.CreateICmpNE(while_condition, CompileScopePtr->_Builder.getInt8(0));
     }
 
     /* Add a basic block for the consequence of the WhileStmt */
