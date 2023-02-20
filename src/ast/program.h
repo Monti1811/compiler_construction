@@ -26,8 +26,8 @@ struct FunctionDefinition {
 
     BlockStatement _block;
     Declaration _declaration;
-    private:
     std::unordered_set<Symbol> _labels;
+    private:
     std::optional<std::shared_ptr<FunctionType>> type;
 };
 

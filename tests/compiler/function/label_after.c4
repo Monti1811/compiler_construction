@@ -1,0 +1,9 @@
+int main(void) {
+    int i;
+    goto start;
+    i = 50;
+    return i;
+start:
+    i = 100;
+    return i;
+}

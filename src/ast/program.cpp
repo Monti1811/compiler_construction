@@ -300,6 +300,15 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
                 count++;
             }
             
+            for (auto label : func_iter.base()->_labels) {
+                llvm::BasicBlock *labeledBlock = llvm::BasicBlock::Create(
+                    inner_compile_scope_ptr->_Ctx,
+                    *label + "_BLOCK",
+                    inner_compile_scope_ptr->_ParentFunction.value()
+                );
+                inner_compile_scope_ptr->addLabeledBlock(label, labeledBlock);
+            }
+
             func_iter.base()->_block.compile(inner_compile_scope_ptr);
 
             if (Builder.GetInsertBlock()->getTerminator() == nullptr) {
