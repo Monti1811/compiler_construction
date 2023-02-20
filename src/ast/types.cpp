@@ -14,8 +14,8 @@ std::optional<TypePtr> unifyTypes(TypePtr left_type, TypePtr right_type) {
         return INT_TYPE;
     }
 
-    if ((left == TypeKind::TY_INT && right == TypeKind::TY_NULLPTR) 
-        || (left == TypeKind::TY_NULLPTR && right == TypeKind::TY_INT)
+    if ((left == TypeKind::TY_INT && right_type->isPointer()) 
+        || (left_type->isPointer() && right == TypeKind::TY_INT)
     ) {
         return INT_TYPE;
     }
