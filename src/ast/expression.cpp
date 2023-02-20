@@ -483,7 +483,7 @@ TypePtr LessThanExpression::typecheck(ScopePtr& scope) {
     auto unified_type = unifyTypes(left_type, right_type);
     if (!unified_type.has_value()) {
         if (!left_type->equals(right_type)) {
-            errorloc(this->loc, "Cannot compare two values of different types");
+            errorloc(this->loc, "Cannot compare values of type ", left_type, " and ", right_type);
         }
         unified_type = left_type;
     }
@@ -503,7 +503,7 @@ TypePtr EqualExpression::typecheck(ScopePtr& scope) {
     auto unified_type = unifyTypes(left_type, right_type);
     if (!unified_type.has_value()) {
         if (!left_type->equals(right_type)) {
-            errorloc(this->loc, "Cannot compare two values of different types");
+            errorloc(this->loc, "Cannot compare values of type ", left_type, " and ", right_type);
         }
         unified_type = left_type;
     }
@@ -523,7 +523,7 @@ TypePtr UnequalExpression::typecheck(ScopePtr& scope) {
     auto unified_type = unifyTypes(left_type, right_type);
     if (!unified_type.has_value()) {
         if (!left_type->equals(right_type)) {
-            errorloc(this->loc, "Cannot compare two values of different types");
+            errorloc(this->loc, "Cannot compare values of type ", left_type, " and ", right_type);
         }
         unified_type = left_type;
     }
@@ -546,7 +546,7 @@ TypePtr AndExpression::typecheck(ScopePtr& scope) {
     auto unified_type = unifyTypes(left_type, right_type);
     if (!unified_type.has_value()) {
         if (!left_type->equals(right_type)) {
-            errorloc(this->loc, "Cannot compare two values of different types");
+            errorloc(this->loc, "Cannot apply logical and operator to values of type ", left_type, " and ", right_type);
         }
         unified_type = left_type;
     }
@@ -569,7 +569,7 @@ TypePtr OrExpression::typecheck(ScopePtr& scope) {
     auto unified_type = unifyTypes(left_type, right_type);
     if (!unified_type.has_value()) {
         if (!left_type->equals(right_type)) {
-            errorloc(this->loc, "Cannot compare two values of different types");
+            errorloc(this->loc, "Cannot apply logical or operator to values of type ", left_type, " and ", right_type);
         }
         unified_type = left_type;
     }
@@ -591,7 +591,7 @@ TypePtr TernaryExpression::typecheck(ScopePtr& scope) {
     auto unified_type = unifyTypes(left_type, right_type);
     if (!unified_type.has_value()) {
         if (!left_type->equals(right_type)) {
-            errorloc(this->loc, "Cannot compare two values of different types");
+            errorloc(this->loc, "Second and third operand of ternary expression are incompatible; cannot unify ", left_type, " with ", right_type);
         }
         unified_type = left_type;
     }
