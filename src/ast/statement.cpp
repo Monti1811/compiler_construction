@@ -233,6 +233,12 @@ void IfStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
         value_condition = CompileScopePtr->_Builder.CreateICmpNE(value_condition, CompileScopePtr->_Builder.getInt32(0));
     } else if (value_condition->getType()->isIntegerTy(8)) {
         value_condition = CompileScopePtr->_Builder.CreateICmpNE(value_condition, CompileScopePtr->_Builder.getInt8(0));
+    } else if (value_condition->getType()->isPointerTy()) {
+        // return 0 if nullptr, 1 otherwise
+        if (this->_condition->type->kind == TY_NULLPTR) {
+            value_condition = CompileScopePtr->_Builder.getInt1(0);
+        }
+        value_condition = CompileScopePtr->_Builder.getInt1(1);
     }
     /* Change the name of the IfStmt condition (after the creation) */
     value_condition->setName("if-condition");
@@ -349,6 +355,12 @@ void WhileStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
         while_condition = CompileScopePtr->_Builder.CreateICmpNE(while_condition, CompileScopePtr->_Builder.getInt32(0));
     } else if (while_condition->getType()->isIntegerTy(8)) {
         while_condition = CompileScopePtr->_Builder.CreateICmpNE(while_condition, CompileScopePtr->_Builder.getInt8(0));
+    } else if (while_condition->getType()->isPointerTy()) {
+        // return 0 if nullptr, 1 otherwise
+        if (this->_condition->type->kind == TY_NULLPTR) {
+            while_condition = CompileScopePtr->_Builder.getInt1(0);
+        }
+        while_condition = CompileScopePtr->_Builder.getInt1(1);
     }
 
     /* Add a basic block for the consequence of the WhileStmt */
