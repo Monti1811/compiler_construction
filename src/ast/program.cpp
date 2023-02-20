@@ -52,6 +52,87 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     this->type = function_type;
 }
 
+void FunctionDefinition::compile(std::shared_ptr<CompileScope> compile_scope_ptr) {
+    std::shared_ptr<FunctionType> func_type_ptr = this->getFunctionType();
+    auto llvm_type = 
+        !func_type_ptr->has_params 
+        ?
+        func_type_ptr->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx) 
+        :
+        std::static_pointer_cast<ParamFunctionType>(func_type_ptr)->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx);
+    std::string name(*(this->_declaration._declarator->getName().value()));
+    // Check if function was already declared, if yes, choose it, otherwise create a new one
+    llvm::Function *Func = compile_scope_ptr->_Module.getFunction(name);
+    if (Func == nullptr) {
+        Func = llvm::Function::Create(
+            llvm_type                                       /* FunctionType *Ty */,
+            llvm::GlobalValue::ExternalLinkage              /* LinkageType */,
+            name                                           /* const Twine &N="" */,
+            compile_scope_ptr->_Module                      /* Module *M=0 */);
+
+    }
+
+    llvm::Function::arg_iterator FuncArgIt = Func->arg_begin();
+    auto inner_compile_scope_ptr = std::make_shared<CompileScope>(compile_scope_ptr, Func);
+
+    int count = 0;
+    auto param_func_type = std::static_pointer_cast<ParamFunctionType>(func_type_ptr);
+    while (FuncArgIt != Func->arg_end()) {
+        llvm::Argument *Arg = FuncArgIt;
+        if (param_func_type->params[count].name.has_value()) {
+            Arg->setName(*(param_func_type->params[count].name.value()));
+        } else {
+            Arg->setName("");
+        }
+        FuncArgIt++;
+        count++;
+    }
+    llvm::BasicBlock *FuncEntryBB = llvm::BasicBlock::Create(
+        compile_scope_ptr->_Ctx                 /* LLVMContext &Context */,
+        "entry"                                 /* const Twine &Name="" */,
+        Func                                    /* Function *Parent=0 */,
+        0                                       /* BasicBlock *InsertBefore=0 */);
+    compile_scope_ptr->_Builder.SetInsertPoint(FuncEntryBB);
+    compile_scope_ptr->_AllocaBuilder.SetInsertPoint(FuncEntryBB);
+    
+    count = 0;
+    FuncArgIt = Func->arg_begin();
+    auto FuncLLVMTypeIt = llvm_type->param_begin();
+    while (FuncArgIt != Func->arg_end()) {
+        compile_scope_ptr->_AllocaBuilder.SetInsertPoint(compile_scope_ptr->_AllocaBuilder.GetInsertBlock(),
+                        compile_scope_ptr->_AllocaBuilder.GetInsertBlock()->begin());
+        llvm::Argument *Arg = FuncArgIt; 
+        llvm::Value *ArgVarPtr = compile_scope_ptr->_AllocaBuilder.CreateAlloca(Arg->getType());
+        compile_scope_ptr->_Builder.CreateStore(Arg, ArgVarPtr);
+        // fill compile_scope
+        auto name = param_func_type->params[count].name.value();
+        inner_compile_scope_ptr->addAlloca(name, ArgVarPtr);
+        inner_compile_scope_ptr->addType(name, FuncLLVMTypeIt[count]);
+        FuncArgIt++;
+        count++;
+    }
+    
+    for (auto label : this->_labels) {
+        llvm::BasicBlock *labeledBlock = llvm::BasicBlock::Create(
+            inner_compile_scope_ptr->_Ctx,
+            *label + "_BLOCK",
+            inner_compile_scope_ptr->_ParentFunction.value()
+        );
+        inner_compile_scope_ptr->addLabeledBlock(label, labeledBlock);
+    }
+
+    this->_block.compile(inner_compile_scope_ptr);
+
+    if (compile_scope_ptr->_Builder.GetInsertBlock()->getTerminator() == nullptr) {
+        llvm::Type *CurFuncReturnType = compile_scope_ptr->_Builder.getCurrentFunctionReturnType();
+        if (CurFuncReturnType->isVoidTy()) {
+            compile_scope_ptr->_Builder.CreateRetVoid();
+        } else {
+            compile_scope_ptr->_Builder.CreateRet(llvm::Constant::getNullValue(CurFuncReturnType));
+        }
+    } 
+}
+
 void Program::addDeclaration(Declaration declaration) {
     this->_declarations.push_back(std::move(declaration));
     this->_is_declaration.push_back(true);
@@ -163,162 +244,13 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
             if (decl_iter == this->_declarations.end()) {
                 error("Internal error: Tried to read non-existent declaration");
             }
-            // does not declare a variable
-            if (decl_iter.base()->_declarator->isAbstract()) {
-                // If it's a struct, add it to the declared structs
-                if (decl_iter.base()->_specifier->_kind == SpecifierKind::STRUCT) {
-                    std::shared_ptr<Type> type = decl_iter.base()->getTypeDecl().type;
-                    type->toLLVMType(Builder, Ctx);
-                }
-                decl_iter++;
-                continue;
-            }
-            // The same thing as for concrete function definitions
-            std::shared_ptr<Type> type = decl_iter.base()->getTypeDecl().type;
-            llvm::Type* llvm_type = type->toLLVMType(Builder, Ctx);
-            auto isFunction = decl_iter.base()->_declarator->kind == DeclaratorKind::FUNCTION || llvm_type->isFunctionTy();
-            if (isFunction) {
-                std::shared_ptr<FunctionType> func_type_ptr = std::static_pointer_cast<FunctionType>(type);
-                
-                auto llvm_type = 
-                !func_type_ptr->has_params 
-                ?
-                func_type_ptr->toLLVMType(Builder, Ctx) 
-                :
-                std::static_pointer_cast<ParamFunctionType>(func_type_ptr)->toLLVMType(Builder, Ctx);
-
-                auto name = decl_iter.base()->_declarator->getName().value();
-                std::string _name(*name);
-                llvm::Function *Func = llvm::Function::Create(
-                    llvm_type                                       /* FunctionType *Ty */,
-                    llvm::GlobalValue::ExternalLinkage              /* LinkageType */,
-                    _name                                           /* const Twine &N="" */,
-                    &M                                              /* Module *M=0 */);
-
-            
-                    
-                llvm::Function::arg_iterator FuncArgIt = Func->arg_begin();
-                if (func_type_ptr->has_params) {
-                    int count = 0;
-                    auto param_func_type = std::static_pointer_cast<ParamFunctionType>(func_type_ptr);
-                    while (FuncArgIt != Func->arg_end()) {
-                        llvm::Argument *Arg = FuncArgIt;
-                        if (param_func_type->params[count].name.has_value()) {
-                            Arg->setName(*(param_func_type->params[count].name.value()));
-                        } else {
-                            Arg->setName("");
-                        }
-                        FuncArgIt++;
-                        count++;
-                    }
-                }
-
-            } else {
-
-                
-  
-                auto name = decl_iter.base()->_declarator->getName().value();
-
-                compile_scope_ptr->addType(name, llvm_type);
-
-                /* Create a global variable */
-                new llvm::GlobalVariable(
-                    M                                               /* Module & */,
-                    llvm_type                                       /* Type * */,
-                    false                                           /* bool isConstant */,
-                    llvm::GlobalValue::CommonLinkage                /* LinkageType */,
-                    llvm::Constant::getNullValue(llvm_type)         /* Constant * Initializer */,
-                    *name                                            /* const Twine &Name = "" */,
-                    /* --------- We do not need this part (=> use defaults) ---------- */
-                    0                                               /* GlobalVariable *InsertBefore = 0 */,
-                    llvm::GlobalVariable::NotThreadLocal            /* ThreadLocalMode TLMode = NotThreadLocal */,
-                    0                                               /* unsigned AddressSpace = 0 */,
-                    false                                           /* bool isExternallyInitialized = false */);
-            }
-            // Go to the next declaration
+            decl_iter.base()->compile(compile_scope_ptr);
             decl_iter++;
         } else {
             if (func_iter == this->_functions.end()) {
                 error("Internal error: Tried to read non-existent function definition");
             }
-            std::shared_ptr<FunctionType> func_type_ptr = func_iter.base()->getFunctionType();
-            auto llvm_type = 
-                !func_type_ptr->has_params 
-                ?
-                func_type_ptr->toLLVMType(Builder, Ctx) 
-                :
-                std::static_pointer_cast<ParamFunctionType>(func_type_ptr)->toLLVMType(Builder, Ctx);
-            std::string name(*(func_iter.base()->_declaration._declarator->getName().value()));
-            // Check if function was already declared, if yes, choose it, otherwise create a new one
-            llvm::Function *Func = M.getFunction(name);
-            if (Func == nullptr) {
-                Func = llvm::Function::Create(
-                    llvm_type                                       /* FunctionType *Ty */,
-                    llvm::GlobalValue::ExternalLinkage              /* LinkageType */,
-                    name                                           /* const Twine &N="" */,
-                    &M                                              /* Module *M=0 */);
-    
-            }
-
-            llvm::Function::arg_iterator FuncArgIt = Func->arg_begin();
-            auto inner_compile_scope_ptr = std::make_shared<CompileScope>(compile_scope_ptr, Func);
-
-            int count = 0;
-            auto param_func_type = std::static_pointer_cast<ParamFunctionType>(func_type_ptr);
-            while (FuncArgIt != Func->arg_end()) {
-                llvm::Argument *Arg = FuncArgIt;
-                if (param_func_type->params[count].name.has_value()) {
-                    Arg->setName(*(param_func_type->params[count].name.value()));
-                } else {
-                    Arg->setName("");
-                }
-                FuncArgIt++;
-                count++;
-            }
-            llvm::BasicBlock *FuncEntryBB = llvm::BasicBlock::Create(
-                Ctx                                     /* LLVMContext &Context */,
-                "entry"                                 /* const Twine &Name="" */,
-                Func                                    /* Function *Parent=0 */,
-                0                                       /* BasicBlock *InsertBefore=0 */);
-            Builder.SetInsertPoint(FuncEntryBB);
-            AllocaBuilder.SetInsertPoint(FuncEntryBB);
-            
-            count = 0;
-            FuncArgIt = Func->arg_begin();
-            auto FuncLLVMTypeIt = llvm_type->param_begin();
-            while (FuncArgIt != Func->arg_end()) {
-                AllocaBuilder.SetInsertPoint(AllocaBuilder.GetInsertBlock(),
-                                AllocaBuilder.GetInsertBlock()->begin());
-                llvm::Argument *Arg = FuncArgIt; 
-                llvm::Value *ArgVarPtr = AllocaBuilder.CreateAlloca(Arg->getType());
-                Builder.CreateStore(Arg, ArgVarPtr);
-                // fill compile_scope
-                auto name = param_func_type->params[count].name.value();
-                inner_compile_scope_ptr->addAlloca(name, ArgVarPtr);
-                inner_compile_scope_ptr->addType(name, FuncLLVMTypeIt[count]);
-                FuncArgIt++;
-                count++;
-            }
-            
-            for (auto label : func_iter.base()->_labels) {
-                llvm::BasicBlock *labeledBlock = llvm::BasicBlock::Create(
-                    inner_compile_scope_ptr->_Ctx,
-                    *label + "_BLOCK",
-                    inner_compile_scope_ptr->_ParentFunction.value()
-                );
-                inner_compile_scope_ptr->addLabeledBlock(label, labeledBlock);
-            }
-
-            func_iter.base()->_block.compile(inner_compile_scope_ptr);
-
-            if (Builder.GetInsertBlock()->getTerminator() == nullptr) {
-                llvm::Type *CurFuncReturnType = Builder.getCurrentFunctionReturnType();
-                if (CurFuncReturnType->isVoidTy()) {
-                    Builder.CreateRetVoid();
-                } else {
-                    Builder.CreateRet(llvm::Constant::getNullValue(CurFuncReturnType));
-                }
-            } 
+            func_iter.base()->compile(compile_scope_ptr);
             func_iter++;
         }
     }
