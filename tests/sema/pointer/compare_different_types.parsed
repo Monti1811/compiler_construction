@@ -1,1 +1,1 @@
-4:11: error: Cannot compare two values of different types
+4:11: error: Cannot compare values of type *(int) and *(char)
