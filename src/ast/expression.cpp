@@ -1,6 +1,6 @@
 #include "expression.h"
 
-llvm::Value* toBoolTy(ExpressionPtr to_convert, std::shared_ptr<CompileScope> CompileScopePtr);
+llvm::Value* toBoolTy(llvm::Value* to_convert, std::shared_ptr<CompileScope> CompileScopePtr);
 
 // print functions
 
@@ -984,6 +984,7 @@ llvm::Value* DerefExpression::compileLValue(std::shared_ptr<CompileScope> Compil
 
 llvm::Value* NegationExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     llvm::Value* inner_value = this->_inner->compileRValue(CompileScopePtr);
+    inner_value = CompileScopePtr->_Builder.CreateIntCast(inner_value, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true);
     return CompileScopePtr->_Builder.CreateMul(CompileScopePtr->_Builder.getInt32(-1), inner_value);
 }
 
@@ -992,7 +993,7 @@ llvm::Value* NegationExpression::compileLValue(std::shared_ptr<CompileScope>) {
 }
 
 llvm::Value* LogicalNegationExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* inner_value = toBoolTy(std::move(_inner), CompileScopePtr);
+    llvm::Value* inner_value = toBoolTy(this->_inner->compileRValue(CompileScopePtr), CompileScopePtr);
     return CompileScopePtr->_Builder.CreateICmpEQ(CompileScopePtr->_Builder.getInt1(0), inner_value);
 }
 
@@ -1007,7 +1008,10 @@ llvm::Value* BinaryExpression::compileLValue(std::shared_ptr<CompileScope>) {
 llvm::Value* MultiplyExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
     llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateMul(value_lhs, value_rhs);
+    return CompileScopePtr->_Builder.CreateMul(
+        CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true), 
+        CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
+        );
 }
 
 llvm::Value* AddExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -1015,12 +1019,23 @@ llvm::Value* AddExpression::compileRValue(std::shared_ptr<CompileScope> CompileS
     llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
     // If one of them is pointer, get the pointer shifted by the value of the second operand
     if (value_lhs->getType()->isPointerTy()) {
-        return CompileScopePtr->_Builder.CreateInBoundsGEP(CompileScopePtr->_Builder.getInt32Ty(), value_lhs, value_rhs);
+        return CompileScopePtr->_Builder.CreateInBoundsGEP(
+            CompileScopePtr->_Builder.getInt32Ty(), 
+            value_lhs, 
+            CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
+            );
     }
     if (value_rhs->getType()->isPointerTy()) {
-        return CompileScopePtr->_Builder.CreateInBoundsGEP(CompileScopePtr->_Builder.getInt32Ty(), value_rhs, value_lhs);
+        return CompileScopePtr->_Builder.CreateInBoundsGEP(
+            CompileScopePtr->_Builder.getInt32Ty(), 
+            value_rhs, 
+            CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
+            );
     }
-    return CompileScopePtr->_Builder.CreateAdd(value_lhs, value_rhs);
+    return CompileScopePtr->_Builder.CreateAdd(
+        CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true), 
+        CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
+        );
 }
 
 llvm::Value* SubstractExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -1032,7 +1047,19 @@ llvm::Value* SubstractExpression::compileRValue(std::shared_ptr<CompileScope> Co
         llvm::Value* sub_exp = CompileScopePtr->_Builder.CreateSub(value_lhs, value_rhs);
         return CompileScopePtr->_Builder.CreateExactSDiv(sub_exp, CompileScopePtr->_Builder.getInt32(4));
     }
-    return CompileScopePtr->_Builder.CreateSub(value_lhs, value_rhs);
+    if (value_lhs->getType()->isPointerTy()) {
+        return CompileScopePtr->_Builder.CreateInBoundsGEP(
+            CompileScopePtr->_Builder.getInt32Ty(), 
+            value_lhs, 
+            CompileScopePtr->_Builder.CreateMul(
+                CompileScopePtr->_Builder.getInt32(-1),
+                CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true))
+            );
+    }
+    return CompileScopePtr->_Builder.CreateSub(
+        CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true), 
+        CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
+        );
 }
 
 llvm::Value* LessThanExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -1054,19 +1081,23 @@ llvm::Value* UnequalExpression::compileRValue(std::shared_ptr<CompileScope> Comp
 }
 
 llvm::Value* AndExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* value_lhs = toBoolTy(std::move(this->_left), CompileScopePtr);
-    llvm::Value* value_rhs = toBoolTy(std::move(this->_right), CompileScopePtr);
+    // TODO: don't compile the right side when the left side is false 
+    llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(CompileScopePtr), CompileScopePtr);
+    llvm::Value* value_rhs = toBoolTy(this->_right->compileRValue(CompileScopePtr), CompileScopePtr);
     return CompileScopePtr->_Builder.CreateLogicalAnd(value_lhs, value_rhs);
 }
 
 llvm::Value* OrExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* value_lhs = toBoolTy(std::move(this->_left), CompileScopePtr);
-    llvm::Value* value_rhs = toBoolTy(std::move(this->_right), CompileScopePtr);
+    // TODO: don't compile the right side when the left side is true 
+    llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(CompileScopePtr), CompileScopePtr);
+    llvm::Value* value_rhs = toBoolTy(this->_right->compileRValue(CompileScopePtr), CompileScopePtr);
     return CompileScopePtr->_Builder.CreateLogicalOr(value_lhs, value_rhs);
 }
 
 llvm::Value* TernaryExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    auto condition_value = toBoolTy(std::move(this->_condition), CompileScopePtr);
+    // TODO: don't compile the incorrect side 
+    // 0 ? (x = 3) : 2 assigns x the value 3 although it shouldn't
+    auto condition_value = toBoolTy(this->_condition->compileRValue(CompileScopePtr), CompileScopePtr);
     auto true_value = this->_left->compileRValue(CompileScopePtr);
     auto false_value = this->_right->compileRValue(CompileScopePtr);
     return CompileScopePtr->_Builder.CreateSelect(condition_value, true_value, false_value);
@@ -1155,20 +1186,18 @@ ExpressionPtr castExpression(ExpressionPtr expr, TypePtr type) {
     return cast;
 }
 
-llvm::Value* toBoolTy(ExpressionPtr expr_to_convert, std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* to_convert = expr_to_convert->compileRValue(CompileScopePtr);
+llvm::Value* toBoolTy(llvm::Value* to_convert, std::shared_ptr<CompileScope> CompileScopePtr) {
     if (to_convert->getType()->isIntegerTy(32)) {
         return CompileScopePtr->_Builder.CreateICmpNE(CompileScopePtr->_Builder.getInt32(0), to_convert);
     } else if (to_convert->getType()->isIntegerTy(8)) {
         return CompileScopePtr->_Builder.CreateICmpNE(CompileScopePtr->_Builder.getInt8(0), to_convert);
     } else if (to_convert->getType()->isPointerTy()) {
         // return 0 if nullptr, 1 otherwise
-        if (expr_to_convert->type->kind == TY_NULLPTR) {
-            return CompileScopePtr->_Builder.getInt1(0);
-        }
-        return CompileScopePtr->_Builder.getInt1(1);
+        llvm::Value* int_to_convert = CompileScopePtr->_Builder.CreatePtrToInt(to_convert, CompileScopePtr->_Builder.getInt32Ty());
+        return CompileScopePtr->_Builder.CreateICmpNE(CompileScopePtr->_Builder.getInt32(0), int_to_convert);
     }
     else {
         return to_convert;
     }
 }
+
