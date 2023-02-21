@@ -36,19 +36,25 @@ if-header1:                                       ; preds = %if-end
   %9 = load ptr, ptr %1, align 8
   %10 = ptrtoint ptr %9 to i32
   %11 = icmp ne i32 0, %10
+  br i1 %11, label %or-end, label %or-consequence
+
+or-consequence:                                   ; preds = %if-header1
   %12 = load ptr, ptr %0, align 8
   %13 = ptrtoint ptr %12 to i32
   %14 = icmp ne i32 0, %13
-  %if-condition2 = select i1 %11, i1 true, i1 %14
+  br label %or-end
+
+or-end:                                           ; preds = %or-consequence, %if-header1
+  %if-condition2 = phi i1 [ %11, %if-header1 ], [ %14, %or-consequence ]
   br i1 %if-condition2, label %if-consequence3, label %if-alternative4
 
-if-consequence3:                                  ; preds = %if-header1
+if-consequence3:                                  ; preds = %or-end
   %15 = load i32, ptr %2, align 4
   %16 = add i32 %15, 4
   store i32 %16, ptr %2, align 4
   br label %if-end5
 
-if-alternative4:                                  ; preds = %if-header1
+if-alternative4:                                  ; preds = %or-end
   %17 = load i32, ptr %2, align 4
   %18 = add i32 %17, 8
   store i32 %18, ptr %2, align 4
@@ -61,19 +67,25 @@ if-header6:                                       ; preds = %if-end5
   %19 = load ptr, ptr %1, align 8
   %20 = ptrtoint ptr %19 to i32
   %21 = icmp ne i32 0, %20
+  br i1 %21, label %and-consequence, label %and-end
+
+and-consequence:                                  ; preds = %if-header6
   %22 = load ptr, ptr %0, align 8
   %23 = ptrtoint ptr %22 to i32
   %24 = icmp ne i32 0, %23
-  %if-condition7 = select i1 %21, i1 %24, i1 false
+  br label %and-end
+
+and-end:                                          ; preds = %and-consequence, %if-header6
+  %if-condition7 = phi i1 [ %21, %if-header6 ], [ %24, %and-consequence ]
   br i1 %if-condition7, label %if-consequence8, label %if-alternative9
 
-if-consequence8:                                  ; preds = %if-header6
+if-consequence8:                                  ; preds = %and-end
   %25 = load i32, ptr %2, align 4
   %26 = add i32 %25, 16
   store i32 %26, ptr %2, align 4
   br label %if-end10
 
-if-alternative9:                                  ; preds = %if-header6
+if-alternative9:                                  ; preds = %and-end
   %27 = load i32, ptr %2, align 4
   %28 = add i32 %27, 32
   store i32 %28, ptr %2, align 4

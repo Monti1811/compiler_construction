@@ -31,21 +31,27 @@ DEAD_BLOCK:                                       ; No predecessors!
 if-header1:                                       ; preds = %if-alternative
   %5 = load i32, ptr %1, align 4
   %6 = icmp slt i32 0, %5
+  br i1 %6, label %and-consequence, label %and-end
+
+and-consequence:                                  ; preds = %if-header1
   %7 = load i32, ptr %0, align 4
   %8 = icmp eq i32 %7, 0
-  %if-condition2 = select i1 %6, i1 %8, i1 false
+  br label %and-end
+
+and-end:                                          ; preds = %and-consequence, %if-header1
+  %if-condition2 = phi i1 [ %6, %if-header1 ], [ %8, %and-consequence ]
   br i1 %if-condition2, label %if-consequence3, label %if-alternative4
 
-if-consequence3:                                  ; preds = %if-header1
+if-consequence3:                                  ; preds = %and-end
   %9 = load i32, ptr %1, align 4
   %10 = sub i32 %9, 1
   %11 = call i32 @ack(i32 %10, i32 1)
   ret i32 %11
 
-if-alternative4:                                  ; preds = %if-header1
+if-alternative4:                                  ; preds = %and-end
   br label %if-header7
 
-if-end5:                                          ; preds = %if-end10, %DEAD_BLOCK6
+if-end5:                                          ; preds = %if-end12, %DEAD_BLOCK6
   br label %if-end
 
 DEAD_BLOCK6:                                      ; No predecessors!
@@ -54,12 +60,18 @@ DEAD_BLOCK6:                                      ; No predecessors!
 if-header7:                                       ; preds = %if-alternative4
   %12 = load i32, ptr %1, align 4
   %13 = icmp slt i32 0, %12
+  br i1 %13, label %and-consequence8, label %and-end9
+
+and-consequence8:                                 ; preds = %if-header7
   %14 = load i32, ptr %0, align 4
   %15 = icmp slt i32 0, %14
-  %if-condition8 = select i1 %13, i1 %15, i1 false
-  br i1 %if-condition8, label %if-consequence9, label %if-end10
+  br label %and-end9
 
-if-consequence9:                                  ; preds = %if-header7
+and-end9:                                         ; preds = %and-consequence8, %if-header7
+  %if-condition10 = phi i1 [ %13, %if-header7 ], [ %15, %and-consequence8 ]
+  br i1 %if-condition10, label %if-consequence11, label %if-end12
+
+if-consequence11:                                 ; preds = %and-end9
   %16 = load i32, ptr %1, align 4
   %17 = sub i32 %16, 1
   %18 = load i32, ptr %1, align 4
@@ -69,11 +81,11 @@ if-consequence9:                                  ; preds = %if-header7
   %22 = call i32 @ack(i32 %17, i32 %21)
   ret i32 %22
 
-if-end10:                                         ; preds = %DEAD_BLOCK11, %if-header7
+if-end12:                                         ; preds = %DEAD_BLOCK13, %and-end9
   br label %if-end5
 
-DEAD_BLOCK11:                                     ; No predecessors!
-  br label %if-end10
+DEAD_BLOCK13:                                     ; No predecessors!
+  br label %if-end12
 }
 
 define i32 @main() {
