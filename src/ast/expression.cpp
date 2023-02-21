@@ -848,12 +848,6 @@ llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> Compile
     for (size_t i = 0; i < this->_arguments.size(); i++) {
         llvm::Value* val = this->_arguments[i]->compileRValue(CompileScopePtr);
         args.push_back(val);
-        if (val->getType() != llvm_function_type->getParamType(i)) {
-            auto fn_type = val->getType();
-            auto arg_type = llvm_function_type->getParamType(i);
-            llvm::Value* val = this->_arguments[i]->compileRValue(CompileScopePtr);
-            int x = 1;
-        }
     }
 
     return CompileScopePtr->_Builder.CreateCall(llvm_function_type, fun, llvm::makeArrayRef(args));
