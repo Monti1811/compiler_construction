@@ -456,7 +456,7 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
                 errorloc(this->loc, "both pointers have to point to object complete types");
             }
         }
-        this->type = left_type;
+        this->type = INT_TYPE;
         return this->type;
     }
     // left side must be complete object type
