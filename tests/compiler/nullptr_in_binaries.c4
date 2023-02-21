@@ -2,6 +2,7 @@ int main() {
     int c;
     c = 0;
     int* p;
+    p = &c;
     if (p == 0) {
         c = c + 1;
     }

@@ -8,6 +8,7 @@ entry:
   %2 = alloca i32, align 4
   store i32 0, ptr %2, align 4
   store ptr null, ptr %1, align 8
+  store ptr %2, ptr %0, align 8
   br label %if-header
 
 if-header:                                        ; preds = %entry
