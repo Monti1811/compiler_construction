@@ -1109,7 +1109,7 @@ llvm::Value* UnequalExpression::compileRValue(std::shared_ptr<CompileScope> Comp
 llvm::Value* AndExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     // Get the current block
     auto curr_block = CompileScopePtr->_Builder.GetInsertBlock();
-    // TODO: don't compile the right side when the left side is true 
+
     llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(CompileScopePtr), CompileScopePtr);
     /* Add a basic block for the consequence of the OrExpression */
     llvm::BasicBlock *OrConsequenceBlock = llvm::BasicBlock::Create(
@@ -1141,7 +1141,7 @@ llvm::Value* AndExpression::compileRValue(std::shared_ptr<CompileScope> CompileS
 llvm::Value* OrExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     // Get the current block
     auto curr_block = CompileScopePtr->_Builder.GetInsertBlock();
-    // TODO: don't compile the right side when the left side is true 
+
     llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(CompileScopePtr), CompileScopePtr);
     /* Add a basic block for the consequence of the OrExpression */
     llvm::BasicBlock *OrConsequenceBlock = llvm::BasicBlock::Create(
@@ -1171,8 +1171,6 @@ llvm::Value* OrExpression::compileRValue(std::shared_ptr<CompileScope> CompileSc
 }
 
 llvm::Value* TernaryExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO: don't compile the incorrect side 
-    // 0 ? (x = 3) : 2 assigns x the value 3 although it shouldn't
     auto condition_value = toBoolTy(this->_condition->compileRValue(CompileScopePtr), CompileScopePtr);
     /* Add a basic block for the consequence of the TernaryExpression */
     llvm::BasicBlock *TernaryConsequenceBlock = llvm::BasicBlock::Create(
