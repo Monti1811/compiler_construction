@@ -10,10 +10,13 @@ int main(void) {
 	s.b = 2;
 	s.c = 3;
 
-	struct S* sx;
-	sx->a = 10;
-	sx->b = 20;
-	sx->c = 30;
+	struct S t;
+	struct S* tp;
+	tp = &t;
 
-	return s.a + s.b + s.c + sx->a + sx->b + sx->c;
+	tp->a = 10;
+	tp->b = 20;
+	tp->c = 30;
+
+	return s.a + s.b + s.c + tp->a + tp->b + tp->c;
 }
