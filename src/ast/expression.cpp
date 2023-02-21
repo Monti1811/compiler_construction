@@ -840,12 +840,18 @@ llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> Compile
         }
     }
 
-    auto llvm_function_type = function_type.value()->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    llvm::FunctionType* llvm_function_type = function_type.value()->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
 
     std::vector<llvm::Value*> args;
     for (size_t i = 0; i < this->_arguments.size(); i++) {
         llvm::Value* val = this->_arguments[i]->compileRValue(CompileScopePtr);
         args.push_back(val);
+        if (val->getType() != llvm_function_type->getParamType(i)) {
+            auto fn_type = val->getType();
+            auto arg_type = llvm_function_type->getParamType(i);
+            llvm::Value* val2 = this->_arguments[i]->compileRValue(CompileScopePtr);
+            int x = 1;
+        }
     }
 
     return CompileScopePtr->_Builder.CreateCall(llvm_function_type, fun, llvm::makeArrayRef(args));
@@ -1105,17 +1111,67 @@ llvm::Value* UnequalExpression::compileRValue(std::shared_ptr<CompileScope> Comp
 }
 
 llvm::Value* AndExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO: don't compile the right side when the left side is false 
+    // Get the current block
+    auto curr_block = CompileScopePtr->_Builder.GetInsertBlock();
+    // TODO: don't compile the right side when the left side is true 
     llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(CompileScopePtr), CompileScopePtr);
+    /* Add a basic block for the consequence of the OrExpression */
+    llvm::BasicBlock *OrConsequenceBlock = llvm::BasicBlock::Create(
+        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        "and-consequence" /* const Twine &Name="" */,
+        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        0 /* BasicBlock *InsertBefore=0 */);
+    /* Add a basic block for the end of the TernaryExpression (after the Ternary) */
+    llvm::BasicBlock *OrEndBlock = llvm::BasicBlock::Create(
+        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        "and-end" /* const Twine &Name="" */,
+        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        0 /* BasicBlock *InsertBefore=0 */);
+    // If first expr is true, we jump to the second term, otherwise we skip the second term.
+    CompileScopePtr->_Builder.CreateCondBr(value_lhs, OrConsequenceBlock, OrEndBlock);
+    // Create the compiled value of the second term
+    CompileScopePtr->_Builder.SetInsertPoint(OrConsequenceBlock);
     llvm::Value* value_rhs = toBoolTy(this->_right->compileRValue(CompileScopePtr), CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateLogicalAnd(value_lhs, value_rhs);
+    /* Insert the jump to the Ternary end block */
+    CompileScopePtr->_Builder.CreateBr(OrEndBlock);
+    /* Continue in the Ternary end block */
+    CompileScopePtr->_Builder.SetInsertPoint(OrEndBlock);
+    llvm::PHINode* phi = CompileScopePtr->_Builder.CreatePHI(CompileScopePtr->_Builder.getInt1Ty(), 2);
+    phi->addIncoming(value_lhs, curr_block);
+    phi->addIncoming(value_rhs, OrConsequenceBlock);
+    return phi;
 }
 
 llvm::Value* OrExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+    // Get the current block
+    auto curr_block = CompileScopePtr->_Builder.GetInsertBlock();
     // TODO: don't compile the right side when the left side is true 
     llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(CompileScopePtr), CompileScopePtr);
+    /* Add a basic block for the consequence of the OrExpression */
+    llvm::BasicBlock *OrConsequenceBlock = llvm::BasicBlock::Create(
+        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        "or-consequence" /* const Twine &Name="" */,
+        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        0 /* BasicBlock *InsertBefore=0 */);
+    /* Add a basic block for the end of the TernaryExpression (after the Ternary) */
+    llvm::BasicBlock *OrEndBlock = llvm::BasicBlock::Create(
+        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        "or-end" /* const Twine &Name="" */,
+        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        0 /* BasicBlock *InsertBefore=0 */);
+    // If first expr is true, we skip the second term, otherwise we jump to the second term.
+    CompileScopePtr->_Builder.CreateCondBr(value_lhs, OrEndBlock, OrConsequenceBlock);
+    // Create the compiled value of the second term
+    CompileScopePtr->_Builder.SetInsertPoint(OrConsequenceBlock);
     llvm::Value* value_rhs = toBoolTy(this->_right->compileRValue(CompileScopePtr), CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateLogicalOr(value_lhs, value_rhs);
+    /* Insert the jump to the Ternary end block */
+    CompileScopePtr->_Builder.CreateBr(OrEndBlock);
+    /* Continue in the Ternary end block */
+    CompileScopePtr->_Builder.SetInsertPoint(OrEndBlock);
+    llvm::PHINode* phi = CompileScopePtr->_Builder.CreatePHI(CompileScopePtr->_Builder.getInt1Ty(), 2);
+    phi->addIncoming(value_lhs, curr_block);
+    phi->addIncoming(value_rhs, OrConsequenceBlock);
+    return phi;
 }
 
 llvm::Value* TernaryExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
