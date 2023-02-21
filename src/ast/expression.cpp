@@ -214,7 +214,9 @@ TypePtr CallExpression::typecheck(ScopePtr& scope) {
         for (size_t i = 0; i < params.size(); i++) {
             auto arg_type = this->_arguments[i]->typecheckWrap(scope);
             if (!arg_type->strong_equals(params[i].type)) {
-                if (!((arg_type->kind == TY_POINTER || arg_type->kind == TY_NULLPTR) && arg_type->equals(params[i].type))) {
+                // If it's a pointer and something else or if a nullptr with another pointer, make a more in depth check
+                if (!((arg_type->kind == TY_POINTER || (arg_type->kind == TY_NULLPTR && params[i].type->kind == TY_POINTER)) 
+                        && arg_type->equals(params[i].type))) {
                     auto unified_type = unifyTypes(arg_type, params[i].type);
                     if (unified_type.has_value()) {
                         this->_arguments[i] = castExpression(std::move(this->_arguments[i]), unified_type.value());
@@ -849,7 +851,7 @@ llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> Compile
         if (val->getType() != llvm_function_type->getParamType(i)) {
             auto fn_type = val->getType();
             auto arg_type = llvm_function_type->getParamType(i);
-            llvm::Value* val2 = this->_arguments[i]->compileRValue(CompileScopePtr);
+            llvm::Value* val = this->_arguments[i]->compileRValue(CompileScopePtr);
             int x = 1;
         }
     }
