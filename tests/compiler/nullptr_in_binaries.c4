@@ -4,10 +4,10 @@ int main() {
     int* p;
     p = &c;
     if (p == 0) {
-        c = c + 1;
+        c = c + 100;
     }
     if (p != 0) {
-        c = c + 2;
+        c = c + 200;
     }
     return c;
 }

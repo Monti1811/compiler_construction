@@ -11,9 +11,9 @@ int main() {
         c = c + 2;
     }
     if (p || q) {
-        c = c + 4;
-    } else {
         c = c + 8;
+    } else {
+        c = c + 4;
     }
     if (p && q) {
         c = c + 16;

@@ -50,13 +50,13 @@ or-end:                                           ; preds = %or-consequence, %if
 
 if-consequence3:                                  ; preds = %or-end
   %15 = load i32, ptr %2, align 4
-  %16 = add i32 %15, 4
+  %16 = add i32 %15, 8
   store i32 %16, ptr %2, align 4
   br label %if-end5
 
 if-alternative4:                                  ; preds = %or-end
   %17 = load i32, ptr %2, align 4
-  %18 = add i32 %17, 8
+  %18 = add i32 %17, 4
   store i32 %18, ptr %2, align 4
   br label %if-end5
 
