@@ -1,0 +1,12 @@
+int main() {
+    int c;
+    c = 0;
+    int* p;
+    if (p == 0) {
+        c = c - 1;
+    }
+    if (p != 0) {
+        c = c + 1;
+    }
+    return c;
+}

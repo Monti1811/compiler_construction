@@ -1,0 +1,87 @@
+; ModuleID = 'tests/compiler/if_nullptr.c4'
+source_filename = "tests/compiler/if_nullptr.c4"
+
+define i32 @main() {
+entry:
+  %0 = alloca ptr, align 8
+  %1 = alloca ptr, align 8
+  %2 = alloca i32, align 4
+  store i32 0, ptr %2, align 4
+  store ptr null, ptr %1, align 8
+  br label %if-header
+
+if-header:                                        ; preds = %entry
+  %3 = load ptr, ptr %1, align 8
+  %4 = ptrtoint ptr %3 to i32
+  %if-condition = icmp ne i32 0, %4
+  br i1 %if-condition, label %if-consequence, label %if-alternative
+
+if-consequence:                                   ; preds = %if-header
+  %5 = load i32, ptr %2, align 4
+  %6 = sub i32 %5, 1
+  store i32 %6, ptr %2, align 4
+  br label %if-end
+
+if-alternative:                                   ; preds = %if-header
+  %7 = load i32, ptr %2, align 4
+  %8 = add i32 %7, 1
+  store i32 %8, ptr %2, align 4
+  br label %if-end
+
+if-end:                                           ; preds = %if-alternative, %if-consequence
+  br label %if-header1
+
+if-header1:                                       ; preds = %if-end
+  %9 = load ptr, ptr %1, align 8
+  %10 = ptrtoint ptr %9 to i32
+  %11 = icmp ne i32 0, %10
+  %12 = load ptr, ptr %0, align 8
+  %13 = ptrtoint ptr %12 to i32
+  %14 = icmp ne i32 0, %13
+  %if-condition2 = select i1 %11, i1 true, i1 %14
+  br i1 %if-condition2, label %if-consequence3, label %if-alternative4
+
+if-consequence3:                                  ; preds = %if-header1
+  %15 = load i32, ptr %2, align 4
+  %16 = add i32 %15, 1
+  store i32 %16, ptr %2, align 4
+  br label %if-end5
+
+if-alternative4:                                  ; preds = %if-header1
+  %17 = load i32, ptr %2, align 4
+  %18 = sub i32 %17, 1
+  store i32 %18, ptr %2, align 4
+  br label %if-end5
+
+if-end5:                                          ; preds = %if-alternative4, %if-consequence3
+  br label %if-header6
+
+if-header6:                                       ; preds = %if-end5
+  %19 = load ptr, ptr %1, align 8
+  %20 = ptrtoint ptr %19 to i32
+  %21 = icmp ne i32 0, %20
+  %22 = load ptr, ptr %0, align 8
+  %23 = ptrtoint ptr %22 to i32
+  %24 = icmp ne i32 0, %23
+  %if-condition7 = select i1 %21, i1 %24, i1 false
+  br i1 %if-condition7, label %if-consequence8, label %if-alternative9
+
+if-consequence8:                                  ; preds = %if-header6
+  %25 = load i32, ptr %2, align 4
+  %26 = sub i32 %25, 1
+  store i32 %26, ptr %2, align 4
+  br label %if-end10
+
+if-alternative9:                                  ; preds = %if-header6
+  %27 = load i32, ptr %2, align 4
+  %28 = add i32 %27, 1
+  store i32 %28, ptr %2, align 4
+  br label %if-end10
+
+if-end10:                                         ; preds = %if-alternative9, %if-consequence8
+  %29 = load i32, ptr %2, align 4
+  ret i32 %29
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}

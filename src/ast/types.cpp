@@ -3,7 +3,7 @@
 std::optional<TypePtr> unifyTypes(TypePtr left_type, TypePtr right_type) {
     if (left_type->strong_equals(right_type)) {
         return std::nullopt;
-    }
+    } 
 
     auto left = left_type->kind;
     auto right = right_type->kind;
