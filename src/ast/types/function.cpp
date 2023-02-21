@@ -14,6 +14,11 @@ bool FunctionType::strong_equals(TypePtr const& other) {
 }
 
 llvm::FunctionType* FunctionType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+    if (this->has_params) {
+        auto param_function_type = static_cast<ParamFunctionType*>(this);
+        return param_function_type->toLLVMType(Builder, Ctx);
+    }
+
     /* Create the return type */
     llvm::Type *FuncReturnType = this->return_type->toLLVMType(Builder, Ctx);
 

@@ -1,0 +1,9 @@
+int f(void) {
+    return 42;
+}
+
+int main(void) {
+    int (*g)(void);
+    g = f;
+    return (***********g)();
+}

@@ -697,14 +697,15 @@ TypePtr CastExpression::typecheck(ScopePtr& scope) {
 
 
 llvm::Value* IdentExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // If it's a function, don't load the function
-    auto fun = CompileScopePtr->_Module.getFunction(*(this->_ident));
-    if (fun != NULL) {
-        return fun;
-    }
     // identifier should always exist since we typechecked the program already
-    llvm::Value* saved_alloca = CompileScopePtr->getAlloca(this->_ident).value();
+    llvm::Value* saved_alloca = this->compileLValue(CompileScopePtr);
     llvm::Type* var_type = CompileScopePtr->getType(this->_ident).value();
+
+    // If the identifier denotes a function, return the function directly
+    if (var_type->isFunctionTy()) {
+        return saved_alloca;
+    }
+
     return CompileScopePtr->_Builder.CreateLoad(var_type, saved_alloca);
 }
 
@@ -822,21 +823,26 @@ llvm::Value* IndexExpression::compileLValue(std::shared_ptr<CompileScope> Compil
 
 
 llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    Symbol name(static_cast<IdentExpression*>(this->_expression.get())->_ident);
-    llvm::Function* fun = CompileScopePtr->_Module.getFunction(*name);
-    if (fun == NULL) {
-        //fun = std::static_pointer_cast<llvm::Function*>(CompileScopePtr->getAlloca(name).value());
-        llvm::Value* fun_ptr = CompileScopePtr->getAlloca(name).value();
-        llvm::Value* fun_val = CompileScopePtr->_Builder.CreateLoad(fun_ptr->getType(), fun_ptr);
-        fun = static_cast<llvm::Function*>(fun_val);
+    auto fun = this->_expression->compileRValue(CompileScopePtr);
+
+    auto function_type = this->_expression->type->unwrapFunctionPointer();
+    if (!function_type.has_value()) {
+        if (this->_expression->type->kind == TypeKind::TY_FUNCTION) {
+            function_type = std::static_pointer_cast<FunctionType>(this->_expression->type);
+        } else {
+            errorloc(this->loc, "Could not unwrap function pointer during codegen");
+        }
     }
+
+    auto llvm_function_type = function_type.value()->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+
     std::vector<llvm::Value*> args;
     for (size_t i = 0; i < this->_arguments.size(); i++) {
         llvm::Value* val = this->_arguments[i]->compileRValue(CompileScopePtr);
         args.push_back(val);
     }
-    
-    return CompileScopePtr->_Builder.CreateCall(fun, llvm::makeArrayRef(args));
+
+    return CompileScopePtr->_Builder.CreateCall(llvm_function_type, fun, llvm::makeArrayRef(args));
 }
 
 llvm::Value* CallExpression::compileLValue(std::shared_ptr<CompileScope>) {
