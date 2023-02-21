@@ -1,0 +1,23 @@
+int main() {
+    int c;
+    c = 0;
+    int* p;
+    int *q;
+    p = 0;
+    if (p) {
+        c = c - 1;
+    } else {
+        c = c + 1;
+    }
+    if (p || q) {
+        c = c + 1;
+    } else {
+        c = c - 1;
+    }
+    if (p && q) {
+        c = c - 1;
+    } else {
+        c = c + 1;
+    }
+    return c;
+}

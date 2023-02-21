@@ -404,9 +404,8 @@ TypePtr AddExpression::typecheck(ScopePtr& scope) {
             this->_left = castExpression(std::move(this->_left), unified_type.value());
             this->_right = castExpression(std::move(this->_right), unified_type.value());
         } else {
-            this->type = left_type;
+            this->type = INT_TYPE;
         }
-
         return this->type;
     }
 
@@ -439,7 +438,7 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
             this->_left = castExpression(std::move(this->_left), unified_type.value());
             this->_right = castExpression(std::move(this->_right), unified_type.value());
         } else {
-            this->type = left_type;
+            this->type = INT_TYPE;
         }
 
         return this->type;
@@ -457,7 +456,7 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
                 errorloc(this->loc, "both pointers have to point to object complete types");
             }
         }
-        this->type = INT_TYPE;
+        this->type = left_type;
         return this->type;
     }
     // left side must be complete object type
@@ -1148,6 +1147,8 @@ std::optional<llvm::Value*> CastExpression::convertNullptrs(std::shared_ptr<Comp
     } else if (this->type->kind == TypeKind::TY_CHAR) {
         return compile_scope->_Builder.getInt8(0);
     } else if (this->type->kind == TypeKind::TY_NULLPTR) {
+        return std::nullopt;
+    } else if (this->type->kind == TypeKind::TY_POINTER) {
         return std::nullopt;
     } else {
         errorloc(this->loc, "Invalid usage of null pointer constant");
