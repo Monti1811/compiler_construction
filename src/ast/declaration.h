@@ -3,6 +3,7 @@
 #include "declarators/declarator.h"
 #include "specifiers/specifier.h"
 
+#include "compile_scope.h"
 #include "type_decl.h"
 
 // int x;
@@ -21,6 +22,8 @@ struct Declaration {
     void typecheck(ScopePtr& scope);
     TypeDecl toType(ScopePtr& scope);
     TypeDecl getTypeDecl();
+
+    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
 
     Locatable _loc;
     TypeSpecifierPtr _specifier;

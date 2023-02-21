@@ -1,9 +1,17 @@
-; ModuleID = 'tests/compiler/function/ptr_call.c4'
-source_filename = "tests/compiler/function/ptr_call.c4"
+; ModuleID = 'tests/compiler/function/ptr_call_wrong_function.c4'
+source_filename = "tests/compiler/function/ptr_call_wrong_function.c4"
 
 define i32 @f() {
 entry:
   ret i32 42
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}
+
+define i32 @g() {
+entry:
+  ret i32 123
 
 DEAD_BLOCK:                                       ; No predecessors!
   ret i32 0

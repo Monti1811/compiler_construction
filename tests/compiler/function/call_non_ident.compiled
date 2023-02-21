@@ -1,5 +1,5 @@
-; ModuleID = 'tests/compiler/function/ptr_call.c4'
-source_filename = "tests/compiler/function/ptr_call.c4"
+; ModuleID = 'tests/compiler/function/call_non_ident.c4'
+source_filename = "tests/compiler/function/call_non_ident.c4"
 
 define i32 @f() {
 entry:

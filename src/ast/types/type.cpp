@@ -70,7 +70,7 @@ void Type::print(std::ostream& stream) {
                     }
                     stream << param.type;
                     if (param.name) {
-                        stream << " " << *param.name;
+                        stream << " " << **param.name;
                     }
                 }
                 stream << ")";

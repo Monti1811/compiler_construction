@@ -20,4 +20,4 @@ test:
   stage: test
   script:
     - ln -s /llvm ./llvm
-    - python3 test.py --ci --verbose lexer parser sema
+    - python3 test.py --ci --verbose lexer parser sema compiler
