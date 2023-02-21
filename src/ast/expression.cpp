@@ -975,11 +975,23 @@ llvm::Value* ReferenceExpression::compileLValue(std::shared_ptr<CompileScope>) {
 llvm::Value* DerefExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     auto expr_value = this->compileLValue(CompileScopePtr);
     auto expr_type = this->_inner->type;
-    if (expr_type->kind != TY_POINTER) {
-        errorloc(this->loc, "Tried to dereference non-pointer during codegen");
+
+    // If we try to dereference a function, don't do anything and just return the function
+    if (expr_type->kind == TypeKind::TY_FUNCTION) {
+        return expr_value;
+    }
+
+    if (expr_type->kind != TypeKind::TY_POINTER) {
+        errorloc(this->loc, "Tried to dereference an expression of type ", expr_type, " during codegen");
     }
 
     auto ptr_ty = std::static_pointer_cast<PointerType>(expr_type);
+
+    // If we try to dereference a function, don't do anything and just return the function
+    if (ptr_ty->inner->kind == TypeKind::TY_FUNCTION) {
+        return expr_value;
+    }
+
     auto inner_expr_type = ptr_ty->inner->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
     return CompileScopePtr->_Builder.CreateLoad(inner_expr_type, expr_value);
 }
