@@ -4,6 +4,7 @@ source_filename = "tests/compiler/function/label.c4"
 define i32 @main() {
 entry:
   %0 = alloca i32, align 4
+  store i32 0, ptr %0, align 4
   br label %label_BLOCK
 
 label_BLOCK:                                      ; preds = %if-consequence, %entry

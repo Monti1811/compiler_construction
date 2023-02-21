@@ -213,8 +213,17 @@ TypePtr CallExpression::typecheck(ScopePtr& scope) {
 
         for (size_t i = 0; i < params.size(); i++) {
             auto arg_type = this->_arguments[i]->typecheckWrap(scope);
-            if (!arg_type->equals(params[i].type)) {
-                errorloc(this->_arguments[i]->loc, "Incorrect argument type");
+            if (!arg_type->strong_equals(params[i].type)) {
+                // If it's a pointer and something else or if a nullptr with another pointer, make a more in depth check
+                if (!((arg_type->kind == TY_POINTER || (arg_type->kind == TY_NULLPTR && params[i].type->kind == TY_POINTER)) 
+                        && arg_type->equals(params[i].type))) {
+                    auto unified_type = unifyTypes(arg_type, params[i].type);
+                    if (unified_type.has_value()) {
+                        this->_arguments[i] = castExpression(std::move(this->_arguments[i]), unified_type.value());
+                    } else {
+                        errorloc(this->_arguments[i]->loc, "Incorrect argument type");
+                    }
+                }
             }
         }
 
@@ -833,7 +842,7 @@ llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> Compile
         }
     }
 
-    auto llvm_function_type = function_type.value()->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    llvm::FunctionType* llvm_function_type = function_type.value()->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
 
     std::vector<llvm::Value*> args;
     for (size_t i = 0; i < this->_arguments.size(); i++) {
@@ -1098,26 +1107,117 @@ llvm::Value* UnequalExpression::compileRValue(std::shared_ptr<CompileScope> Comp
 }
 
 llvm::Value* AndExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO: don't compile the right side when the left side is false 
+    // Get the current block
+    auto curr_block = CompileScopePtr->_Builder.GetInsertBlock();
+
     llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(CompileScopePtr), CompileScopePtr);
+    /* Add a basic block for the consequence of the OrExpression */
+    llvm::BasicBlock *OrConsequenceBlock = llvm::BasicBlock::Create(
+        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        "and-consequence" /* const Twine &Name="" */,
+        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        0 /* BasicBlock *InsertBefore=0 */);
+    /* Add a basic block for the end of the TernaryExpression (after the Ternary) */
+    llvm::BasicBlock *OrEndBlock = llvm::BasicBlock::Create(
+        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        "and-end" /* const Twine &Name="" */,
+        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        0 /* BasicBlock *InsertBefore=0 */);
+    // If first expr is true, we jump to the second term, otherwise we skip the second term.
+    CompileScopePtr->_Builder.CreateCondBr(value_lhs, OrConsequenceBlock, OrEndBlock);
+    // Create the compiled value of the second term
+    CompileScopePtr->_Builder.SetInsertPoint(OrConsequenceBlock);
     llvm::Value* value_rhs = toBoolTy(this->_right->compileRValue(CompileScopePtr), CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateLogicalAnd(value_lhs, value_rhs);
+    /* Insert the jump to the Ternary end block */
+    CompileScopePtr->_Builder.CreateBr(OrEndBlock);
+    /* Continue in the Ternary end block */
+    CompileScopePtr->_Builder.SetInsertPoint(OrEndBlock);
+    llvm::PHINode* phi = CompileScopePtr->_Builder.CreatePHI(CompileScopePtr->_Builder.getInt1Ty(), 2);
+    phi->addIncoming(value_lhs, curr_block);
+    phi->addIncoming(value_rhs, OrConsequenceBlock);
+    return phi;
 }
 
 llvm::Value* OrExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO: don't compile the right side when the left side is true 
+    // Get the current block
+    auto curr_block = CompileScopePtr->_Builder.GetInsertBlock();
+
     llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(CompileScopePtr), CompileScopePtr);
+    /* Add a basic block for the consequence of the OrExpression */
+    llvm::BasicBlock *OrConsequenceBlock = llvm::BasicBlock::Create(
+        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        "or-consequence" /* const Twine &Name="" */,
+        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        0 /* BasicBlock *InsertBefore=0 */);
+    /* Add a basic block for the end of the TernaryExpression (after the Ternary) */
+    llvm::BasicBlock *OrEndBlock = llvm::BasicBlock::Create(
+        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        "or-end" /* const Twine &Name="" */,
+        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        0 /* BasicBlock *InsertBefore=0 */);
+    // If first expr is true, we skip the second term, otherwise we jump to the second term.
+    CompileScopePtr->_Builder.CreateCondBr(value_lhs, OrEndBlock, OrConsequenceBlock);
+    // Create the compiled value of the second term
+    CompileScopePtr->_Builder.SetInsertPoint(OrConsequenceBlock);
     llvm::Value* value_rhs = toBoolTy(this->_right->compileRValue(CompileScopePtr), CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateLogicalOr(value_lhs, value_rhs);
+    /* Insert the jump to the Ternary end block */
+    CompileScopePtr->_Builder.CreateBr(OrEndBlock);
+    /* Continue in the Ternary end block */
+    CompileScopePtr->_Builder.SetInsertPoint(OrEndBlock);
+    llvm::PHINode* phi = CompileScopePtr->_Builder.CreatePHI(CompileScopePtr->_Builder.getInt1Ty(), 2);
+    phi->addIncoming(value_lhs, curr_block);
+    phi->addIncoming(value_rhs, OrConsequenceBlock);
+    return phi;
 }
 
 llvm::Value* TernaryExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // TODO: don't compile the incorrect side 
-    // 0 ? (x = 3) : 2 assigns x the value 3 although it shouldn't
     auto condition_value = toBoolTy(this->_condition->compileRValue(CompileScopePtr), CompileScopePtr);
+    /* Add a basic block for the consequence of the TernaryExpression */
+    llvm::BasicBlock *TernaryConsequenceBlock = llvm::BasicBlock::Create(
+        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        "ternary-consequence" /* const Twine &Name="" */,
+        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        0 /* BasicBlock *InsertBefore=0 */);
+
+    /* Add a basic block for the alternative of the TernaryExpression */
+    llvm::BasicBlock *TernaryAlternativeBlock = llvm::BasicBlock::Create(
+        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        "ternary-alternative" /* const Twine &Name="" */,
+        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        0 /* BasicBlock *InsertBefore=0 */);
+    /* Add a basic block for the end of the TernaryExpression (after the Ternary) */
+    llvm::BasicBlock *TernaryEndBlock = llvm::BasicBlock::Create(
+        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        "ternary-end" /* const Twine &Name="" */,
+        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        0 /* BasicBlock *InsertBefore=0 */);
+    /* Create the conditional branch */
+    CompileScopePtr->_Builder.CreateCondBr(condition_value, TernaryConsequenceBlock, TernaryAlternativeBlock);
+    /* Set the header of the TernaryConsequenceBlock as the new insert point */
+    CompileScopePtr->_Builder.SetInsertPoint(TernaryConsequenceBlock);
+    auto consequence_compile_scope_ptr = std::make_shared<CompileScope>(CompileScopePtr);
     auto true_value = this->_left->compileRValue(CompileScopePtr);
+    /* Insert the jump to the Ternary end block */
+    CompileScopePtr->_Builder.CreateBr(TernaryEndBlock);
+    /* Set the header of the TernaryAlternativeBlock as the new insert point */
+    CompileScopePtr->_Builder.SetInsertPoint(TernaryAlternativeBlock);
+    auto alternative_compile_scope_ptr = std::make_shared<CompileScope>(CompileScopePtr);
     auto false_value = this->_right->compileRValue(CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateSelect(condition_value, true_value, false_value);
+    /* Insert the jump to the Ternary end block */
+    CompileScopePtr->_Builder.CreateBr(TernaryEndBlock);
+    /* Continue in the Ternary end block */
+    CompileScopePtr->_Builder.SetInsertPoint(TernaryEndBlock);
+    
+    //auto condition_value = toBoolTy(this->_condition->compileRValue(CompileScopePtr), CompileScopePtr);
+    //auto true_value = this->_left->compileRValue(CompileScopePtr);
+    //auto false_value = this->_right->compileRValue(CompileScopePtr);
+    if (true_value->getType() == CompileScopePtr->_Builder.getVoidTy()) {
+        return nullptr;
+    }
+    llvm::PHINode* phi = CompileScopePtr->_Builder.CreatePHI(true_value->getType(), 2);
+    phi->addIncoming(true_value, TernaryConsequenceBlock);
+    phi->addIncoming(false_value, TernaryAlternativeBlock);
+    return phi; //CompileScopePtr->_Builder.CreateSelect(condition_value, true_value, false_value);
 }
 
 llvm::Value* TernaryExpression::compileLValue(std::shared_ptr<CompileScope>) {

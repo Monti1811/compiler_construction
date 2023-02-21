@@ -12,11 +12,20 @@ entry:
   store i32 %z, ptr %0, align 4
   %4 = load i32, ptr %3, align 4
   %5 = icmp slt i32 %4, 0
+  br i1 %5, label %ternary-consequence, label %ternary-alternative
+
+ternary-consequence:                              ; preds = %entry
+  br label %ternary-end
+
+ternary-alternative:                              ; preds = %entry
   %6 = load i32, ptr %2, align 4
   %7 = load i32, ptr %0, align 4
   %8 = add i32 %6, %7
   %9 = mul i32 2, %8
-  %10 = select i1 %5, i32 5, i32 %9
+  br label %ternary-end
+
+ternary-end:                                      ; preds = %ternary-alternative, %ternary-consequence
+  %10 = phi i32 [ 5, %ternary-consequence ], [ %9, %ternary-alternative ]
   store i32 %10, ptr %1, align 4
   %11 = load i32, ptr %1, align 4
   ret i32 %11

@@ -90,10 +90,21 @@ void BlockStatement::typecheckInner(ScopePtr &inner_scope)
 
 void BlockStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
 {
-    // TODO
+    auto inner_compile_scope = std::make_shared<CompileScope>(CompileScopePtr);
+
+    // First compile all declarations, then compile other statements
     for (auto &item : this->_items)
     {
-        item->compile(CompileScopePtr);
+        if (item->kind == StatementKind::ST_DECLARATION) {
+            item->compile(inner_compile_scope);
+        }
+        
+    }
+    for (auto &item : this->_items)
+    {
+        if (!(item->kind == StatementKind::ST_DECLARATION)) {
+            item->compile(inner_compile_scope);
+        }
     }
 }
 
