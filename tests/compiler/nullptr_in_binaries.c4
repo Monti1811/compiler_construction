@@ -3,10 +3,10 @@ int main() {
     c = 0;
     int* p;
     if (p == 0) {
-        c = c - 1;
+        c = c + 1;
     }
     if (p != 0) {
-        c = c + 1;
+        c = c + 2;
     }
     return c;
 }

@@ -5,19 +5,19 @@ int main() {
     int *q;
     p = 0;
     if (p) {
-        c = c - 1;
-    } else {
         c = c + 1;
+    } else {
+        c = c + 2;
     }
     if (p || q) {
-        c = c + 1;
+        c = c + 4;
     } else {
-        c = c - 1;
+        c = c + 8;
     }
     if (p && q) {
-        c = c - 1;
+        c = c + 16;
     } else {
-        c = c + 1;
+        c = c + 32;
     }
     return c;
 }

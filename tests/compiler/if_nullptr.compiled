@@ -18,13 +18,13 @@ if-header:                                        ; preds = %entry
 
 if-consequence:                                   ; preds = %if-header
   %5 = load i32, ptr %2, align 4
-  %6 = sub i32 %5, 1
+  %6 = add i32 %5, 1
   store i32 %6, ptr %2, align 4
   br label %if-end
 
 if-alternative:                                   ; preds = %if-header
   %7 = load i32, ptr %2, align 4
-  %8 = add i32 %7, 1
+  %8 = add i32 %7, 2
   store i32 %8, ptr %2, align 4
   br label %if-end
 
@@ -43,13 +43,13 @@ if-header1:                                       ; preds = %if-end
 
 if-consequence3:                                  ; preds = %if-header1
   %15 = load i32, ptr %2, align 4
-  %16 = add i32 %15, 1
+  %16 = add i32 %15, 4
   store i32 %16, ptr %2, align 4
   br label %if-end5
 
 if-alternative4:                                  ; preds = %if-header1
   %17 = load i32, ptr %2, align 4
-  %18 = sub i32 %17, 1
+  %18 = add i32 %17, 8
   store i32 %18, ptr %2, align 4
   br label %if-end5
 
@@ -68,13 +68,13 @@ if-header6:                                       ; preds = %if-end5
 
 if-consequence8:                                  ; preds = %if-header6
   %25 = load i32, ptr %2, align 4
-  %26 = sub i32 %25, 1
+  %26 = add i32 %25, 16
   store i32 %26, ptr %2, align 4
   br label %if-end10
 
 if-alternative9:                                  ; preds = %if-header6
   %27 = load i32, ptr %2, align 4
-  %28 = add i32 %27, 1
+  %28 = add i32 %27, 32
   store i32 %28, ptr %2, align 4
   br label %if-end10
 
