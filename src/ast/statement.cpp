@@ -537,7 +537,7 @@ void ReturnStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
         llvm::Value *return_value = this->_expr.value()->compileRValue(CompileScopePtr);
         // If return type is a bool, cast it to int32
         if (return_value->getType()->isIntegerTy(1)) {
-            return_value = CompileScopePtr->_Builder.CreateIntCast(return_value, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true);
+            return_value = CompileScopePtr->_Builder.CreateIntCast(return_value, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false);
         }
             
         CompileScopePtr->_Builder.CreateRet(return_value);

@@ -16,7 +16,7 @@ and-consequence:                                  ; preds = %entry
 
 and-end:                                          ; preds = %and-consequence, %entry
   %5 = phi i1 [ %2, %entry ], [ %4, %and-consequence ]
-  %6 = sext i1 %5 to i32
+  %6 = zext i1 %5 to i32
   ret i32 %6
 
 DEAD_BLOCK:                                       ; No predecessors!
