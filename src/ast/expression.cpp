@@ -215,17 +215,14 @@ TypePtr CallExpression::typecheck(ScopePtr& scope) {
 
         for (size_t i = 0; i < params.size(); i++) {
             auto arg_type = this->_arguments[i]->typecheckWrap(scope);
-            if (!arg_type->strong_equals(params[i].type)) {
-                // If it's a pointer and something else or if a nullptr with another pointer, make a more in depth check
-                if (!((arg_type->kind == TY_POINTER || (arg_type->kind == TY_NULLPTR && params[i].type->kind == TY_POINTER)) 
-                        && arg_type->equals(params[i].type))) {
-                    auto unified_type = unifyTypes(arg_type, params[i].type);
-                    if (unified_type.has_value()) {
-                        this->_arguments[i] = castExpression(std::move(this->_arguments[i]), unified_type.value());
-                    } else if (params[i].type->kind != TY_FUNCTION) {
-                        errorloc(this->_arguments[i]->loc, "Incorrect argument type, expected ", params[i].type, ", is ", arg_type);
-                    }
-                }
+            auto unified_type = unifyTypes(arg_type, params[i].type);
+
+            if (arg_type->equals(params[i].type) || unified_type.has_value()) {
+                this->_arguments[i] = castExpression(std::move(this->_arguments[i]), params[i].type);
+            } else if (params[i].type->kind == TY_FUNCTION && arg_type->kind == TY_POINTER) {
+                // This case is OK, functions can be implicitly cast to function pointers
+            } else {
+                errorloc(this->_arguments[i]->loc, "Incorrect argument type, expected ", params[i].type, ", is ", arg_type);
             }
         }
 
@@ -855,8 +852,8 @@ llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> Compile
     llvm::FunctionType* llvm_function_type = function_type.value()->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
 
     std::vector<llvm::Value*> args;
-    for (size_t i = 0; i < this->_arguments.size(); i++) {
-        llvm::Value* val = this->_arguments[i]->compileRValue(CompileScopePtr);
+    for (auto& arg : this->_arguments) {
+        llvm::Value* val = arg->compileRValue(CompileScopePtr);
         args.push_back(val);
     }
 
