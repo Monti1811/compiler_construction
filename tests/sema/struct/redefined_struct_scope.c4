@@ -1,0 +1,13 @@
+struct S {
+    int a;
+};
+
+int main(void) {
+    struct S {
+        int b;
+    };
+
+    struct S s;
+    s.b = 42;
+    s.a = 42;
+}
