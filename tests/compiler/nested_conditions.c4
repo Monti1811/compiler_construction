@@ -1,0 +1,17 @@
+int main(void) {
+    int i;
+    int r;
+
+    i = 0;
+    r = 0;
+
+    // This condition is more complicated than it needs to be,
+    // but the point is that it has nested shortcircuit operators in the condition
+    while ((i < 20 || i < 30) && (r == 0 || r < 100)) {
+        i = i + 1;
+        if (i == 20)
+            r = i;
+    }
+
+    return r;
+}

@@ -1,0 +1,69 @@
+; ModuleID = 'tests/compiler/nested_conditions.c4'
+source_filename = "tests/compiler/nested_conditions.c4"
+
+define i32 @main() {
+entry:
+  %0 = alloca i32, align 4
+  %1 = alloca i32, align 4
+  store i32 0, ptr %1, align 4
+  store i32 0, ptr %0, align 4
+  br label %while-header
+
+while-header:                                     ; preds = %if-end, %entry
+  %2 = load i32, ptr %1, align 4
+  %3 = icmp slt i32 %2, 20
+  br i1 %3, label %or-end, label %or-consequence
+
+or-consequence:                                   ; preds = %while-header
+  %4 = load i32, ptr %1, align 4
+  %5 = icmp slt i32 %4, 30
+  br label %or-end
+
+or-end:                                           ; preds = %or-consequence, %while-header
+  %6 = phi i1 [ %3, %while-header ], [ %5, %or-consequence ]
+  br i1 %6, label %and-consequence, label %and-end
+
+and-consequence:                                  ; preds = %or-end
+  %7 = load i32, ptr %0, align 4
+  %8 = icmp eq i32 %7, 0
+  br i1 %8, label %or-end2, label %or-consequence1
+
+and-end:                                          ; preds = %or-end2, %or-end
+  %9 = phi i1 [ %6, %while-header ], [ %12, %and-consequence ]
+  br i1 %9, label %while-body, label %while-end
+
+or-consequence1:                                  ; preds = %and-consequence
+  %10 = load i32, ptr %0, align 4
+  %11 = icmp slt i32 %10, 100
+  br label %or-end2
+
+or-end2:                                          ; preds = %or-consequence1, %and-consequence
+  %12 = phi i1 [ %8, %and-consequence ], [ %11, %or-consequence1 ]
+  br label %and-end
+
+while-body:                                       ; preds = %and-end
+  %13 = load i32, ptr %1, align 4
+  %14 = add i32 %13, 1
+  store i32 %14, ptr %1, align 4
+  br label %if-header
+
+while-end:                                        ; preds = %and-end
+  %15 = load i32, ptr %0, align 4
+  ret i32 %15
+
+if-header:                                        ; preds = %while-body
+  %16 = load i32, ptr %1, align 4
+  %if-condition = icmp eq i32 %16, 20
+  br i1 %if-condition, label %if-consequence, label %if-end
+
+if-consequence:                                   ; preds = %if-header
+  %17 = load i32, ptr %1, align 4
+  store i32 %17, ptr %0, align 4
+  br label %if-end
+
+if-end:                                           ; preds = %if-consequence, %if-header
+  br label %while-header
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}

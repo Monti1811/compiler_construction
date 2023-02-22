@@ -1,0 +1,117 @@
+; ModuleID = 'tests/compiler/exprs/shortcircuit_if.c4'
+source_filename = "tests/compiler/exprs/shortcircuit_if.c4"
+
+define i32 @main() {
+entry:
+  %0 = alloca i32, align 4
+  %1 = alloca i32, align 4
+  %2 = alloca i32, align 4
+  store i32 0, ptr %2, align 4
+  store i32 1, ptr %1, align 4
+  store i32 0, ptr %0, align 4
+  br label %if-header
+
+if-header:                                        ; preds = %entry
+  %3 = load i32, ptr %2, align 4
+  %4 = icmp ne i32 0, %3
+  br i1 %4, label %and-consequence, label %and-end
+
+and-consequence:                                  ; preds = %if-header
+  %5 = load i32, ptr %0, align 4
+  %6 = add i32 %5, 1
+  store i32 %6, ptr %0, align 4
+  %7 = icmp ne i32 0, %6
+  br label %and-end
+
+and-end:                                          ; preds = %and-consequence, %if-header
+  %if-condition = phi i1 [ %4, %if-header ], [ %7, %and-consequence ]
+  br i1 %if-condition, label %if-consequence, label %if-end
+
+if-consequence:                                   ; preds = %and-end
+  %8 = load i32, ptr %0, align 4
+  %9 = add i32 %8, 2
+  store i32 %9, ptr %0, align 4
+  br label %if-end
+
+if-end:                                           ; preds = %if-consequence, %and-end
+  br label %if-header1
+
+if-header1:                                       ; preds = %if-end
+  %10 = load i32, ptr %1, align 4
+  %11 = icmp ne i32 0, %10
+  br i1 %11, label %or-end, label %or-consequence
+
+or-consequence:                                   ; preds = %if-header1
+  %12 = load i32, ptr %0, align 4
+  %13 = add i32 %12, 4
+  store i32 %13, ptr %0, align 4
+  %14 = icmp ne i32 0, %13
+  br label %or-end
+
+or-end:                                           ; preds = %or-consequence, %if-header1
+  %if-condition2 = phi i1 [ %11, %if-header1 ], [ %14, %or-consequence ]
+  br i1 %if-condition2, label %if-consequence3, label %if-end4
+
+if-consequence3:                                  ; preds = %or-end
+  br label %if-end4
+
+if-end4:                                          ; preds = %if-consequence3, %or-end
+  br label %if-header5
+
+if-header5:                                       ; preds = %if-end4
+  %15 = load i32, ptr %2, align 4
+  %16 = icmp ne i32 0, %15
+  br i1 %16, label %ternary-consequence, label %ternary-alternative
+
+ternary-consequence:                              ; preds = %if-header5
+  %17 = load i32, ptr %0, align 4
+  %18 = add i32 %17, 5
+  store i32 %18, ptr %0, align 4
+  br label %ternary-end
+
+ternary-alternative:                              ; preds = %if-header5
+  br label %ternary-end
+
+ternary-end:                                      ; preds = %ternary-alternative, %ternary-consequence
+  %19 = phi i32 [ %18, %ternary-consequence ], [ 0, %ternary-alternative ]
+  %if-condition6 = icmp ne i32 %19, 0
+  br i1 %if-condition6, label %if-consequence7, label %if-end8
+
+if-consequence7:                                  ; preds = %ternary-end
+  %20 = load i32, ptr %0, align 4
+  %21 = add i32 %20, 16
+  store i32 %21, ptr %0, align 4
+  br label %if-end8
+
+if-end8:                                          ; preds = %if-consequence7, %ternary-end
+  br label %if-header9
+
+if-header9:                                       ; preds = %if-end8
+  %22 = load i32, ptr %1, align 4
+  %23 = icmp ne i32 0, %22
+  br i1 %23, label %ternary-consequence10, label %ternary-alternative11
+
+ternary-consequence10:                            ; preds = %if-header9
+  br label %ternary-end12
+
+ternary-alternative11:                            ; preds = %if-header9
+  %24 = load i32, ptr %0, align 4
+  %25 = add i32 %24, 32
+  store i32 %25, ptr %0, align 4
+  br label %ternary-end12
+
+ternary-end12:                                    ; preds = %ternary-alternative11, %ternary-consequence10
+  %26 = phi i32 [ 1, %ternary-consequence10 ], [ %25, %ternary-alternative11 ]
+  %if-condition13 = icmp ne i32 %26, 0
+  br i1 %if-condition13, label %if-consequence14, label %if-end15
+
+if-consequence14:                                 ; preds = %ternary-end12
+  br label %if-end15
+
+if-end15:                                         ; preds = %if-consequence14, %ternary-end12
+  %27 = load i32, ptr %0, align 4
+  ret i32 %27
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}
