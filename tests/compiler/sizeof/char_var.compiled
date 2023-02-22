@@ -1,0 +1,11 @@
+; ModuleID = 'tests/compiler/sizeof/char_var.c4'
+source_filename = "tests/compiler/sizeof/char_var.c4"
+
+define i32 @main() {
+entry:
+  %0 = alloca i8, align 1
+  ret i32 1
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}
