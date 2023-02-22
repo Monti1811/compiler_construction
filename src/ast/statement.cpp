@@ -523,11 +523,11 @@ void ReturnStatement::typecheck(ScopePtr &scope)
     auto expr_type = _expr.value()->typecheckWrap(scope);
 
     auto unified_type = unifyTypes(return_type, expr_type);
-    if (unified_type.has_value()) {
-        this->_expr.value() = castExpression(std::move(this->_expr.value()), unified_type.value());
-    } else if (!expr_type->equals(return_type)) {
+    if (!unified_type.has_value() && !expr_type->equals(return_type)) {
         errorloc(this->loc, "return type and type of return expr did not match");
     }
+
+    this->_expr.value() = castExpression(std::move(this->_expr.value()), return_type);
 }
 
 void ReturnStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
@@ -537,7 +537,7 @@ void ReturnStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
         llvm::Value *return_value = this->_expr.value()->compileRValue(CompileScopePtr);
         // If return type is a bool, cast it to int32
         if (return_value->getType()->isIntegerTy(1)) {
-            return_value = CompileScopePtr->_Builder.CreateIntCast(return_value, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true);
+            return_value = CompileScopePtr->_Builder.CreateIntCast(return_value, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false);
         }
             
         CompileScopePtr->_Builder.CreateRet(return_value);

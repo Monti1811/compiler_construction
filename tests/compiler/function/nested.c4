@@ -1,0 +1,25 @@
+// Test 'cws_nested_funcs' by greatgroup
+
+int f(int f(int)){
+	return f(0);
+}
+
+int foo(int x){
+	return x + 10;
+}
+
+int foo2(int x){
+	return x + 5;
+}
+
+int (*g(int x))(int x){
+	if (x == 1) {
+		return foo;
+	} else {
+		return foo2;
+	}
+}
+
+int main(void) {
+	return f(g(0));
+}

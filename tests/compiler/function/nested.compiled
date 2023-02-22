@@ -1,0 +1,75 @@
+; ModuleID = 'tests/compiler/function/nested.c4'
+source_filename = "tests/compiler/function/nested.c4"
+
+define i32 @f(ptr %f) {
+entry:
+  %0 = alloca ptr, align 8
+  store ptr %f, ptr %0, align 8
+  %1 = load ptr, ptr %0, align 8
+  %2 = call i32 %1(i32 0)
+  ret i32 %2
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}
+
+define i32 @foo(i32 %x) {
+entry:
+  %0 = alloca i32, align 4
+  store i32 %x, ptr %0, align 4
+  %1 = load i32, ptr %0, align 4
+  %2 = add i32 %1, 10
+  ret i32 %2
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}
+
+define i32 @foo2(i32 %x) {
+entry:
+  %0 = alloca i32, align 4
+  store i32 %x, ptr %0, align 4
+  %1 = load i32, ptr %0, align 4
+  %2 = add i32 %1, 5
+  ret i32 %2
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}
+
+define ptr @g(i32 %x) {
+entry:
+  %0 = alloca i32, align 4
+  store i32 %x, ptr %0, align 4
+  br label %if-header
+
+if-header:                                        ; preds = %entry
+  %1 = load i32, ptr %0, align 4
+  %if-condition = icmp eq i32 %1, 1
+  br i1 %if-condition, label %if-consequence, label %if-alternative
+
+if-consequence:                                   ; preds = %if-header
+  ret ptr @foo
+
+if-alternative:                                   ; preds = %if-header
+  ret ptr @foo2
+
+if-end:                                           ; preds = %DEAD_BLOCK1, %DEAD_BLOCK
+  ret ptr null
+
+DEAD_BLOCK:                                       ; No predecessors!
+  br label %if-end
+
+DEAD_BLOCK1:                                      ; No predecessors!
+  br label %if-end
+}
+
+define i32 @main() {
+entry:
+  %0 = call ptr @g(i32 0)
+  %1 = call i32 @f(ptr %0)
+  ret i32 %1
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}

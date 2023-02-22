@@ -21,15 +21,11 @@ void StructSpecifier::print(std::ostream& stream) {
 }
 
 TypePtr StructSpecifier::toType(ScopePtr& scope) {
-    if (this->_tag.has_value()) {
+    if (this->_tag.has_value() && !this->_components.has_value()) {
         // Try to retrieve already defined struct from scope
         auto type = scope->getStructType(this->_tag.value());
 
-        if (type.has_value() && type.value()->isComplete()) {
-            if (this->_components.has_value()) {
-                errorloc(this->_loc, "Cannot redefine already defined struct");
-            }
-
+        if (type.has_value()) {
             return type.value();
         }
     }
@@ -39,7 +35,7 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
         auto type = std::make_shared<StructType>(this->_tag);
 
         if (scope->addStruct(type)) {
-            errorloc(this->_loc, "Duplicate struct");
+            errorloc(this->_loc, "Cannot redefine already defined struct");
         }
 
         return type;
@@ -84,7 +80,7 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
     }
 
     if (scope->addStruct(type)) {
-        errorloc(this->_loc, "Duplicate struct");
+        errorloc(this->_loc, "Cannot redefine already defined struct");
     }
 
     return type;
