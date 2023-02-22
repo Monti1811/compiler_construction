@@ -1,0 +1,24 @@
+; ModuleID = 'tests/compiler/exprs/bool.c4'
+source_filename = "tests/compiler/exprs/bool.c4"
+
+define i32 @main() {
+entry:
+  %0 = alloca i32, align 4
+  store i32 42, ptr %0, align 4
+  %1 = load i32, ptr %0, align 4
+  %2 = icmp ne i32 0, %1
+  br i1 %2, label %and-consequence, label %and-end
+
+and-consequence:                                  ; preds = %entry
+  %3 = load i32, ptr %0, align 4
+  %4 = icmp ne i32 0, %3
+  br label %and-end
+
+and-end:                                          ; preds = %and-consequence, %entry
+  %5 = phi i1 [ %2, %entry ], [ %4, %and-consequence ]
+  %6 = sext i1 %5 to i32
+  ret i32 %6
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}
