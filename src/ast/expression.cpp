@@ -126,7 +126,9 @@ TypePtr NullPtrExpression::typecheck(ScopePtr&) {
 }
 
 TypePtr CharConstantExpression::typecheck(ScopePtr&) {
-    this->type = CHAR_TYPE;
+    // 6.4.4.4.10:
+    // An integer character constant has type int.
+    this->type = INT_TYPE;
     return this->type;
 }
 
@@ -779,7 +781,7 @@ char CharConstantExpression::getChar() {
 }
 
 llvm::Value* CharConstantExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    return CompileScopePtr->_Builder.getInt8(this->getChar());
+    return CompileScopePtr->_Builder.getInt32(this->getChar());
 }
 
 llvm::Value* CharConstantExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
