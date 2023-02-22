@@ -69,7 +69,7 @@ void UnaryExpression::print(std::ostream& stream) {
 }
 
 void SizeofTypeExpression::print(std::ostream& stream) {
-    stream << "(sizeof(" << this->_type << "))";
+    stream << "(sizeof(" << this->_decl << "))";
 }
 
 void BinaryExpression::print(std::ostream& stream) {
@@ -319,8 +319,8 @@ TypePtr SizeofExpression::typecheck(ScopePtr& scope) {
         return this->type;
     }
 
-TypePtr SizeofTypeExpression::typecheck(ScopePtr&) {
-        // TODO: Additional checks
+TypePtr SizeofTypeExpression::typecheck(ScopePtr& scope) {
+        this->_inner_type = this->_decl.toType(scope).type;
         this->type = INT_TYPE;
         return this->type;
     }
@@ -933,19 +933,8 @@ llvm::Value* SizeofExpression::compileRValue(std::shared_ptr<CompileScope> Compi
         auto string = static_cast<StringLiteralExpression*>(this->_inner.get());
         return CompileScopePtr->_Builder.getInt32(string->_value.length()-1);
     }
-    switch (this->_inner->type->kind) {
-        case TY_INT: return CompileScopePtr->_Builder.getInt32(4);
-        case TY_CHAR: return CompileScopePtr->_Builder.getInt32(1);
-        case TY_VOID: return CompileScopePtr->_Builder.getInt32(1);
-        case TY_POINTER: return CompileScopePtr->_Builder.getInt32(8);
-        case TY_NULLPTR: return CompileScopePtr->_Builder.getInt32(8);
-        case TY_STRUCT: {
-            auto inner_type = this->_inner->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-            return CompileScopePtr->_Builder.getInt32(CompileScopePtr->_Module.getDataLayout().getTypeAllocSize(inner_type));
-        }
-        default:
-            error("sizeof type cannot be compiled");
-    }
+    auto inner_type = this->_inner->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    return CompileScopePtr->_Builder.getInt32(CompileScopePtr->_Module.getDataLayout().getTypeAllocSize(inner_type));
 }
 
 llvm::Value* SizeofExpression::compileLValue(std::shared_ptr<CompileScope>) {
@@ -953,19 +942,8 @@ llvm::Value* SizeofExpression::compileLValue(std::shared_ptr<CompileScope>) {
 }
 
 llvm::Value* SizeofTypeExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    switch (this->_type->_kind) {
-        case TY_INT: return CompileScopePtr->_Builder.getInt32(4);
-        case TY_CHAR: return CompileScopePtr->_Builder.getInt32(1);
-        case TY_VOID: return CompileScopePtr->_Builder.getInt32(1);
-        case TY_POINTER: return CompileScopePtr->_Builder.getInt32(8);
-        case TY_NULLPTR: return CompileScopePtr->_Builder.getInt32(8);
-        case TY_STRUCT: {
-            auto inner_type = this->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-            return CompileScopePtr->_Builder.getInt32(CompileScopePtr->_Module.getDataLayout().getTypeAllocSize(inner_type));
-        }
-        default:
-            error("sizeof type cannot be compiled");
-    }
+    auto llvm_type = this->_inner_type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    return CompileScopePtr->_Builder.getInt32(CompileScopePtr->_Module.getDataLayout().getTypeAllocSize(llvm_type));
 }
 
 llvm::Value* SizeofTypeExpression::compileLValue(std::shared_ptr<CompileScope>) {

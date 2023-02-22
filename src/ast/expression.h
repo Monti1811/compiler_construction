@@ -8,6 +8,7 @@
 #include "../util/symbol_internalizer.h"
 #include "../lexer/token.h"
 
+#include "declaration.h"
 #include "scope.h"
 #include "specifiers/specifier.h"
 #include "types.h"
@@ -237,9 +238,9 @@ struct SizeofExpression: public UnaryExpression {
 
 struct SizeofTypeExpression: public Expression {
     public:
-    SizeofTypeExpression(Locatable loc, TypeSpecifierPtr type)
+    SizeofTypeExpression(Locatable loc, Declaration decl)
         : Expression(loc)
-        , _type(std::move(type)) {};
+        , _decl(std::move(decl)) {};
 
     void print(std::ostream& stream);
 
@@ -249,7 +250,8 @@ struct SizeofTypeExpression: public Expression {
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     // sizeof (inner)
     private:
-    TypeSpecifierPtr _type;
+    Declaration _decl;
+    TypePtr _inner_type;
 };
 
 struct ReferenceExpression: public UnaryExpression {

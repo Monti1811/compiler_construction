@@ -294,9 +294,9 @@ ExpressionPtr Parser::parseUnaryExpression() {
                 ) {
                     auto loc = this->getLoc();
                     expect(TokenKind::TK_LPAREN, "(");
-                    auto spec = this->parseTypeSpecifier();
+                    auto decl = this->parseDeclaration(DeclKind::ABSTRACT);
                     expect(TokenKind::TK_RPAREN, ")");
-                    return std::make_unique<SizeofTypeExpression>(loc, std::move(spec));
+                    return std::make_unique<SizeofTypeExpression>(loc, std::move(decl));
                 }
             }
             auto expr = std::make_unique<SizeofExpression>(getLoc(), parseUnaryExpression());
