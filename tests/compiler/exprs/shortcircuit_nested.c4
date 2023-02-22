@@ -1,0 +1,7 @@
+int main(void) {
+    int t;
+    int f;
+    t = 1;
+    f = 0;
+    return (f ? ((t && t) || (f && f)) : ((f && f) || (t && t))) ? 42 : 0;
+}
