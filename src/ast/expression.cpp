@@ -311,6 +311,14 @@ TypePtr SizeofExpression::typecheck(ScopePtr& scope) {
         }
         if (inner_type->kind == TY_STRUCT) {
             auto struct_type = std::static_pointer_cast<StructType>(inner_type);
+            if (struct_type->tag.has_value()) {
+                // We retrieve the struct again from the scope, because we might have gotten an incomplete struct
+                // that was redefined at some other point
+                auto type = scope->getStructType(struct_type->tag.value());
+                if (type.has_value()) {
+                    struct_type = type.value();
+                }
+            }
             if (!struct_type->isComplete()) {
                 errorloc(this->_inner->loc, "inner of sizeof expression must not have incomplete type");
             }

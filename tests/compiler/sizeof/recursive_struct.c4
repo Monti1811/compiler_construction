@@ -1,0 +1,17 @@
+struct S {
+    struct S* s;
+    int x;
+};
+
+int main(void) {
+    struct S s;
+    struct S t;
+
+    s.x = 40;
+    s.s = &t;
+    t.x = 2;
+
+    int r;
+    r = sizeof(*(s.s));
+    return r;
+}
