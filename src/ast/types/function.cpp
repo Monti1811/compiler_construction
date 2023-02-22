@@ -67,8 +67,12 @@ llvm::FunctionType* ParamFunctionType::toLLVMType(llvm::IRBuilder<>& Builder, ll
     /* Create a vector to store all parameter types */
     std::vector<llvm::Type *> FuncParamTypes;
     for (auto param : this->params) {
-        llvm::Type *FuncParamType = param.type->toLLVMType(Builder, Ctx);
-        FuncParamTypes.push_back(FuncParamType);
+        if (param.type->kind == TypeKind::TY_FUNCTION) {
+            FuncParamTypes.push_back(Builder.getPtrTy());
+        } else {
+            llvm::Type *FuncParamType = param.type->toLLVMType(Builder, Ctx);
+            FuncParamTypes.push_back(FuncParamType);
+        }
     }
     /* Create the (function) type of the function */
     return llvm::FunctionType::get(

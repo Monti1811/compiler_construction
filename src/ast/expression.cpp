@@ -220,8 +220,8 @@ TypePtr CallExpression::typecheck(ScopePtr& scope) {
                     auto unified_type = unifyTypes(arg_type, params[i].type);
                     if (unified_type.has_value()) {
                         this->_arguments[i] = castExpression(std::move(this->_arguments[i]), unified_type.value());
-                    } else {
-                        errorloc(this->_arguments[i]->loc, "Incorrect argument type");
+                    } else if (params[i].type->kind != TY_FUNCTION) {
+                        errorloc(this->_arguments[i]->loc, "Incorrect argument type, expected ", params[i].type, ", is ", arg_type);
                     }
                 }
             }
