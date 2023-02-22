@@ -1111,6 +1111,7 @@ llvm::Value* AndExpression::compileRValue(std::shared_ptr<CompileScope> CompileS
     auto curr_block = CompileScopePtr->_Builder.GetInsertBlock();
 
     llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(CompileScopePtr), CompileScopePtr);
+    auto lhs_block = CompileScopePtr->_Builder.GetInsertBlock();
     /* Add a basic block for the consequence of the OrExpression */
     llvm::BasicBlock *OrConsequenceBlock = llvm::BasicBlock::Create(
         CompileScopePtr->_Ctx /* LLVMContext &Context */,
@@ -1128,13 +1129,14 @@ llvm::Value* AndExpression::compileRValue(std::shared_ptr<CompileScope> CompileS
     // Create the compiled value of the second term
     CompileScopePtr->_Builder.SetInsertPoint(OrConsequenceBlock);
     llvm::Value* value_rhs = toBoolTy(this->_right->compileRValue(CompileScopePtr), CompileScopePtr);
+    auto rhs_block = CompileScopePtr->_Builder.GetInsertBlock();
     /* Insert the jump to the Ternary end block */
     CompileScopePtr->_Builder.CreateBr(OrEndBlock);
     /* Continue in the Ternary end block */
     CompileScopePtr->_Builder.SetInsertPoint(OrEndBlock);
     llvm::PHINode* phi = CompileScopePtr->_Builder.CreatePHI(CompileScopePtr->_Builder.getInt1Ty(), 2);
-    phi->addIncoming(value_lhs, curr_block);
-    phi->addIncoming(value_rhs, OrConsequenceBlock);
+    phi->addIncoming(value_lhs, lhs_block);
+    phi->addIncoming(value_rhs, rhs_block);
     return phi;
 }
 
@@ -1143,6 +1145,7 @@ llvm::Value* OrExpression::compileRValue(std::shared_ptr<CompileScope> CompileSc
     auto curr_block = CompileScopePtr->_Builder.GetInsertBlock();
 
     llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(CompileScopePtr), CompileScopePtr);
+    auto lhs_block = CompileScopePtr->_Builder.GetInsertBlock();
     /* Add a basic block for the consequence of the OrExpression */
     llvm::BasicBlock *OrConsequenceBlock = llvm::BasicBlock::Create(
         CompileScopePtr->_Ctx /* LLVMContext &Context */,
@@ -1160,13 +1163,14 @@ llvm::Value* OrExpression::compileRValue(std::shared_ptr<CompileScope> CompileSc
     // Create the compiled value of the second term
     CompileScopePtr->_Builder.SetInsertPoint(OrConsequenceBlock);
     llvm::Value* value_rhs = toBoolTy(this->_right->compileRValue(CompileScopePtr), CompileScopePtr);
+    auto rhs_block = CompileScopePtr->_Builder.GetInsertBlock();
     /* Insert the jump to the Ternary end block */
     CompileScopePtr->_Builder.CreateBr(OrEndBlock);
     /* Continue in the Ternary end block */
     CompileScopePtr->_Builder.SetInsertPoint(OrEndBlock);
     llvm::PHINode* phi = CompileScopePtr->_Builder.CreatePHI(CompileScopePtr->_Builder.getInt1Ty(), 2);
-    phi->addIncoming(value_lhs, curr_block);
-    phi->addIncoming(value_rhs, OrConsequenceBlock);
+    phi->addIncoming(value_lhs, lhs_block);
+    phi->addIncoming(value_rhs, rhs_block);
     return phi;
 }
 
@@ -1197,12 +1201,14 @@ llvm::Value* TernaryExpression::compileRValue(std::shared_ptr<CompileScope> Comp
     CompileScopePtr->_Builder.SetInsertPoint(TernaryConsequenceBlock);
     auto consequence_compile_scope_ptr = std::make_shared<CompileScope>(CompileScopePtr);
     auto true_value = this->_left->compileRValue(CompileScopePtr);
+    auto true_block = CompileScopePtr->_Builder.GetInsertBlock();
     /* Insert the jump to the Ternary end block */
     CompileScopePtr->_Builder.CreateBr(TernaryEndBlock);
     /* Set the header of the TernaryAlternativeBlock as the new insert point */
     CompileScopePtr->_Builder.SetInsertPoint(TernaryAlternativeBlock);
     auto alternative_compile_scope_ptr = std::make_shared<CompileScope>(CompileScopePtr);
     auto false_value = this->_right->compileRValue(CompileScopePtr);
+    auto false_block = CompileScopePtr->_Builder.GetInsertBlock();
     /* Insert the jump to the Ternary end block */
     CompileScopePtr->_Builder.CreateBr(TernaryEndBlock);
     /* Continue in the Ternary end block */
@@ -1215,8 +1221,8 @@ llvm::Value* TernaryExpression::compileRValue(std::shared_ptr<CompileScope> Comp
         return nullptr;
     }
     llvm::PHINode* phi = CompileScopePtr->_Builder.CreatePHI(true_value->getType(), 2);
-    phi->addIncoming(true_value, TernaryConsequenceBlock);
-    phi->addIncoming(false_value, TernaryAlternativeBlock);
+    phi->addIncoming(true_value, true_block);
+    phi->addIncoming(false_value, false_block);
     return phi; //CompileScopePtr->_Builder.CreateSelect(condition_value, true_value, false_value);
 }
 

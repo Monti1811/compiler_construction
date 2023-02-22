@@ -29,7 +29,7 @@ and-consequence:                                  ; preds = %or-end
   br i1 %8, label %or-end2, label %or-consequence1
 
 and-end:                                          ; preds = %or-end2, %or-end
-  %9 = phi i1 [ %6, %while-header ], [ %12, %and-consequence ]
+  %9 = phi i1 [ %6, %or-end ], [ %12, %or-end2 ]
   br i1 %9, label %while-body, label %while-end
 
 or-consequence1:                                  ; preds = %and-consequence

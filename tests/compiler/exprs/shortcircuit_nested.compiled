@@ -3,61 +3,91 @@ source_filename = "tests/compiler/exprs/shortcircuit_nested.c4"
 
 define i32 @main() {
 entry:
-  br i1 false, label %ternary-consequence, label %ternary-alternative
+  %0 = alloca i32, align 4
+  %1 = alloca i32, align 4
+  store i32 1, ptr %1, align 4
+  store i32 0, ptr %0, align 4
+  %2 = load i32, ptr %0, align 4
+  %3 = icmp ne i32 0, %2
+  br i1 %3, label %ternary-consequence, label %ternary-alternative
 
 ternary-consequence:                              ; preds = %entry
-  br i1 true, label %and-consequence, label %and-end
+  %4 = load i32, ptr %1, align 4
+  %5 = icmp ne i32 0, %4
+  br i1 %5, label %and-consequence, label %and-end
 
 ternary-alternative:                              ; preds = %entry
-  br i1 false, label %and-consequence3, label %and-end4
+  %6 = load i32, ptr %0, align 4
+  %7 = icmp ne i32 0, %6
+  br i1 %7, label %and-consequence3, label %and-end4
 
 ternary-end:                                      ; preds = %or-end6, %or-end
-  %0 = phi i1 [ %4, %ternary-consequence ], [ %7, %ternary-alternative ]
-  %1 = sext i1 %0 to i32
-  %2 = mul i32 %1, 42
-  ret i32 %2
+  %8 = phi i1 [ %14, %or-end ], [ %23, %or-end6 ]
+  br i1 %8, label %ternary-consequence9, label %ternary-alternative10
 
 and-consequence:                                  ; preds = %ternary-consequence
+  %9 = load i32, ptr %1, align 4
+  %10 = icmp ne i32 0, %9
   br label %and-end
 
 and-end:                                          ; preds = %and-consequence, %ternary-consequence
-  %3 = phi i1 [ true, %ternary-consequence ], [ true, %and-consequence ]
-  br i1 %3, label %or-end, label %or-consequence
+  %11 = phi i1 [ %5, %ternary-consequence ], [ %10, %and-consequence ]
+  br i1 %11, label %or-end, label %or-consequence
 
 or-consequence:                                   ; preds = %and-end
-  br i1 false, label %and-consequence1, label %and-end2
+  %12 = load i32, ptr %0, align 4
+  %13 = icmp ne i32 0, %12
+  br i1 %13, label %and-consequence1, label %and-end2
 
 or-end:                                           ; preds = %and-end2, %and-end
-  %4 = phi i1 [ %3, %ternary-consequence ], [ %5, %or-consequence ]
+  %14 = phi i1 [ %11, %and-end ], [ %17, %and-end2 ]
   br label %ternary-end
 
 and-consequence1:                                 ; preds = %or-consequence
+  %15 = load i32, ptr %0, align 4
+  %16 = icmp ne i32 0, %15
   br label %and-end2
 
 and-end2:                                         ; preds = %and-consequence1, %or-consequence
-  %5 = phi i1 [ false, %or-consequence ], [ false, %and-consequence1 ]
+  %17 = phi i1 [ %13, %or-consequence ], [ %16, %and-consequence1 ]
   br label %or-end
 
 and-consequence3:                                 ; preds = %ternary-alternative
+  %18 = load i32, ptr %0, align 4
+  %19 = icmp ne i32 0, %18
   br label %and-end4
 
 and-end4:                                         ; preds = %and-consequence3, %ternary-alternative
-  %6 = phi i1 [ false, %ternary-alternative ], [ false, %and-consequence3 ]
-  br i1 %6, label %or-end6, label %or-consequence5
+  %20 = phi i1 [ %7, %ternary-alternative ], [ %19, %and-consequence3 ]
+  br i1 %20, label %or-end6, label %or-consequence5
 
 or-consequence5:                                  ; preds = %and-end4
-  br i1 true, label %and-consequence7, label %and-end8
+  %21 = load i32, ptr %1, align 4
+  %22 = icmp ne i32 0, %21
+  br i1 %22, label %and-consequence7, label %and-end8
 
 or-end6:                                          ; preds = %and-end8, %and-end4
-  %7 = phi i1 [ %6, %ternary-alternative ], [ %8, %or-consequence5 ]
+  %23 = phi i1 [ %20, %and-end4 ], [ %26, %and-end8 ]
   br label %ternary-end
 
 and-consequence7:                                 ; preds = %or-consequence5
+  %24 = load i32, ptr %1, align 4
+  %25 = icmp ne i32 0, %24
   br label %and-end8
 
 and-end8:                                         ; preds = %and-consequence7, %or-consequence5
-  %8 = phi i1 [ true, %or-consequence5 ], [ true, %and-consequence7 ]
+  %26 = phi i1 [ %22, %or-consequence5 ], [ %25, %and-consequence7 ]
   br label %or-end6
+
+ternary-consequence9:                             ; preds = %ternary-end
+  br label %ternary-end11
+
+ternary-alternative10:                            ; preds = %ternary-end
+  br label %ternary-end11
+
+ternary-end11:                                    ; preds = %ternary-alternative10, %ternary-consequence9
+  %27 = phi i32 [ 42, %ternary-consequence9 ], [ 0, %ternary-alternative10 ]
+  ret i32 %27
 
 DEAD_BLOCK:                                       ; No predecessors!
   ret i32 0
