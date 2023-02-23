@@ -28,7 +28,7 @@ struct Scope {
     void setLabels(std::unordered_set<Symbol> labels);
 
     // Returns whether the variable was already defined
-    bool addDeclaration(TypeDecl& decl);
+    bool addDeclaration(TypeDecl& decl, bool function_param = false);
 
     // Returns whether the function was already defined
     bool addFunctionDeclaration(TypeDecl& decl);

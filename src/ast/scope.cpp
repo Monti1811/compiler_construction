@@ -51,16 +51,20 @@ void Scope::setLabels(std::unordered_set<Symbol> labels) {
     this->labels = labels;
 }
 
-bool Scope::addDeclaration(TypeDecl& decl) {
+bool Scope::addDeclaration(TypeDecl& decl, bool function_param) {
     if (decl.isAbstract()) {
         return false;
+    }
+
+    if (decl.type->kind == TypeKind::TY_FUNCTION && !this->_root && !function_param) {
+        return this->parent.value()->addDeclaration(decl);
     }
 
     auto var = this->vars.insert({ decl.name.value(), decl.type });
     auto var_type = var.first;
     auto is_var_new = var.second;
 
-    if (this->_root || var_type->second->kind == TypeKind::TY_FUNCTION) {
+    if (this->_root) {
         // 6.9.2: External definitions may be redefined (for some reason)
         // Only throw an error if type is not the same as previous declaration
         if (var_type != this->vars.end()) {
