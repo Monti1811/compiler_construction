@@ -20,6 +20,23 @@ std::optional<std::shared_ptr<StructType>> Scope::getStructType(Symbol ident) {
     return this->structs.at(ident);
 }
 
+std::optional<std::shared_ptr<CompleteStructType>> Scope::getCompleteStruct(StructType struct_type) {
+    if (!struct_type.tag.has_value()) {
+        return std::nullopt;
+    }
+    auto tag = struct_type.tag.value();
+    if (this->structs.find(tag) != this->structs.end()) {
+        auto found_type = this->structs.at(tag);
+        if (struct_type.scope_counter == found_type->scope_counter && found_type->isComplete()) {
+            return std::static_pointer_cast<CompleteStructType>(found_type);
+        }
+    }
+    if (this->parent.has_value()) {
+        return this->parent.value()->getCompleteStruct(struct_type);
+    }
+    return std::nullopt;
+}
+
 bool Scope::isLabelDefined(Symbol label) {
     if (this->labels.find(label) == this->labels.end()) {
         if (!parent.has_value()) {
