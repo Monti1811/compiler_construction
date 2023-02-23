@@ -613,8 +613,17 @@ TypePtr TernaryExpression::typecheck(ScopePtr& scope) {
     if (!condition_type->isScalar()) {
         errorloc(this->loc, "Condition type must be scalar");
     }
+
     auto left_type = this->_left->typecheckWrap(scope);
     auto right_type = this->_right->typecheckWrap(scope);
+
+    if (left_type->kind == TypeKind::TY_VOID || right_type->kind == TypeKind::TY_VOID) {
+        this->_left = castExpression(std::move(this->_left), VOID_TYPE);
+        this->_right = castExpression(std::move(this->_right), VOID_TYPE);
+
+        this->type = VOID_TYPE;
+        return this->type;
+    }
 
     auto unified_type = unifyTypes(left_type, right_type);
     if (!unified_type.has_value()) {
@@ -1244,7 +1253,7 @@ llvm::Value* TernaryExpression::compileRValue(std::shared_ptr<CompileScope> Comp
     /* Continue in the Ternary end block */
     CompileScopePtr->_Builder.SetInsertPoint(TernaryEndBlock);
     
-    if (true_value->getType() == CompileScopePtr->_Builder.getVoidTy()) {
+    if (this->_left->type->kind == TypeKind::TY_VOID || this->_right->type->kind == TypeKind::TY_VOID) {
         return nullptr;
     }
     llvm::PHINode* phi = CompileScopePtr->_Builder.CreatePHI(true_value->getType(), 2);
@@ -1300,6 +1309,8 @@ std::optional<llvm::Value*> CastExpression::convertNullptrs(std::shared_ptr<Comp
     } else if (this->type->kind == TypeKind::TY_NULLPTR) {
         return std::nullopt;
     } else if (this->type->kind == TypeKind::TY_POINTER) {
+        return std::nullopt;
+    } else if (this->type->kind == TypeKind::TY_VOID) {
         return std::nullopt;
     } else {
         errorloc(this->loc, "Invalid usage of null pointer constant");
