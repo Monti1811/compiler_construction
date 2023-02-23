@@ -1081,10 +1081,15 @@ llvm::Value* SubstractExpression::compileRValue(std::shared_ptr<CompileScope> Co
     llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
 
     if (value_lhs->getType()->isPointerTy() && value_rhs->getType()->isPointerTy()) {
-        value_lhs = CompileScopePtr->_Builder.CreatePtrToInt(value_lhs, CompileScopePtr->_Builder.getInt32Ty());
-        value_rhs = CompileScopePtr->_Builder.CreatePtrToInt(value_rhs, CompileScopePtr->_Builder.getInt32Ty());
-        llvm::Value* sub_exp = CompileScopePtr->_Builder.CreateSub(value_lhs, value_rhs);
-        return CompileScopePtr->_Builder.CreateExactSDiv(sub_exp, CompileScopePtr->_Builder.getInt32(4));
+        auto type = this->_left->type;
+        if (type->kind == TypeKind::TY_NULLPTR) type = this->_right->type;
+
+        auto ptr_type = std::static_pointer_cast<PointerType>(type);
+        auto inner_type = ptr_type->inner;
+        auto inner_llvm_type = inner_type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+
+        auto int_diff = CompileScopePtr->_Builder.CreatePtrDiff(inner_llvm_type, value_lhs, value_rhs);
+        return CompileScopePtr->_Builder.CreateIntCast(int_diff, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true);
     }
 
     if (this->_left->type->isPointer()) {
