@@ -27,6 +27,19 @@ void Declaration::typecheck(ScopePtr& scope) {
         this->_typeDecl = decl;
         return;
     }
+    // If this declares a function, check if there are duplicate parameter names (and if so, throw an error)
+    if (decl.type->kind == TypeKind::TY_FUNCTION) {
+        auto function_type = std::static_pointer_cast<FunctionType>(decl.type);
+        auto function_scope = std::make_shared<Scope>(scope);
+        if (function_type->has_params) {
+            auto param_function = std::static_pointer_cast<ParamFunctionType>(function_type);
+            for (auto& param : param_function->params) {
+                if (!param.isAbstract() && function_scope->addDeclaration(param, true)) {
+                    errorloc(this->_declarator->loc, "parameter names have to be unique");
+                }
+            }
+        }
+    }
     if (scope->addDeclaration(decl)) {
         errorloc(this->_declarator->loc, "Duplicate variable");
     }

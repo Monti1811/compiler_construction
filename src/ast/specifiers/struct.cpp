@@ -32,7 +32,7 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
 
     if (!this->_components.has_value()) {
         // Struct is incomplete
-        auto type = std::make_shared<StructType>(this->_tag);
+        auto type = std::make_shared<StructType>(this->_tag, scope->scope_counter);
 
         if (scope->addStruct(type)) {
             errorloc(this->_loc, "Cannot redefine already defined struct");
@@ -41,7 +41,7 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
         return type;
     }
 
-    auto type = std::make_shared<CompleteStructType>(this->_tag);
+    auto type = std::make_shared<CompleteStructType>(this->_tag, scope->scope_counter);
 
     for (auto& field_decl : this->_components.value()) {
         auto field = field_decl.toType(scope);

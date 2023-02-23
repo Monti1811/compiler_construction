@@ -1,0 +1,7 @@
+int main(void) {
+    return sizeof(struct S {
+        char c;
+        int x;
+        int* h;
+    });
+}

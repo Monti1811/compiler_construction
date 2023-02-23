@@ -1,0 +1,18 @@
+int main(void) {
+    int a;
+    int b;
+    int c;
+
+    a = sizeof("test");
+    b = sizeof(&"test");
+    c = sizeof(*&"test");
+
+    int r;
+    r = 0;
+
+    if (a == 5) r = r + 5;
+    if (b == 8) r = r + 15;
+    if (c == 5) r = r + 22;
+
+    return r;
+}

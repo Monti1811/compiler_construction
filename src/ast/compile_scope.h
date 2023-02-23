@@ -47,21 +47,23 @@ struct CompileScope {
     }
 
     std::optional<llvm::Type*> getType(Symbol var) {
-        if (this->_Types.find(var) == this->_Types.end()) {
-            if (!this->_Parent.has_value()) {
-                auto var_alloc = _Module.getGlobalVariable(*var);
-                if (var_alloc != NULL) {
-                    return var_alloc->getType();
-                }
-                auto function_alloc = _Module.getFunction(*var);
-                if (function_alloc != NULL) {
-                    return function_alloc->getFunctionType();
-                }
-                return std::nullopt;
-            }
+        if (this->_Types.find(var) != this->_Types.end()) {
+            return this->_Types.at(var);
+        }
+
+        if (this->_Parent.has_value()) {
             return this->_Parent.value()->getType(var);
         }
-        return this->_Types.at(var);
+
+        auto var_alloc = _Module.getGlobalVariable(*var);
+        if (var_alloc != NULL) {
+            return var_alloc->getType();
+        }
+        auto function_alloc = _Module.getFunction(*var);
+        if (function_alloc != NULL) {
+            return function_alloc->getFunctionType();
+        }
+        return std::nullopt;
     }
 
     void addType(Symbol var, llvm::Type* type) {
@@ -126,7 +128,6 @@ struct CompileScope {
     std::unordered_map<std::string, std::string> _FunctionPointers;
     std::optional<llvm::BasicBlock*> _BreakBlock;
     std::optional<llvm::BasicBlock*> _ContinueBlock;
-
 };
 
 // std::shared_ptr<CompileScope> CompileScopePtr;

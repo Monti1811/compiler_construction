@@ -1,0 +1,61 @@
+; ModuleID = 'tests/compiler/sizeof/string.c4'
+source_filename = "tests/compiler/sizeof/string.c4"
+
+define i32 @main() {
+entry:
+  %0 = alloca i32, align 4
+  %1 = alloca i32, align 4
+  %2 = alloca i32, align 4
+  %3 = alloca i32, align 4
+  store i32 5, ptr %3, align 4
+  store i32 8, ptr %2, align 4
+  store i32 5, ptr %1, align 4
+  store i32 0, ptr %0, align 4
+  br label %if-header
+
+if-header:                                        ; preds = %entry
+  %4 = load i32, ptr %3, align 4
+  %if-condition = icmp eq i32 %4, 5
+  br i1 %if-condition, label %if-consequence, label %if-end
+
+if-consequence:                                   ; preds = %if-header
+  %5 = load i32, ptr %0, align 4
+  %6 = add i32 %5, 5
+  store i32 %6, ptr %0, align 4
+  br label %if-end
+
+if-end:                                           ; preds = %if-consequence, %if-header
+  br label %if-header1
+
+if-header1:                                       ; preds = %if-end
+  %7 = load i32, ptr %2, align 4
+  %if-condition2 = icmp eq i32 %7, 8
+  br i1 %if-condition2, label %if-consequence3, label %if-end4
+
+if-consequence3:                                  ; preds = %if-header1
+  %8 = load i32, ptr %0, align 4
+  %9 = add i32 %8, 15
+  store i32 %9, ptr %0, align 4
+  br label %if-end4
+
+if-end4:                                          ; preds = %if-consequence3, %if-header1
+  br label %if-header5
+
+if-header5:                                       ; preds = %if-end4
+  %10 = load i32, ptr %1, align 4
+  %if-condition6 = icmp eq i32 %10, 5
+  br i1 %if-condition6, label %if-consequence7, label %if-end8
+
+if-consequence7:                                  ; preds = %if-header5
+  %11 = load i32, ptr %0, align 4
+  %12 = add i32 %11, 22
+  store i32 %12, ptr %0, align 4
+  br label %if-end8
+
+if-end8:                                          ; preds = %if-consequence7, %if-header5
+  %13 = load i32, ptr %0, align 4
+  ret i32 %13
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}

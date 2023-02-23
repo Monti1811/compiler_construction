@@ -1,0 +1,14 @@
+struct S {
+    int x;
+    int y;
+};
+
+int main(void) {
+    struct S s;
+    struct S {
+        int a;
+    } t;
+    s.y = 15;
+    t.a = 27;
+    return s.y + t.a;
+}

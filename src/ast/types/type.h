@@ -40,6 +40,7 @@ struct Type {
     bool isScalar();
     bool isArithmetic();
     bool isObjectType();
+    bool isString();
     virtual bool isComplete();
     llvm::Type* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
 

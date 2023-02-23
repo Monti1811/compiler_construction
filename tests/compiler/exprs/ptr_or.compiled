@@ -1,0 +1,31 @@
+; ModuleID = 'tests/compiler/exprs/ptr_or.c4'
+source_filename = "tests/compiler/exprs/ptr_or.c4"
+
+define void @foo() {
+entry:
+  ret void
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret void
+}
+
+define i32 @main() {
+entry:
+  %0 = alloca ptr, align 8
+  %1 = load ptr, ptr %0, align 8
+  %2 = ptrtoint ptr %1 to i32
+  %3 = icmp ne i32 0, %2
+  br i1 %3, label %or-end, label %or-consequence
+
+or-consequence:                                   ; preds = %entry
+  br label %or-end
+
+or-end:                                           ; preds = %or-consequence, %entry
+  %4 = phi i1 [ %3, %entry ], [ icmp ne (i32 ptrtoint (ptr @foo to i32), i32 0), %or-consequence ]
+  %5 = zext i1 %4 to i32
+  %6 = mul i32 %5, 42
+  ret i32 %6
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}

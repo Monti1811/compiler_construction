@@ -1,1 +1,1 @@
-12:6: error: Field a does not exist on this struct
+12:6: error: Field a does not exist on struct S { int b; }

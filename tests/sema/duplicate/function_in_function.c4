@@ -1,0 +1,9 @@
+// function_declaration_inside_function test by compiler_connoisseurs
+
+int main(void) {
+    int uz(void*);
+}
+
+int uz(int a) {
+
+}

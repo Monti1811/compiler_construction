@@ -37,6 +37,9 @@ void Type::print(std::ostream& stream) {
         case TypeKind::TY_STRUCT: {
             auto struct_type = static_cast<StructType*>(this);
             stream << "struct";
+            if (struct_type->tag.has_value()) {
+                stream << " " << *struct_type->tag.value();
+            }
             if (struct_type->isComplete()) {
                 auto complete_type = static_cast<CompleteStructType*>(this);
                 stream << " { ";
@@ -50,9 +53,6 @@ void Type::print(std::ostream& stream) {
                     stream << "; ";
                 }
                 stream << "}";
-            }
-            if (struct_type->tag.has_value()) {
-                stream << " " << *struct_type->tag.value();
             }
             return;
         }
@@ -152,6 +152,12 @@ bool Type::isComplete() {
         default:
             return true;
     }
+}
+
+bool Type::isString() {
+    if (this->kind != TypeKind::TY_POINTER) return false;
+    auto pointer_type = static_cast<PointerType*>(this);
+    return pointer_type->inner->kind == TypeKind::TY_CHAR;
 }
 
 std::optional<std::shared_ptr<FunctionType>> Type::unwrapFunctionPointer() {

@@ -1,0 +1,24 @@
+; ModuleID = 'tests/compiler/struct/redefine.c4'
+source_filename = "tests/compiler/struct/redefine.c4"
+
+%struct.S.0 = type { i32 }
+%struct.S = type { i32, i32 }
+
+define i32 @main() {
+entry:
+  %0 = alloca %struct.S.0, align 8
+  %1 = alloca %struct.S, align 8
+  %2 = getelementptr inbounds %struct.S, ptr %1, i32 0, i32 1
+  store i32 15, ptr %2, align 4
+  %3 = getelementptr inbounds %struct.S.0, ptr %0, i32 0, i32 0
+  store i32 27, ptr %3, align 4
+  %4 = getelementptr inbounds %struct.S, ptr %1, i32 0, i32 1
+  %5 = load i32, ptr %4, align 4
+  %6 = getelementptr inbounds %struct.S.0, ptr %0, i32 0, i32 0
+  %7 = load i32, ptr %6, align 4
+  %8 = add i32 %5, %7
+  ret i32 %8
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}

@@ -45,55 +45,59 @@ or-consequence:                                   ; preds = %if-header1
   br label %or-end
 
 or-end:                                           ; preds = %or-consequence, %if-header1
-  %if-condition2 = phi i1 [ %11, %if-header1 ], [ %14, %or-consequence ]
+  %15 = phi i1 [ %11, %if-header1 ], [ %14, %or-consequence ]
+  %16 = zext i1 %15 to i32
+  %if-condition2 = icmp ne i32 %16, 0
   br i1 %if-condition2, label %if-consequence3, label %if-alternative4
 
 if-consequence3:                                  ; preds = %or-end
-  %15 = load i32, ptr %2, align 4
-  %16 = add i32 %15, 8
-  store i32 %16, ptr %2, align 4
+  %17 = load i32, ptr %2, align 4
+  %18 = add i32 %17, 8
+  store i32 %18, ptr %2, align 4
   br label %if-end5
 
 if-alternative4:                                  ; preds = %or-end
-  %17 = load i32, ptr %2, align 4
-  %18 = add i32 %17, 4
-  store i32 %18, ptr %2, align 4
+  %19 = load i32, ptr %2, align 4
+  %20 = add i32 %19, 4
+  store i32 %20, ptr %2, align 4
   br label %if-end5
 
 if-end5:                                          ; preds = %if-alternative4, %if-consequence3
   br label %if-header6
 
 if-header6:                                       ; preds = %if-end5
-  %19 = load ptr, ptr %1, align 8
-  %20 = ptrtoint ptr %19 to i32
-  %21 = icmp ne i32 0, %20
-  br i1 %21, label %and-consequence, label %and-end
+  %21 = load ptr, ptr %1, align 8
+  %22 = ptrtoint ptr %21 to i32
+  %23 = icmp ne i32 0, %22
+  br i1 %23, label %and-consequence, label %and-end
 
 and-consequence:                                  ; preds = %if-header6
-  %22 = load ptr, ptr %0, align 8
-  %23 = ptrtoint ptr %22 to i32
-  %24 = icmp ne i32 0, %23
+  %24 = load ptr, ptr %0, align 8
+  %25 = ptrtoint ptr %24 to i32
+  %26 = icmp ne i32 0, %25
   br label %and-end
 
 and-end:                                          ; preds = %and-consequence, %if-header6
-  %if-condition7 = phi i1 [ %21, %if-header6 ], [ %24, %and-consequence ]
+  %27 = phi i1 [ %23, %if-header6 ], [ %26, %and-consequence ]
+  %28 = zext i1 %27 to i32
+  %if-condition7 = icmp ne i32 %28, 0
   br i1 %if-condition7, label %if-consequence8, label %if-alternative9
 
 if-consequence8:                                  ; preds = %and-end
-  %25 = load i32, ptr %2, align 4
-  %26 = add i32 %25, 16
-  store i32 %26, ptr %2, align 4
+  %29 = load i32, ptr %2, align 4
+  %30 = add i32 %29, 16
+  store i32 %30, ptr %2, align 4
   br label %if-end10
 
 if-alternative9:                                  ; preds = %and-end
-  %27 = load i32, ptr %2, align 4
-  %28 = add i32 %27, 32
-  store i32 %28, ptr %2, align 4
+  %31 = load i32, ptr %2, align 4
+  %32 = add i32 %31, 32
+  store i32 %32, ptr %2, align 4
   br label %if-end10
 
 if-end10:                                         ; preds = %if-alternative9, %if-consequence8
-  %29 = load i32, ptr %2, align 4
-  ret i32 %29
+  %33 = load i32, ptr %2, align 4
+  ret i32 %33
 
 DEAD_BLOCK:                                       ; No predecessors!
   ret i32 0

@@ -41,7 +41,7 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
             if (param.isAbstract()) {
                 errorloc(this->_declaration._declarator->loc, "parameters must not be abstract");
             }
-            if (function_scope->addDeclaration(param)) {
+            if (function_scope->addDeclaration(param, true)) {
                 errorloc(this->_declaration._declarator->loc, "parameter names have to be unique");
             }
         }
