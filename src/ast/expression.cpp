@@ -1028,21 +1028,28 @@ llvm::Value* MultiplyExpression::compileRValue(std::shared_ptr<CompileScope> Com
 llvm::Value* AddExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
     llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+
     // If one of them is pointer, get the pointer shifted by the value of the second operand
-    if (value_lhs->getType()->isPointerTy()) {
+    if (this->_left->type->isPointer()) {
+        auto ptr_type = std::static_pointer_cast<PointerType>(this->_left->type);
+        auto inner_llvm_type = ptr_type->inner->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
         return CompileScopePtr->_Builder.CreateInBoundsGEP(
-            CompileScopePtr->_Builder.getInt32Ty(), 
-            value_lhs, 
+            inner_llvm_type,
+            value_lhs,
             CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
-            );
+        );
     }
-    if (value_rhs->getType()->isPointerTy()) {
+
+    if (this->_right->type->isPointer()) {
+        auto ptr_type = std::static_pointer_cast<PointerType>(this->_right->type);
+        auto inner_llvm_type = ptr_type->inner->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
         return CompileScopePtr->_Builder.CreateInBoundsGEP(
-            CompileScopePtr->_Builder.getInt32Ty(), 
-            value_rhs, 
+            inner_llvm_type,
+            value_rhs,
             CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
-            );
+        );
     }
+
     return CompileScopePtr->_Builder.CreateAdd(
         CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true), 
         CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
@@ -1052,25 +1059,31 @@ llvm::Value* AddExpression::compileRValue(std::shared_ptr<CompileScope> CompileS
 llvm::Value* SubstractExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
     llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+
     if (value_lhs->getType()->isPointerTy() && value_rhs->getType()->isPointerTy()) {
         value_lhs = CompileScopePtr->_Builder.CreatePtrToInt(value_lhs, CompileScopePtr->_Builder.getInt32Ty());
         value_rhs = CompileScopePtr->_Builder.CreatePtrToInt(value_rhs, CompileScopePtr->_Builder.getInt32Ty());
         llvm::Value* sub_exp = CompileScopePtr->_Builder.CreateSub(value_lhs, value_rhs);
         return CompileScopePtr->_Builder.CreateExactSDiv(sub_exp, CompileScopePtr->_Builder.getInt32(4));
     }
-    if (value_lhs->getType()->isPointerTy()) {
+
+    if (this->_left->type->isPointer()) {
+        auto ptr_type = std::static_pointer_cast<PointerType>(this->_left->type);
+        auto inner_llvm_type = ptr_type->inner->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
         return CompileScopePtr->_Builder.CreateInBoundsGEP(
-            CompileScopePtr->_Builder.getInt32Ty(), 
-            value_lhs, 
+            inner_llvm_type,
+            value_lhs,
             CompileScopePtr->_Builder.CreateMul(
                 CompileScopePtr->_Builder.getInt32(-1),
-                CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true))
-            );
+                CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
+            )
+        );
     }
+
     return CompileScopePtr->_Builder.CreateSub(
         CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true), 
         CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
-        );
+    );
 }
 
 llvm::Value* LessThanExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {

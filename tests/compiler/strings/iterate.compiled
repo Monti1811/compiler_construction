@@ -1,0 +1,36 @@
+; ModuleID = 'tests/compiler/strings/iterate.c4'
+source_filename = "tests/compiler/strings/iterate.c4"
+
+@0 = private unnamed_addr constant [5 x i8] c"test\00", align 1
+
+define i32 @main() {
+entry:
+  %0 = alloca i32, align 4
+  %1 = alloca ptr, align 8
+  store ptr @0, ptr %1, align 8
+  store i32 0, ptr %0, align 4
+  br label %while-header
+
+while-header:                                     ; preds = %while-body, %entry
+  %2 = load ptr, ptr %1, align 8
+  %3 = load i8, ptr %2, align 1
+  %4 = sext i8 %3 to i32
+  %5 = icmp ne i32 %4, 0
+  br i1 %5, label %while-body, label %while-end
+
+while-body:                                       ; preds = %while-header
+  %6 = load i32, ptr %0, align 4
+  %7 = add i32 %6, 1
+  store i32 %7, ptr %0, align 4
+  %8 = load ptr, ptr %1, align 8
+  %9 = getelementptr inbounds i8, ptr %8, i32 1
+  store ptr %9, ptr %1, align 8
+  br label %while-header
+
+while-end:                                        ; preds = %while-header
+  %10 = load i32, ptr %0, align 4
+  ret i32 %10
+
+DEAD_BLOCK:                                       ; No predecessors!
+  ret i32 0
+}
