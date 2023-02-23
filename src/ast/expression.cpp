@@ -244,7 +244,7 @@ TypePtr DotExpression::typecheck(ScopePtr& scope) {
         auto field_type = struct_type->typeOfField(ident);
 
         if (!field_type.has_value()) {
-            errorloc(this->loc, "Field " + *ident + " does not exist on this struct");
+            errorloc(this->loc, "Field ", *ident, " does not exist on ", expr_type);
         }
         this->type = field_type.value();
         return this->type;
@@ -266,10 +266,10 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
         if (pointer_type->inner->kind != TypeKind::TY_STRUCT) {
             errorloc(this->loc, "Cannot access a field of a non-struct expression");
         }
-        auto struct_type_to_use = pointer_type->inner;
+        auto inner_type = pointer_type->inner;
         // Check if the struct has a pointer to a struct as a field
-        if (struct_type_to_use->kind == TY_STRUCT && !struct_type_to_use->isComplete()) {
-            auto struct_type = std::static_pointer_cast<StructType>(struct_type_to_use);
+        if (inner_type->kind == TY_STRUCT && !inner_type->isComplete()) {
+            auto struct_type = std::static_pointer_cast<StructType>(inner_type);
             // If yes, check the scope to see if it was defined and use this definition to define the type
             if (struct_type->tag.has_value()) {
                 std::optional<std::shared_ptr<StructType>> complete_type = scope->getStructType(struct_type->tag.value());
@@ -277,20 +277,20 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
                     // Replace the struct type with the complete type
                     pointer_type->inner = complete_type.value();
                     // Replace the struct that should be used to calculate the type with the complete definition
-                    struct_type_to_use = complete_type.value();
+                    inner_type = complete_type.value();
                 }
-            } 
+            }
         }
-        if (!struct_type_to_use->isComplete()) {
+        if (!inner_type->isComplete()) {
             errorloc(this->loc, "Cannot access a field of an incomplete type");
         }
-        auto struct_type = std::static_pointer_cast<CompleteStructType>(struct_type_to_use);
+        auto struct_type = std::static_pointer_cast<CompleteStructType>(inner_type);
 
         auto ident = this->_ident->_ident;
         auto field_type = struct_type->typeOfField(ident);
 
         if (!field_type.has_value()) {
-            errorloc(this->loc, "Field " + *ident + " does not exist on this struct");
+            errorloc(this->loc, "Field ", *ident, " does not exist on ", inner_type);
         }
         this->type = field_type.value();
         return this->type;

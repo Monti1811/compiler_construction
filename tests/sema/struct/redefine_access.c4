@@ -1,0 +1,16 @@
+struct S {
+  struct S *s;
+} s;
+
+int main(void) {
+    struct S t;
+
+    struct S {
+        char c;
+        int a;
+        int* z;
+    };
+
+    s.s = &t;
+    s.s->s;
+}
