@@ -9,6 +9,14 @@
 bool isNumber(unsigned char x);
 bool isAlphabetic(unsigned char x);
 
+void Lexer::printTokens(void) {
+    Token token = this->next();
+    while (token.Kind != TokenKind::TK_EOI) {
+        std::cout << token << std::endl;
+        token = this->next();
+    }
+}
+
 Token Lexer::next() {
     while (true) {
         unsigned char next_char = m_stream.peek();

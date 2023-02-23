@@ -14,6 +14,8 @@ class Lexer {
         : m_stream(LocatableStream(filename))
         , m_internalizer(internalizer) {}
 
+    void printTokens(void);
+
     Token next();
 
    private:
