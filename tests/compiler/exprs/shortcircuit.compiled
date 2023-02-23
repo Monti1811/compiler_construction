@@ -19,49 +19,51 @@ or-consequence:                                   ; preds = %entry
 
 or-end:                                           ; preds = %or-consequence, %entry
   %7 = phi i1 [ %3, %entry ], [ %6, %or-consequence ]
-  store i1 %7, ptr %0, align 1
+  %8 = zext i1 %7 to i32
+  store i32 %8, ptr %0, align 4
   br i1 false, label %and-consequence, label %and-end
 
 and-consequence:                                  ; preds = %or-end
-  %8 = load i32, ptr %1, align 4
-  %9 = add i32 %8, 4
-  store i32 %9, ptr %1, align 4
-  %10 = icmp ne i32 0, %9
+  %9 = load i32, ptr %1, align 4
+  %10 = add i32 %9, 4
+  store i32 %10, ptr %1, align 4
+  %11 = icmp ne i32 0, %10
   br label %and-end
 
 and-end:                                          ; preds = %and-consequence, %or-end
-  %11 = phi i1 [ false, %or-end ], [ %10, %and-consequence ]
-  store i1 %11, ptr %0, align 1
+  %12 = phi i1 [ false, %or-end ], [ %11, %and-consequence ]
+  %13 = zext i1 %12 to i32
+  store i32 %13, ptr %0, align 4
   br i1 false, label %ternary-consequence, label %ternary-alternative
 
 ternary-consequence:                              ; preds = %and-end
-  %12 = load i32, ptr %1, align 4
-  %13 = add i32 %12, 8
-  store i32 %13, ptr %1, align 4
+  %14 = load i32, ptr %1, align 4
+  %15 = add i32 %14, 8
+  store i32 %15, ptr %1, align 4
   br label %ternary-end
 
 ternary-alternative:                              ; preds = %and-end
   br label %ternary-end
 
 ternary-end:                                      ; preds = %ternary-alternative, %ternary-consequence
-  %14 = phi i32 [ %13, %ternary-consequence ], [ 0, %ternary-alternative ]
-  store i32 %14, ptr %0, align 4
+  %16 = phi i32 [ %15, %ternary-consequence ], [ 0, %ternary-alternative ]
+  store i32 %16, ptr %0, align 4
   br i1 true, label %ternary-consequence1, label %ternary-alternative2
 
 ternary-consequence1:                             ; preds = %ternary-end
   br label %ternary-end3
 
 ternary-alternative2:                             ; preds = %ternary-end
-  %15 = load i32, ptr %1, align 4
-  %16 = add i32 %15, 16
-  store i32 %16, ptr %1, align 4
+  %17 = load i32, ptr %1, align 4
+  %18 = add i32 %17, 16
+  store i32 %18, ptr %1, align 4
   br label %ternary-end3
 
 ternary-end3:                                     ; preds = %ternary-alternative2, %ternary-consequence1
-  %17 = phi i32 [ 1, %ternary-consequence1 ], [ %16, %ternary-alternative2 ]
-  store i32 %17, ptr %0, align 4
-  %18 = load i32, ptr %1, align 4
-  ret i32 %18
+  %19 = phi i32 [ 1, %ternary-consequence1 ], [ %18, %ternary-alternative2 ]
+  store i32 %19, ptr %0, align 4
+  %20 = load i32, ptr %1, align 4
+  ret i32 %20
 
 DEAD_BLOCK:                                       ; No predecessors!
   ret i32 0

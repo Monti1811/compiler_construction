@@ -565,6 +565,10 @@ TypePtr AndExpression::typecheck(ScopePtr& scope) {
 
     this->type = INT_TYPE;
 
+    if (left_type->isPointer() && right_type->isPointer()) {
+        return this->type;
+    }
+
     auto unified_type = unifyTypes(left_type, right_type);
     if (!unified_type.has_value()) {
         if (!left_type->equals(right_type)) {
@@ -587,6 +591,10 @@ TypePtr OrExpression::typecheck(ScopePtr& scope) {
     }
 
     this->type = INT_TYPE;
+
+    if (left_type->isPointer() && right_type->isPointer()) {
+        return this->type;
+    }
 
     auto unified_type = unifyTypes(left_type, right_type);
     if (!unified_type.has_value()) {
@@ -1025,7 +1033,8 @@ llvm::Value* NegationExpression::compileLValue(std::shared_ptr<CompileScope>) {
 
 llvm::Value* LogicalNegationExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     llvm::Value* inner_value = toBoolTy(this->_inner->compileRValue(CompileScopePtr), CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateICmpEQ(CompileScopePtr->_Builder.getInt1(0), inner_value);
+    auto result = CompileScopePtr->_Builder.CreateICmpEQ(CompileScopePtr->_Builder.getInt1(0), inner_value);
+    return CompileScopePtr->_Builder.CreateIntCast(result, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false);
 }
 
 llvm::Value* LogicalNegationExpression::compileLValue(std::shared_ptr<CompileScope>) {
@@ -1040,9 +1049,9 @@ llvm::Value* MultiplyExpression::compileRValue(std::shared_ptr<CompileScope> Com
     llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
     llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
     return CompileScopePtr->_Builder.CreateMul(
-        CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true), 
+        CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true),
         CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
-        );
+    );
 }
 
 llvm::Value* AddExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -1056,7 +1065,7 @@ llvm::Value* AddExpression::compileRValue(std::shared_ptr<CompileScope> CompileS
         return CompileScopePtr->_Builder.CreateInBoundsGEP(
             inner_llvm_type,
             value_lhs,
-            CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
+            CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false)
         );
     }
 
@@ -1066,14 +1075,14 @@ llvm::Value* AddExpression::compileRValue(std::shared_ptr<CompileScope> CompileS
         return CompileScopePtr->_Builder.CreateInBoundsGEP(
             inner_llvm_type,
             value_rhs,
-            CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
+            CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false)
         );
     }
 
     return CompileScopePtr->_Builder.CreateAdd(
-        CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true), 
+        CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true),
         CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
-        );
+    );
 }
 
 llvm::Value* SubstractExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -1089,7 +1098,7 @@ llvm::Value* SubstractExpression::compileRValue(std::shared_ptr<CompileScope> Co
         auto inner_llvm_type = inner_type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
 
         auto int_diff = CompileScopePtr->_Builder.CreatePtrDiff(inner_llvm_type, value_lhs, value_rhs);
-        return CompileScopePtr->_Builder.CreateIntCast(int_diff, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true);
+        return CompileScopePtr->_Builder.CreateIntCast(int_diff, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false);
     }
 
     if (this->_left->type->isPointer()) {
@@ -1100,13 +1109,13 @@ llvm::Value* SubstractExpression::compileRValue(std::shared_ptr<CompileScope> Co
             value_lhs,
             CompileScopePtr->_Builder.CreateMul(
                 CompileScopePtr->_Builder.getInt32(-1),
-                CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
+                CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false)
             )
         );
     }
 
     return CompileScopePtr->_Builder.CreateSub(
-        CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true), 
+        CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true),
         CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
     );
 }
@@ -1160,7 +1169,7 @@ llvm::Value* AndExpression::compileRValue(std::shared_ptr<CompileScope> CompileS
     llvm::PHINode* phi = CompileScopePtr->_Builder.CreatePHI(CompileScopePtr->_Builder.getInt1Ty(), 2);
     phi->addIncoming(value_lhs, lhs_block);
     phi->addIncoming(value_rhs, rhs_block);
-    return phi;
+    return CompileScopePtr->_Builder.CreateIntCast(phi, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false);
 }
 
 llvm::Value* OrExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -1194,7 +1203,7 @@ llvm::Value* OrExpression::compileRValue(std::shared_ptr<CompileScope> CompileSc
     llvm::PHINode* phi = CompileScopePtr->_Builder.CreatePHI(CompileScopePtr->_Builder.getInt1Ty(), 2);
     phi->addIncoming(value_lhs, lhs_block);
     phi->addIncoming(value_rhs, rhs_block);
-    return phi;
+    return CompileScopePtr->_Builder.CreateIntCast(phi, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false);
 }
 
 llvm::Value* TernaryExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
@@ -1237,16 +1246,13 @@ llvm::Value* TernaryExpression::compileRValue(std::shared_ptr<CompileScope> Comp
     /* Continue in the Ternary end block */
     CompileScopePtr->_Builder.SetInsertPoint(TernaryEndBlock);
     
-    //auto condition_value = toBoolTy(this->_condition->compileRValue(CompileScopePtr), CompileScopePtr);
-    //auto true_value = this->_left->compileRValue(CompileScopePtr);
-    //auto false_value = this->_right->compileRValue(CompileScopePtr);
     if (true_value->getType() == CompileScopePtr->_Builder.getVoidTy()) {
         return nullptr;
     }
     llvm::PHINode* phi = CompileScopePtr->_Builder.CreatePHI(true_value->getType(), 2);
     phi->addIncoming(true_value, true_block);
     phi->addIncoming(false_value, false_block);
-    return phi; //CompileScopePtr->_Builder.CreateSelect(condition_value, true_value, false_value);
+    return phi;
 }
 
 llvm::Value* TernaryExpression::compileLValue(std::shared_ptr<CompileScope>) {
