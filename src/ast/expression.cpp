@@ -271,14 +271,12 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
         if (inner_type->kind == TY_STRUCT && !inner_type->isComplete()) {
             auto struct_type = std::static_pointer_cast<StructType>(inner_type);
             // If yes, check the scope to see if it was defined and use this definition to define the type
-            if (struct_type->tag.has_value()) {
-                std::optional<std::shared_ptr<StructType>> complete_type = scope->getStructType(struct_type->tag.value());
-                if (complete_type.has_value() && complete_type.value()->isComplete()) {
-                    // Replace the struct type with the complete type
-                    pointer_type->inner = complete_type.value();
-                    // Replace the struct that should be used to calculate the type with the complete definition
-                    inner_type = complete_type.value();
-                }
+            std::optional<std::shared_ptr<CompleteStructType>> complete_type = scope->getCompleteStruct(*struct_type);
+            if (complete_type.has_value()) {
+                // Replace the struct type with the complete type
+                pointer_type->inner = complete_type.value();
+                // Replace the struct that should be used to calculate the type with the complete definition
+                inner_type = complete_type.value();
             }
         }
         if (!inner_type->isComplete()) {

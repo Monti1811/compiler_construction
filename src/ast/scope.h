@@ -15,11 +15,14 @@ struct Scope {
         : parent(parent)
         , function_return_type(parent->function_return_type)
         , loop_counter(parent->loop_counter)
+        , scope_counter(parent->scope_counter + 1)
         , _root(false) {};
 
     std::optional<TypePtr> getVarType(Symbol ident);
 
     std::optional<std::shared_ptr<StructType>> getStructType(Symbol ident);
+
+    std::optional<std::shared_ptr<CompleteStructType>> getCompleteStruct(StructType struct_type);
 
     bool isLabelDefined(Symbol label);
     void setLabels(std::unordered_set<Symbol> labels);
@@ -51,6 +54,7 @@ struct Scope {
     std::optional<TypePtr> function_return_type;
 
     int loop_counter = 0;
+    int scope_counter = 0;
 
     private:
     bool _root;

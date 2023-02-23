@@ -4,9 +4,10 @@
 
 struct StructType: public Type {
     public:
-    StructType(std::optional<Symbol> tag)
+    StructType(std::optional<Symbol> tag, int scope_counter)
         : Type(TypeKind::TY_STRUCT)
-        , tag(tag) {};
+        , tag(tag)
+        , scope_counter(scope_counter) {};
 
     bool equals(TypePtr const& other) override;
     bool strong_equals(TypePtr const& other) override;
@@ -14,12 +15,13 @@ struct StructType: public Type {
 
     std::optional<Symbol> tag;
     std::string alt_tag;
+    int scope_counter;
 };
 
 struct CompleteStructType: public StructType {
     public:
-    CompleteStructType(std::optional<Symbol> tag)
-        : StructType(tag) {};
+    CompleteStructType(std::optional<Symbol> tag, int scope_counter)
+        : StructType(tag, scope_counter) {};
 
     // TODO: Do we need to also consider fields in the equality check?
     // If so, we need to override equals() and maybe strong_equals() here.
