@@ -1,13 +1,13 @@
 #pragma once
 
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <unordered_map>
 #include <vector>
-#include <iostream>
 
-#include "../../util/symbol_internalizer.h"
 #include "../../llvm.h"
+#include "../../util/symbol_internalizer.h"
 
 #include "../type_decl.h"
 
@@ -24,9 +24,9 @@ enum TypeKind {
 struct FunctionType;
 
 struct Type {
-    public:
+  public:
     Type(const TypeKind kind)
-        : kind(kind) {};
+        : kind(kind){};
 
     // Just for debugging purposes
     friend std::ostream& operator<<(std::ostream& stream, const std::shared_ptr<Type>& type);

@@ -4,7 +4,7 @@
 
 /// Base class of everything that has a source code location.
 struct Locatable {
-   public:
+  public:
     const std::string& FileName;
     size_t Line;
     size_t Column;
@@ -19,16 +19,14 @@ struct Locatable {
 
 /// not for external use
 /// Base case of variadic template function for noting errors.
-template <typename T>
-[[noreturn]] void errorf_impl(const T msg) {
+template <typename T> [[noreturn]] void errorf_impl(const T msg) {
     std::cerr << msg << std::endl;
     exit(EXIT_FAILURE);
 }
 
 /// not for external use
 /// Recursive case of variadic template function for noting errors.
-template <typename T, typename... Args>
-[[noreturn]] void errorf_impl(const T msg, Args... args) {
+template <typename T, typename... Args> [[noreturn]] void errorf_impl(const T msg, Args... args) {
     std::cerr << msg;
     errorf_impl(args...);
 }
@@ -42,8 +40,7 @@ template <typename T, typename... Args>
 /// if (...) {
 ///     errorloc(loc, "invalid construct: ", x);
 /// }
-template <typename... Args>
-[[noreturn]] void errorloc(const Locatable& loc, Args... args) {
+template <typename... Args> [[noreturn]] void errorloc(const Locatable& loc, Args... args) {
     std::cerr << loc << " error: ";
     errorf_impl(args...);
 }
@@ -53,8 +50,7 @@ template <typename... Args>
 /// Then, terminate execution with the appropriate error code.
 /// Only use this for errors that are not tied to a source location, like
 /// invalid command line arguments.
-template <typename... Args>
-[[noreturn]] void error(Args... args) {
+template <typename... Args> [[noreturn]] void error(Args... args) {
     std::cerr << "error: ";
     errorf_impl(args...);
 }

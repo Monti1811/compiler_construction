@@ -13,17 +13,35 @@
 */
 struct CompileScope {
     // Constructor for first CompileScope
-    CompileScope(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::LLVMContext& Ctx) :
-    _Parent(std::nullopt), _Builder(Builder), _AllocaBuilder(AllocaBuilder), _Module(Module), _Ctx(Ctx) {};
+    CompileScope(
+        llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::LLVMContext& Ctx
+    )
+        : _Parent(std::nullopt)
+        , _Builder(Builder)
+        , _AllocaBuilder(AllocaBuilder)
+        , _Module(Module)
+        , _Ctx(Ctx){};
     // Construct for CompileScopes with Parent and ParentFunction
-    CompileScope(std::shared_ptr<CompileScope> Parent, llvm::Function* ParentFunction) :
-    _Parent(Parent), _Builder(Parent->_Builder), _AllocaBuilder(Parent->_AllocaBuilder), _Module(Parent->_Module), _Ctx(Parent->_Ctx), 
-    _ParentFunction(ParentFunction), _BreakBlock(Parent->getBreakBlock()), _ContinueBlock(Parent->getContinueBlock()) {};
+    CompileScope(std::shared_ptr<CompileScope> Parent, llvm::Function* ParentFunction)
+        : _Parent(Parent)
+        , _Builder(Parent->_Builder)
+        , _AllocaBuilder(Parent->_AllocaBuilder)
+        , _Module(Parent->_Module)
+        , _Ctx(Parent->_Ctx)
+        , _ParentFunction(ParentFunction)
+        , _BreakBlock(Parent->getBreakBlock())
+        , _ContinueBlock(Parent->getContinueBlock()){};
     // Construct for CompileScopes with Parent
-    CompileScope(std::shared_ptr<CompileScope> Parent) :
-    _Parent(Parent), _Builder(Parent->_Builder), _AllocaBuilder(Parent->_AllocaBuilder), _Module(Parent->_Module), _Ctx(Parent->_Ctx), 
-    _ParentFunction(Parent->_ParentFunction), _BreakBlock(Parent->getBreakBlock()), _ContinueBlock(Parent->getContinueBlock()) {};
-    
+    CompileScope(std::shared_ptr<CompileScope> Parent)
+        : _Parent(Parent)
+        , _Builder(Parent->_Builder)
+        , _AllocaBuilder(Parent->_AllocaBuilder)
+        , _Module(Parent->_Module)
+        , _Ctx(Parent->_Ctx)
+        , _ParentFunction(Parent->_ParentFunction)
+        , _BreakBlock(Parent->getBreakBlock())
+        , _ContinueBlock(Parent->getContinueBlock()){};
+
     std::optional<llvm::Value*> getAlloca(Symbol var) {
         if (this->_Allocas.find(var) == this->_Allocas.end()) {
             if (!this->_Parent.has_value()) {
@@ -84,13 +102,13 @@ struct CompileScope {
         return this->_LabeledBlocks.at(name);
     }
 
-    void setBreakBlock(llvm::BasicBlock *BreakBlock) {
+    void setBreakBlock(llvm::BasicBlock* BreakBlock) {
         this->_BreakBlock = BreakBlock;
     }
     std::optional<llvm::BasicBlock*> getBreakBlock() {
         return this->_BreakBlock;
     }
-    void setContinueBlock(llvm::BasicBlock *ContinueBlock) {
+    void setContinueBlock(llvm::BasicBlock* ContinueBlock) {
         this->_ContinueBlock = ContinueBlock;
     }
     std::optional<llvm::BasicBlock*> getContinueBlock() {
@@ -121,7 +139,8 @@ struct CompileScope {
     llvm::Module& _Module;
     llvm::LLVMContext& _Ctx;
     std::optional<llvm::Function*> _ParentFunction;
-    private:
+
+  private:
     std::unordered_map<Symbol, llvm::Value*> _Allocas;
     std::unordered_map<Symbol, llvm::Type*> _Types;
     std::unordered_map<Symbol, llvm::BasicBlock*> _LabeledBlocks;

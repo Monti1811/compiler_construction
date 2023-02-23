@@ -4,16 +4,13 @@
 
 #include "../scope.h"
 
-enum SpecifierKind {
-    VOID,
-    INT,
-    CHAR,
-    STRUCT
-};
+enum SpecifierKind { VOID, INT, CHAR, STRUCT };
 
 struct TypeSpecifier {
-    public:
-    TypeSpecifier(const Locatable loc, const SpecifierKind kind) : _loc(loc), _kind(kind) {};
+  public:
+    TypeSpecifier(const Locatable loc, const SpecifierKind kind)
+        : _loc(loc)
+        , _kind(kind){};
     virtual ~TypeSpecifier() = default;
 
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<TypeSpecifier>& type);

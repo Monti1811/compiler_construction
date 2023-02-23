@@ -5,16 +5,16 @@
 #include "../scope.h"
 
 // This type describes a function without any parameters specified.
-struct FunctionType: public Type {
-    public:
+struct FunctionType : public Type {
+  public:
     FunctionType(TypePtr const& return_type, ScopePtr scope, bool has_params = false)
         : Type(TypeKind::TY_FUNCTION)
         , return_type(return_type)
         , scope(scope)
         , has_params(has_params) {
-            this->scope->function_return_type = return_type;
-        };
-    
+        this->scope->function_return_type = return_type;
+    };
+
     bool equals(TypePtr const& other) override;
     bool strong_equals(TypePtr const& other) override;
     llvm::FunctionType* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
@@ -25,10 +25,10 @@ struct FunctionType: public Type {
 };
 
 // This type describes a function that has params specified.
-struct ParamFunctionType: public FunctionType {
-    public:
+struct ParamFunctionType : public FunctionType {
+  public:
     ParamFunctionType(TypePtr const& return_type, ScopePtr scope)
-        : FunctionType(return_type, scope, true) {};
+        : FunctionType(return_type, scope, true){};
 
     bool strong_equals(TypePtr const& other) override;
 

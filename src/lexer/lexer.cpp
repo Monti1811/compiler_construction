@@ -103,7 +103,7 @@ Token Lexer::readIdentOrKeyword() {
 unsigned char Lexer::readEscapeChar() {
     Locatable loc = m_stream.loc();
 
-    switch(unsigned char c = m_stream.get()) {
+    switch (unsigned char c = m_stream.get()) {
         case '\'':
         case '"':
         case '?':
@@ -168,10 +168,10 @@ Token Lexer::readNumberConstant() {
     // Save location
     Locatable loc = m_stream.loc();
     unsigned char next_char_val = m_stream.get();
-    // Check if the character is a 0 
+    // Check if the character is a 0
     if (next_char_val == '0') {
         return makeToken(loc, TokenKind::TK_ZERO_CONSTANT, next_char_val);
-    // Character is a digit
+        // Character is a digit
     } else {
         // Buffer for the number
         std::string num;
@@ -250,7 +250,7 @@ Token Lexer::readPunctuator() {
                 setToken(TokenKind::TK_POUND_POUND);
             }
             break;
-        } 
+        }
         // Check if it's '+', '++' or '+='
         case TK_PLUS: {
             switch (m_stream.peek()) {
@@ -262,7 +262,7 @@ Token Lexer::readPunctuator() {
                     break;
             }
             break;
-        } 
+        }
         // Check if it's '-', '->', '--' or '-='
         case TK_MINUS: {
             switch (m_stream.peek()) {
@@ -277,7 +277,7 @@ Token Lexer::readPunctuator() {
                     break;
             }
             break;
-        } 
+        }
         // Check if it's '&', '&&' or '&='
         case TK_AND: {
             switch (m_stream.peek()) {
@@ -289,7 +289,7 @@ Token Lexer::readPunctuator() {
                     break;
             }
             break;
-        } 
+        }
         // Check if it's '|', '||' or '|='
         case TK_PIPE: {
             switch (m_stream.peek()) {
@@ -301,7 +301,7 @@ Token Lexer::readPunctuator() {
                     break;
             }
             break;
-        } 
+        }
         case TK_BANG: {
             if (m_stream.peek() == '=') {
                 setToken(TokenKind::TK_NOT_EQUAL);
@@ -375,7 +375,7 @@ Token Lexer::readPunctuator() {
                     break;
             }
             break;
-        } 
+        }
         // Check if it's '>', '>>', '>>=' or '>='
         case TK_GREATER: {
             switch (m_stream.peek()) {
@@ -413,7 +413,7 @@ void Lexer::readMultiComment() {
         if (c == '\0') {
             fail("Multiline comment was not closed");
         }
-        
+
         m_stream.get();
         if (c == '*') {
             while (true) {
@@ -438,8 +438,7 @@ Token Lexer::eof() {
     return makeToken(loc, TokenKind::TK_EOI, "");
 }
 
-template<typename T>
-Token Lexer::makeToken(Locatable loc, TokenKind kind, T symbol) {
+template <typename T> Token Lexer::makeToken(Locatable loc, TokenKind kind, T symbol) {
     Symbol sym = m_internalizer.internalize(symbol);
     return Token(loc, kind, sym);
 }

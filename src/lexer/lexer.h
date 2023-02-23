@@ -5,11 +5,11 @@
 
 #include "../util/symbol_internalizer.h"
 
-#include "token.h"
 #include "stream.h"
+#include "token.h"
 
 class Lexer {
-   public:
+  public:
     Lexer(std::string const& filename, SymbolInternalizer& internalizer)
         : m_stream(LocatableStream(filename))
         , m_internalizer(internalizer) {}
@@ -18,7 +18,7 @@ class Lexer {
 
     Token next();
 
-   private:
+  private:
     Token readIdentOrKeyword();
 
     unsigned char readEscapeChar();
@@ -33,11 +33,11 @@ class Lexer {
     void readLineComment();
 
     Token eof();
-    template<typename T> Token makeToken(Locatable loc, TokenKind kind, T symbol);
+    template <typename T> Token makeToken(Locatable loc, TokenKind kind, T symbol);
 
     void fail(std::string message);
     void fail(std::string message, Locatable& loc);
-    
+
     LocatableStream m_stream;
     SymbolInternalizer& m_internalizer;
 };

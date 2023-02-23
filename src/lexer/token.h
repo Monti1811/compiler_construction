@@ -12,7 +12,7 @@ enum TokenKind {
 #undef KIND_ACTION
 
 struct Token : public Locatable {
-   public:
+  public:
     TokenKind Kind;
     Symbol Text;
 

@@ -18,8 +18,9 @@ using Symbol = const std::string*;
 /// Symbols are guaranteed to be accessible as long as the SymbolInternalizer
 /// is not destroyed.
 class SymbolInternalizer {
-   public:
-    SymbolInternalizer(size_t prealloc_size = 512) : StringSet(prealloc_size) {}
+  public:
+    SymbolInternalizer(size_t prealloc_size = 512)
+        : StringSet(prealloc_size) {}
 
     /// Internalize the given argument. The string is copied and does not need
     /// to be preserved by the caller.
@@ -33,6 +34,6 @@ class SymbolInternalizer {
     /// to be preserved by the caller.
     Symbol internalize(const char character);
 
-   private:
+  private:
     std::unordered_set<std::string> StringSet;
 };

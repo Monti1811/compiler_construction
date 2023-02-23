@@ -1,22 +1,22 @@
 #pragma once
 
 #include <memory>
-#include <vector>
 #include <string.h>
+#include <vector>
 
+#include "../lexer/token.h"
 #include "../util/diagnostic.h"
 #include "../util/symbol_internalizer.h"
-#include "../lexer/token.h"
 
+#include "compile_scope.h"
 #include "declaration.h"
 #include "scope.h"
 #include "specifiers/specifier.h"
 #include "types.h"
-#include "compile_scope.h"
 
 struct Expression {
     Expression(Locatable loc)
-        : loc(loc) {};
+        : loc(loc){};
     virtual ~Expression() = default;
 
     virtual TypePtr typecheck(ScopePtr& scope) = 0;
@@ -51,11 +51,11 @@ typedef std::unique_ptr<Expression> ExpressionPtr;
 
 ExpressionPtr castExpression(ExpressionPtr expr, TypePtr type);
 
-struct IdentExpression: public Expression {
-    public:
+struct IdentExpression : public Expression {
+  public:
     IdentExpression(Locatable loc, Symbol ident)
         : Expression(loc)
-        , _ident(ident) {};
+        , _ident(ident){};
 
     TypePtr typecheck(ScopePtr& scope);
     bool isLvalue(ScopePtr& scope);
@@ -64,15 +64,16 @@ struct IdentExpression: public Expression {
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<IdentExpression>& expr);
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
-    public:
+
+  public:
     Symbol _ident;
 };
 
-struct IntConstantExpression: public Expression {
-    public:
+struct IntConstantExpression : public Expression {
+  public:
     IntConstantExpression(Locatable loc, Symbol value)
         : Expression(loc)
-        , _value(std::stoull(*value)) {};
+        , _value(std::stoull(*value)){};
 
     TypePtr typecheck(ScopePtr&);
 
@@ -83,11 +84,11 @@ struct IntConstantExpression: public Expression {
     unsigned long long _value;
 };
 
-struct NullPtrExpression: public Expression {
-    public:
+struct NullPtrExpression : public Expression {
+  public:
     NullPtrExpression(Locatable loc, Symbol value)
         : Expression(loc)
-        , _value(std::stoull(*value)) {};
+        , _value(std::stoull(*value)){};
 
     TypePtr typecheck(ScopePtr&);
 
@@ -98,11 +99,11 @@ struct NullPtrExpression: public Expression {
     unsigned long long _value;
 };
 
-struct CharConstantExpression: public Expression {
-    public:
+struct CharConstantExpression : public Expression {
+  public:
     CharConstantExpression(Locatable loc, Symbol value)
         : Expression(loc)
-        , _value( (*value) ) {};
+        , _value((*value)){};
 
     TypePtr typecheck(ScopePtr&);
 
@@ -116,11 +117,11 @@ struct CharConstantExpression: public Expression {
     std::string _value;
 };
 
-struct StringLiteralExpression: public Expression {
-    public:
+struct StringLiteralExpression : public Expression {
+  public:
     StringLiteralExpression(Locatable loc, Symbol value)
         : Expression(loc)
-        , _value(*value) {};
+        , _value(*value){};
 
     TypePtr typecheck(ScopePtr&);
     bool isLvalue(ScopePtr& scope);
@@ -136,12 +137,12 @@ struct StringLiteralExpression: public Expression {
     std::string _value;
 };
 
-struct IndexExpression: public Expression {
-    public:
+struct IndexExpression : public Expression {
+  public:
     IndexExpression(Locatable loc, ExpressionPtr expression, ExpressionPtr index)
         : Expression(loc)
         , _expression(std::move(expression))
-        , _index(std::move(index)) {};
+        , _index(std::move(index)){};
 
     TypePtr typecheck(ScopePtr& scope);
     bool isLvalue(ScopePtr&);
@@ -151,18 +152,18 @@ struct IndexExpression: public Expression {
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     // expression[index]
-    private:
+  private:
     ExpressionPtr _expression;
     ExpressionPtr _index;
     bool _swapped = false;
 };
 
-struct CallExpression: public Expression {
-    public:
+struct CallExpression : public Expression {
+  public:
     CallExpression(Locatable loc, ExpressionPtr expression, std::vector<ExpressionPtr> arguments)
         : Expression(loc)
         , _expression(std::move(expression))
-        , _arguments(std::move(arguments)) {};
+        , _arguments(std::move(arguments)){};
 
     TypePtr typecheck(ScopePtr& scope);
 
@@ -175,12 +176,12 @@ struct CallExpression: public Expression {
     std::vector<ExpressionPtr> _arguments;
 };
 
-struct DotExpression: public Expression {
-    public:
+struct DotExpression : public Expression {
+  public:
     DotExpression(Locatable loc, ExpressionPtr expression, std::unique_ptr<IdentExpression> ident)
         : Expression(loc)
         , _expression(std::move(expression))
-        , _ident(std::move(ident)) {};
+        , _ident(std::move(ident)){};
 
     void print(std::ostream& stream);
 
@@ -190,17 +191,17 @@ struct DotExpression: public Expression {
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     // expression.ident
-    private:
+  private:
     ExpressionPtr _expression;
     std::unique_ptr<IdentExpression> _ident;
 };
 
-struct ArrowExpression: public Expression {
-    public:
+struct ArrowExpression : public Expression {
+  public:
     ArrowExpression(Locatable loc, ExpressionPtr expression, std::unique_ptr<IdentExpression> ident)
         : Expression(loc)
         , _expression(std::move(expression))
-        , _ident(std::move(ident)) {};
+        , _ident(std::move(ident)){};
 
     void print(std::ostream& stream);
 
@@ -210,43 +211,43 @@ struct ArrowExpression: public Expression {
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     // expression->ident
-    private:
+  private:
     ExpressionPtr _expression;
     std::unique_ptr<IdentExpression> _ident;
 };
 
-struct UnaryExpression: public Expression {
-    public:
+struct UnaryExpression : public Expression {
+  public:
     UnaryExpression(Locatable loc, ExpressionPtr inner, const char* const op_str)
         : Expression(loc)
         , _inner(std::move(inner))
-        , _op_str(op_str) {};
-    
+        , _op_str(op_str){};
+
     void print(std::ostream& stream);
 
     ExpressionPtr _inner;
 
-    private:
+  private:
     const char* const _op_str;
 };
 
-struct SizeofExpression: public UnaryExpression {
+struct SizeofExpression : public UnaryExpression {
     // sizeof inner
 
-    public:
+  public:
     SizeofExpression(Locatable loc, ExpressionPtr inner)
-        : UnaryExpression(loc, std::move(inner), "sizeof ") {};
-        
-    TypePtr typecheck(ScopePtr& scope);    
+        : UnaryExpression(loc, std::move(inner), "sizeof "){};
+
+    TypePtr typecheck(ScopePtr& scope);
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
-struct SizeofTypeExpression: public Expression {
-    public:
+struct SizeofTypeExpression : public Expression {
+  public:
     SizeofTypeExpression(Locatable loc, Declaration decl)
         : Expression(loc)
-        , _decl(std::move(decl)) {};
+        , _decl(std::move(decl)){};
 
     void print(std::ostream& stream);
 
@@ -255,18 +256,18 @@ struct SizeofTypeExpression: public Expression {
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
     // sizeof (inner)
-    private:
+  private:
     Declaration _decl;
     TypePtr _inner_type;
 };
 
-struct ReferenceExpression: public UnaryExpression {
+struct ReferenceExpression : public UnaryExpression {
     // &inner
 
-    public:
+  public:
     ReferenceExpression(Locatable loc, ExpressionPtr inner)
-        : UnaryExpression(loc, std::move(inner), "&") {};
-    
+        : UnaryExpression(loc, std::move(inner), "&"){};
+
     TypePtr typecheck(ScopePtr& scope);
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
@@ -274,12 +275,12 @@ struct ReferenceExpression: public UnaryExpression {
     std::optional<size_t> getStringLength(void);
 };
 
-struct DerefExpression: public UnaryExpression {
+struct DerefExpression : public UnaryExpression {
     // *inner
 
-    public:
+  public:
     DerefExpression(Locatable loc, ExpressionPtr inner)
-        : UnaryExpression(loc, std::move(inner), "*") {};
+        : UnaryExpression(loc, std::move(inner), "*"){};
 
     TypePtr typecheck(ScopePtr& scope);
     bool isLvalue(ScopePtr& scope);
@@ -289,146 +290,146 @@ struct DerefExpression: public UnaryExpression {
     std::optional<size_t> getStringLength(void);
 };
 
-struct NegationExpression: public UnaryExpression {
+struct NegationExpression : public UnaryExpression {
     // -inner
 
-    public:
+  public:
     NegationExpression(Locatable loc, ExpressionPtr inner)
-        : UnaryExpression(loc, std::move(inner), "-") {};
-        
+        : UnaryExpression(loc, std::move(inner), "-"){};
+
     TypePtr typecheck(ScopePtr& scope);
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
-struct LogicalNegationExpression: public UnaryExpression {
+struct LogicalNegationExpression : public UnaryExpression {
     // !inner
 
-    public:
+  public:
     LogicalNegationExpression(Locatable loc, ExpressionPtr inner)
-        : UnaryExpression(loc, std::move(inner), "!") {};
+        : UnaryExpression(loc, std::move(inner), "!"){};
 
     TypePtr typecheck(ScopePtr& scope);
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
-struct BinaryExpression: public Expression {
-    public:
+struct BinaryExpression : public Expression {
+  public:
     BinaryExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right, const char* const op_str)
         : Expression(loc)
         , _left(std::move(left))
         , _right(std::move(right))
-        , _op_str(op_str) {};
+        , _op_str(op_str){};
 
     void print(std::ostream& stream);
 
     TypePtr typecheck(ScopePtr& scope);
-    
+
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
-    
+
     ExpressionPtr _left;
     ExpressionPtr _right;
 
-    private:
+  private:
     const char* const _op_str;
 };
 
-struct MultiplyExpression: public BinaryExpression {
+struct MultiplyExpression : public BinaryExpression {
     // left * right
 
-    public:
+  public:
     MultiplyExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
-        : BinaryExpression(loc, std::move(left), std::move(right), "*") {};
+        : BinaryExpression(loc, std::move(left), std::move(right), "*"){};
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
-struct AddExpression: public BinaryExpression {
+struct AddExpression : public BinaryExpression {
     // left + right
 
-    public:
+  public:
     AddExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
-        : BinaryExpression(loc, std::move(left), std::move(right), "+") {};
+        : BinaryExpression(loc, std::move(left), std::move(right), "+"){};
 
     TypePtr typecheck(ScopePtr& scope);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
-struct SubstractExpression: public BinaryExpression {
+struct SubstractExpression : public BinaryExpression {
     // left - right
 
-    public:
+  public:
     SubstractExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
-        : BinaryExpression(loc, std::move(left), std::move(right), "-") {};
+        : BinaryExpression(loc, std::move(left), std::move(right), "-"){};
 
     TypePtr typecheck(ScopePtr& scope);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
-struct LessThanExpression: public BinaryExpression {
+struct LessThanExpression : public BinaryExpression {
     // left < right
 
-    public:
+  public:
     LessThanExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
-        : BinaryExpression(loc, std::move(left), std::move(right), "<") {};
+        : BinaryExpression(loc, std::move(left), std::move(right), "<"){};
 
     TypePtr typecheck(ScopePtr& scope);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
-struct EqualExpression: public BinaryExpression {
+struct EqualExpression : public BinaryExpression {
     // left == right
 
-    public:
+  public:
     EqualExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
-        : BinaryExpression(loc, std::move(left), std::move(right), "==") {};
+        : BinaryExpression(loc, std::move(left), std::move(right), "=="){};
 
     TypePtr typecheck(ScopePtr& scope);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
-struct UnequalExpression: public BinaryExpression {
+struct UnequalExpression : public BinaryExpression {
     // left != right
 
-    public:
+  public:
     UnequalExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
-        : BinaryExpression(loc, std::move(left), std::move(right), "!=") {};
+        : BinaryExpression(loc, std::move(left), std::move(right), "!="){};
 
     TypePtr typecheck(ScopePtr& scope);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
-struct AndExpression: public BinaryExpression {
+struct AndExpression : public BinaryExpression {
     // left && right
 
-    public:
+  public:
     AndExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
-        : BinaryExpression(loc, std::move(left), std::move(right), "&&") {};
+        : BinaryExpression(loc, std::move(left), std::move(right), "&&"){};
 
     TypePtr typecheck(ScopePtr& scope);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
-struct OrExpression: public BinaryExpression {
+struct OrExpression : public BinaryExpression {
     // left || right
 
-    public:
+  public:
     OrExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
-        : BinaryExpression(loc, std::move(left), std::move(right), "||") {};
+        : BinaryExpression(loc, std::move(left), std::move(right), "||"){};
 
     TypePtr typecheck(ScopePtr& scope);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
-struct TernaryExpression: public Expression {
+struct TernaryExpression : public Expression {
     // condition ? left : right
 
-    public:
+  public:
     TernaryExpression(Locatable loc, ExpressionPtr condition, ExpressionPtr left, ExpressionPtr right)
         : Expression(loc)
         , _condition(std::move(condition))
         , _left(std::move(left))
-        , _right(std::move(right)) {};
+        , _right(std::move(right)){};
 
     void print(std::ostream& stream);
 
@@ -436,31 +437,32 @@ struct TernaryExpression: public Expression {
 
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
-    private:
+
+  private:
     ExpressionPtr _condition;
     ExpressionPtr _left;
     ExpressionPtr _right;
 };
 
-struct AssignExpression: public BinaryExpression {
+struct AssignExpression : public BinaryExpression {
     // left = right
 
-    public:
+  public:
     AssignExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
-        : BinaryExpression(loc, std::move(left), std::move(right), "=") {};
+        : BinaryExpression(loc, std::move(left), std::move(right), "="){};
 
     TypePtr typecheck(ScopePtr& scope);
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
-struct CastExpression: public Expression {
+struct CastExpression : public Expression {
     // Just used for type conversion during typecheck phase
 
-    public:
+  public:
     CastExpression(Locatable loc, ExpressionPtr inner)
         : Expression(loc)
-        , _inner(std::move(inner)) {};
+        , _inner(std::move(inner)){};
 
     void print(std::ostream& stream);
 

@@ -4,10 +4,11 @@
 
 #include "specifier.h"
 
-struct StructSpecifier: public TypeSpecifier {
-    public:
-    StructSpecifier(const Locatable loc, std::optional<Symbol> tag) : 
-        TypeSpecifier(loc, SpecifierKind::STRUCT), _tag(tag) {};
+struct StructSpecifier : public TypeSpecifier {
+  public:
+    StructSpecifier(const Locatable loc, std::optional<Symbol> tag)
+        : TypeSpecifier(loc, SpecifierKind::STRUCT)
+        , _tag(tag){};
 
     void print(std::ostream& stream);
 

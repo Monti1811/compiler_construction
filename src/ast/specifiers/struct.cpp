@@ -6,7 +6,7 @@ void StructSpecifier::print(std::ostream& stream) {
     stream << "struct";
     if (_tag.has_value()) {
         stream << ' ' << *_tag.value();
-    } 
+    }
 
     if (this->_components.has_value()) {
         IndentManager& indent = IndentManager::getInstance();
@@ -76,7 +76,9 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
     }
 
     if (!type->validateFields()) {
-        errorloc(this->_loc, "Structs must have at least one named field, and must not have unnamed fields at the beginning");
+        errorloc(
+            this->_loc, "Structs must have at least one named field, and must not have unnamed fields at the beginning"
+        );
     }
 
     if (scope->addStruct(type)) {

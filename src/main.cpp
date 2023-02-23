@@ -6,7 +6,7 @@
 
 enum CompilerStage { TOKENIZE, PARSE, COMPILE };
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char const* argv[]) {
     SymbolInternalizer internalizer = SymbolInternalizer();
 
     bool print_tokens = false;
@@ -19,7 +19,7 @@ int main(int argc, char const *argv[]) {
     for (auto i = 1; i < argc; i++) {
         auto arg = argv[i];
 
-        auto matches = [&](char const *match) {
+        auto matches = [&](char const* match) {
             return strcmp(arg, match) == 0;
         };
 
@@ -39,8 +39,7 @@ int main(int argc, char const *argv[]) {
     }
 
     if (filename.empty()) {
-        std::cout << "Syntax: " << argv[0] << " [arguments] <filename>"
-                  << std::endl;
+        std::cout << "Syntax: " << argv[0] << " [arguments] <filename>" << std::endl;
         return EXIT_FAILURE;
     }
 

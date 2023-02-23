@@ -2,32 +2,23 @@
 
 #include <memory>
 #include <optional>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "../util/diagnostic.h"
 #include "../util/symbol_internalizer.h"
 
-#include "expression.h"
 #include "declarators.h"
+#include "expression.h"
 #include "scope.h"
 #include "types.h"
 
-enum class StatementKind {
-    ST_LABELED,
-    ST_BLOCK,
-    ST_EMPTY,
-    ST_DECLARATION,
-    ST_EXPRESSION,
-    ST_IF,
-    ST_WHILE,
-    ST_JUMP
-};
+enum class StatementKind { ST_LABELED, ST_BLOCK, ST_EMPTY, ST_DECLARATION, ST_EXPRESSION, ST_IF, ST_WHILE, ST_JUMP };
 
 struct Statement {
     Statement(Locatable loc, const StatementKind kind)
         : loc(loc)
-        , kind(kind) {};
+        , kind(kind){};
     virtual ~Statement() = default;
 
     Locatable loc;
@@ -44,11 +35,11 @@ typedef std::unique_ptr<Statement> StatementPtr;
 
 // label:
 // label: statement
-struct LabeledStatement: public Statement {
+struct LabeledStatement : public Statement {
     LabeledStatement(Locatable loc, Symbol name, StatementPtr inner)
         : Statement(loc, StatementKind::ST_LABELED)
         , _name(name)
-        , _inner(std::move(inner)) {};
+        , _inner(std::move(inner)){};
 
     void print(std::ostream& stream);
 
@@ -56,7 +47,7 @@ struct LabeledStatement: public Statement {
 
     void compile(std::shared_ptr<CompileScope> CompileScopePtr);
 
-    private:
+  private:
     Symbol _name;
     StatementPtr _inner;
 };
@@ -68,10 +59,10 @@ struct LabeledStatement: public Statement {
 ///    stmt2;
 /// }
 /// ```
-struct BlockStatement: public Statement {
+struct BlockStatement : public Statement {
     BlockStatement(Locatable loc, std::vector<StatementPtr> items)
         : Statement(loc, StatementKind::ST_BLOCK)
-        , _items(std::move(items)) {};
+        , _items(std::move(items)){};
 
     void print(std::ostream& stream);
 
@@ -80,14 +71,14 @@ struct BlockStatement: public Statement {
 
     void compile(std::shared_ptr<CompileScope> CompileScopePtr);
 
-    private:
+  private:
     std::vector<StatementPtr> _items;
 };
 
-struct EmptyStatement: public Statement {
+struct EmptyStatement : public Statement {
     EmptyStatement(Locatable loc)
-        : Statement(loc, StatementKind::ST_EMPTY) {};
-    
+        : Statement(loc, StatementKind::ST_EMPTY){};
+
     void print(std::ostream& stream);
 
     void compile(std::shared_ptr<CompileScope> CompileScopePtr);
@@ -96,10 +87,10 @@ struct EmptyStatement: public Statement {
 };
 
 // int y;
-struct DeclarationStatement: public Statement {
+struct DeclarationStatement : public Statement {
     DeclarationStatement(Locatable loc, Declaration declaration)
         : Statement(loc, StatementKind::ST_DECLARATION)
-        , _declaration(std::move(declaration)) {};
+        , _declaration(std::move(declaration)){};
 
     void print(std::ostream& stream);
 
@@ -107,15 +98,15 @@ struct DeclarationStatement: public Statement {
 
     void typecheck(ScopePtr& scope);
 
-    private:
+  private:
     Declaration _declaration;
 };
 
 // Just an expression disguised as a Statement
-struct ExpressionStatement: public Statement {
+struct ExpressionStatement : public Statement {
     ExpressionStatement(Locatable loc, ExpressionPtr expr)
         : Statement(loc, StatementKind::ST_EXPRESSION)
-        , _expr(std::move(expr)) {};
+        , _expr(std::move(expr)){};
 
     void print(std::ostream& stream);
 
@@ -123,21 +114,23 @@ struct ExpressionStatement: public Statement {
 
     void typecheck(ScopePtr& scope);
 
-    private:
+  private:
     ExpressionPtr _expr;
 };
 
 // if (cond) then stat
 // if (cond) then stat else stat
-struct IfStatement: public Statement {
-    public:
-    IfStatement(Locatable loc, ExpressionPtr condition, StatementPtr then_statement, std::optional<StatementPtr> else_statement)
+struct IfStatement : public Statement {
+  public:
+    IfStatement(
+        Locatable loc, ExpressionPtr condition, StatementPtr then_statement, std::optional<StatementPtr> else_statement
+    )
         : Statement(loc, StatementKind::ST_IF)
         , _condition(std::move(condition))
         , _then_statement(std::move(then_statement))
-        , _else_statement(std::move(else_statement)) {};
+        , _else_statement(std::move(else_statement)){};
     IfStatement(Locatable loc, ExpressionPtr condition, StatementPtr then_statement)
-        : IfStatement(loc, std::move(condition), std::move(then_statement), std::nullopt) {};
+        : IfStatement(loc, std::move(condition), std::move(then_statement), std::nullopt){};
 
     void print(std::ostream& stream);
 
@@ -145,19 +138,19 @@ struct IfStatement: public Statement {
 
     void compile(std::shared_ptr<CompileScope> CompileScopePtr);
 
-    private:
+  private:
     ExpressionPtr _condition;
     StatementPtr _then_statement;
     std::optional<StatementPtr> _else_statement;
 };
 
 // while (condition) statement
-struct WhileStatement: public Statement {
-    public:
+struct WhileStatement : public Statement {
+  public:
     WhileStatement(Locatable loc, ExpressionPtr condition, StatementPtr statement)
         : Statement(loc, StatementKind::ST_WHILE)
         , _condition(std::move(condition))
-        , _body(std::move(statement)) {};
+        , _body(std::move(statement)){};
 
     void print(std::ostream& stream);
 
@@ -165,16 +158,16 @@ struct WhileStatement: public Statement {
 
     void compile(std::shared_ptr<CompileScope> CompileScopePtr);
 
-    private:
+  private:
     ExpressionPtr _condition;
     StatementPtr _body;
 };
 
 // Parent class of jump instructions
-struct JumpStatement: public Statement {
+struct JumpStatement : public Statement {
     JumpStatement(Locatable loc, Symbol name)
         : Statement(loc, StatementKind::ST_JUMP)
-        , _jump_str(*name) {};
+        , _jump_str(*name){};
 
     void print(std::ostream& stream);
 
@@ -182,15 +175,15 @@ struct JumpStatement: public Statement {
 
     void compile(std::shared_ptr<CompileScope> CompileScopePtr);
 
-    private:
+  private:
     const std::string _jump_str;
 };
 
 // goto identifier
-struct GotoStatement: public JumpStatement {
+struct GotoStatement : public JumpStatement {
     GotoStatement(Locatable loc, Symbol name, Symbol ident)
         : JumpStatement(loc, name)
-        , _ident(ident) {};
+        , _ident(ident){};
 
     void print(std::ostream& stream);
 
@@ -198,24 +191,24 @@ struct GotoStatement: public JumpStatement {
 
     void compile(std::shared_ptr<CompileScope> CompileScopePtr);
 
-    private:
+  private:
     Symbol _ident;
 };
 
 // continue; (in loops)
-struct ContinueStatement: public JumpStatement {
+struct ContinueStatement : public JumpStatement {
     ContinueStatement(Locatable loc, Symbol name)
-        : JumpStatement(loc, name) {};
-    
+        : JumpStatement(loc, name){};
+
     void typecheck(ScopePtr& scope);
 
     void compile(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
 // break; (in loops)
-struct BreakStatement: public JumpStatement {
+struct BreakStatement : public JumpStatement {
     BreakStatement(Locatable loc, Symbol name)
-        : JumpStatement(loc, name) {};
+        : JumpStatement(loc, name){};
 
     void typecheck(ScopePtr& scope);
 
@@ -224,14 +217,14 @@ struct BreakStatement: public JumpStatement {
 
 // return;
 // return 1;
-struct ReturnStatement: public JumpStatement {
+struct ReturnStatement : public JumpStatement {
     ReturnStatement(Locatable loc, Symbol name)
         : JumpStatement(loc, name)
-        , _expr(std::nullopt) {};
+        , _expr(std::nullopt){};
 
     ReturnStatement(Locatable loc, Symbol name, ExpressionPtr expr)
         : JumpStatement(loc, name)
-        , _expr(std::make_optional(std::move(expr))) {};
+        , _expr(std::make_optional(std::move(expr))){};
 
     void print(std::ostream& stream);
 
@@ -239,6 +232,6 @@ struct ReturnStatement: public JumpStatement {
 
     void compile(std::shared_ptr<CompileScope> CompileScopePtr);
 
-    private:
+  private:
     std::optional<ExpressionPtr> _expr;
 };

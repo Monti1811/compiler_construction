@@ -13,7 +13,7 @@ void IndentManager::increaseCurrIndentation(int value) {
 }
 
 void IndentManager::decreaseCurrIndentation(int value) {
-    this->currIndent = std::max(this->currIndent-value,0);
+    this->currIndent = std::max(this->currIndent - value, 0);
 }
 
 void IndentManager::printCurrIndentation(std::ostream& stream) {

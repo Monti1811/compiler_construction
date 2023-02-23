@@ -10,8 +10,8 @@
 
 #include "declarators/declarator.h"
 #include "expression.h"
-#include "statement.h"
 #include "program.h"
+#include "statement.h"
 
 // Declarators and abstract declarators share a lot of syntactical and
 // semantical properties. Therefore, we use the same AST data structures to
@@ -23,15 +23,15 @@ enum class DeclKind { ANY, ABSTRACT, CONCRETE };
 /// This class should implement the parser that translates a stream of tokens
 /// into an abstract syntax tree.
 class Parser {
-   public:
+  public:
     Parser(Lexer& lexer)
-    : _lexer(lexer)
-    , _currentToken(lexer.next())
-    , _nextToken(lexer.next()) {};
+        : _lexer(lexer)
+        , _currentToken(lexer.next())
+        , _nextToken(lexer.next()){};
 
     Program parseProgram();
 
-   private:
+  private:
     Lexer& _lexer;
     Token _currentToken;
     Token _nextToken;

@@ -5,7 +5,7 @@
 struct PointerDeclarator : public Declarator {
     PointerDeclarator(Locatable loc, DeclaratorPtr inner)
         : Declarator(loc, inner->isAbstract(), DeclaratorKind::POINTER)
-        , _inner(std::move(inner)) {};
+        , _inner(std::move(inner)){};
 
     void print(std::ostream& stream);
 

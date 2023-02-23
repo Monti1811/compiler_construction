@@ -23,8 +23,8 @@ llvm::Type* StructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext
     if (def_structtype) {
         return def_structtype;
     }
-    llvm::StructType *StructXType = llvm::StructType::create(Ctx, struct_name);
-    std::vector<llvm::Type *> StructMemberTypes;
+    llvm::StructType* StructXType = llvm::StructType::create(Ctx, struct_name);
+    std::vector<llvm::Type*> StructMemberTypes;
     StructXType->setBody(StructMemberTypes);
     return StructXType;
 }
@@ -34,7 +34,7 @@ bool CompleteStructType::isComplete() {
 }
 
 bool CompleteStructType::addField(StructField field) {
-    if (field.name.has_value() && !this->_field_names.insert({ field.name.value(), this->fields.size() }).second) {
+    if (field.name.has_value() && !this->_field_names.insert({field.name.value(), this->fields.size()}).second) {
         return true;
     }
 
@@ -90,14 +90,14 @@ llvm::Type* CompleteStructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLV
 
     std::string struct_name = "struct." + *tag.value();
 
-    llvm::StructType *StructXType = llvm::StructType::create(Ctx, struct_name);
+    llvm::StructType* StructXType = llvm::StructType::create(Ctx, struct_name);
     this->_llvm_name = StructXType->getName();
 
-    std::vector<llvm::Type *> StructMemberTypes;
+    std::vector<llvm::Type*> StructMemberTypes;
     for (auto field : this->fields) {
         if (field.type->kind == TY_STRUCT) {
             auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(field.type);
-            complete_struct_ty->alt_tag = struct_name + '.' +  *field.name.value();
+            complete_struct_ty->alt_tag = struct_name + '.' + *field.name.value();
             if (!complete_struct_ty->tag.has_value()) {
                 StructMemberTypes.push_back(complete_struct_ty->toLLVMTypeAnonymous(Builder, Ctx));
                 continue;
@@ -116,12 +116,12 @@ llvm::Type* CompleteStructType::toLLVMTypeAnonymous(llvm::IRBuilder<>& Builder, 
     if (def_structtype) {
         return def_structtype;
     }
-    llvm::StructType *StructXType = llvm::StructType::create(Ctx, this->alt_tag);
-    std::vector<llvm::Type *> StructMemberTypes;
+    llvm::StructType* StructXType = llvm::StructType::create(Ctx, this->alt_tag);
+    std::vector<llvm::Type*> StructMemberTypes;
     for (auto field : this->fields) {
         if (field.type->kind == TY_STRUCT) {
             auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(field.type);
-            complete_struct_ty->alt_tag = this->alt_tag + '.' +  *field.name.value();
+            complete_struct_ty->alt_tag = this->alt_tag + '.' + *field.name.value();
             if (!complete_struct_ty->tag.has_value()) {
                 StructMemberTypes.push_back(complete_struct_ty->toLLVMTypeAnonymous(Builder, Ctx));
                 continue;

@@ -60,7 +60,7 @@ bool Scope::addDeclaration(TypeDecl& decl, bool function_param) {
         return this->parent.value()->addDeclaration(decl);
     }
 
-    auto var = this->vars.insert({ decl.name.value(), decl.type });
+    auto var = this->vars.insert({decl.name.value(), decl.type});
     auto var_type = var.first;
     auto is_var_new = var.second;
 
@@ -91,7 +91,7 @@ bool Scope::addFunctionDeclaration(TypeDecl& decl) {
     }
 
     // Add the function declaration to the scope's variables
-    this->vars.insert({ name, decl.type });
+    this->vars.insert({name, decl.type});
     // Mark this function as defined - if it was already before, return true.
     bool function_newly_defined = this->defined_functions.insert(name).second;
     return !function_newly_defined;
@@ -120,7 +120,7 @@ bool Scope::addStruct(std::shared_ptr<StructType> type) {
     if (def_struct_it != this->structs.end()) {
         def_struct_it->second = type;
     } else {
-        this->structs.insert({ name, type });
+        this->structs.insert({name, type});
     }
     return false;
 }

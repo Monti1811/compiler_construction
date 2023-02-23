@@ -10,8 +10,7 @@ std::ostream& operator<<(std::ostream& stream, Declaration& declaration) {
 void Declaration::print(std::ostream& stream) {
     stream << this->_specifier;
 
-    auto declarator_empty =
-        this->_declarator->kind == DeclaratorKind::PRIMITIVE && this->_declarator->isAbstract();
+    auto declarator_empty = this->_declarator->kind == DeclaratorKind::PRIMITIVE && this->_declarator->isAbstract();
 
     if (!declarator_empty) {
         stream << ' ' << this->_declarator;
@@ -77,10 +76,10 @@ void Declaration::compile(std::shared_ptr<CompileScope> compile_scope_ptr) {
         auto llvm_type = func_type_ptr->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx);
 
         llvm::Function* llvm_function = llvm::Function::Create(
-            llvm_type                                       /* FunctionType *Ty */,
-            llvm::GlobalValue::ExternalLinkage              /* LinkageType */,
-            *name                                           /* const Twine &N="" */,
-            compile_scope_ptr->_Module                      /* Module *M=0 */
+            llvm_type /* FunctionType *Ty */,
+            llvm::GlobalValue::ExternalLinkage /* LinkageType */,
+            *name /* const Twine &N="" */,
+            compile_scope_ptr->_Module /* Module *M=0 */
         );
     } else {
         llvm::Type* llvm_type = type->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx);
@@ -89,17 +88,17 @@ void Declaration::compile(std::shared_ptr<CompileScope> compile_scope_ptr) {
 
         /* Create a global variable */
         new llvm::GlobalVariable(
-            compile_scope_ptr->_Module                      /* Module & */,
-            llvm_type                                       /* Type * */,
-            false                                           /* bool isConstant */,
-            llvm::GlobalValue::CommonLinkage                /* LinkageType */,
-            llvm::Constant::getNullValue(llvm_type)         /* Constant * Initializer */,
-            *name                                            /* const Twine &Name = "" */,
+            compile_scope_ptr->_Module /* Module & */,
+            llvm_type /* Type * */,
+            false /* bool isConstant */,
+            llvm::GlobalValue::CommonLinkage /* LinkageType */,
+            llvm::Constant::getNullValue(llvm_type) /* Constant * Initializer */,
+            *name /* const Twine &Name = "" */,
             /* --------- We do not need this part (=> use defaults) ---------- */
-            0                                               /* GlobalVariable *InsertBefore = 0 */,
-            llvm::GlobalVariable::NotThreadLocal            /* ThreadLocalMode TLMode = NotThreadLocal */,
-            0                                               /* unsigned AddressSpace = 0 */,
-            false                                           /* bool isExternallyInitialized = false */
+            0 /* GlobalVariable *InsertBefore = 0 */,
+            llvm::GlobalVariable::NotThreadLocal /* ThreadLocalMode TLMode = NotThreadLocal */,
+            0 /* unsigned AddressSpace = 0 */,
+            false /* bool isExternallyInitialized = false */
         );
     }
 }

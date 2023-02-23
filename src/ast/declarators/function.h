@@ -6,10 +6,10 @@
 #include "../types.h"
 
 struct FunctionDeclarator : public Declarator {
-    public:
+  public:
     FunctionDeclarator(Locatable loc, DeclaratorPtr decl)
         : Declarator(loc, decl->isAbstract(), DeclaratorKind::FUNCTION)
-        , _name(std::move(decl)) {};
+        , _name(std::move(decl)){};
 
     void print(std::ostream& stream);
 

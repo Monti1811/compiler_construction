@@ -20,14 +20,13 @@ llvm::FunctionType* FunctionType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::L
     }
 
     /* Create the return type */
-    llvm::Type *FuncReturnType = this->return_type->toLLVMType(Builder, Ctx);
+    llvm::Type* FuncReturnType = this->return_type->toLLVMType(Builder, Ctx);
 
     /* Create a vector to store all parameter types */
-    std::vector<llvm::Type *> FuncParamTypes;
+    std::vector<llvm::Type*> FuncParamTypes;
 
     /* Create the (function) type of the function */
-    return llvm::FunctionType::get(
-        FuncReturnType, FuncParamTypes, /* isVarArg */ false);
+    return llvm::FunctionType::get(FuncReturnType, FuncParamTypes, /* isVarArg */ false);
 }
 
 bool ParamFunctionType::strong_equals(TypePtr const& other) {
@@ -62,19 +61,18 @@ void ParamFunctionType::addParameter(FunctionParam const& param) {
 
 llvm::FunctionType* ParamFunctionType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
     /* Create the return type */
-    llvm::Type *FuncReturnType = this->return_type->toLLVMType(Builder, Ctx);
+    llvm::Type* FuncReturnType = this->return_type->toLLVMType(Builder, Ctx);
 
     /* Create a vector to store all parameter types */
-    std::vector<llvm::Type *> FuncParamTypes;
+    std::vector<llvm::Type*> FuncParamTypes;
     for (auto param : this->params) {
         if (param.type->kind == TypeKind::TY_FUNCTION) {
             FuncParamTypes.push_back(Builder.getPtrTy());
         } else {
-            llvm::Type *FuncParamType = param.type->toLLVMType(Builder, Ctx);
+            llvm::Type* FuncParamType = param.type->toLLVMType(Builder, Ctx);
             FuncParamTypes.push_back(FuncParamType);
         }
     }
     /* Create the (function) type of the function */
-    return llvm::FunctionType::get(
-        FuncReturnType, FuncParamTypes, /* isVarArg */ false);
+    return llvm::FunctionType::get(FuncReturnType, FuncParamTypes, /* isVarArg */ false);
 }

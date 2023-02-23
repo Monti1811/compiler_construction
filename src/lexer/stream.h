@@ -6,14 +6,14 @@
 #include "../util/diagnostic.h"
 
 class LocatableStream {
-   public:
+  public:
     LocatableStream(std::string const& filename)
         : m_stream(std::ifstream(filename))
         , m_filename(filename) {
-            if (!m_stream.good()) {
-                error("File '", filename, "' does not exist");
-            }
+        if (!m_stream.good()) {
+            error("File '", filename, "' does not exist");
         }
+    }
 
     unsigned char get();
     std::string get_str(size_t length);
@@ -24,7 +24,7 @@ class LocatableStream {
 
     Locatable loc();
 
-   private:
+  private:
     unsigned char get_or_eof();
 
     std::ifstream m_stream;

@@ -1,10 +1,14 @@
 #include "diagnostic.h"
 
 Locatable::Locatable(const std::string& FileName, size_t Line, size_t Column)
-    : FileName(FileName), Line(Line), Column(Column) {}
+    : FileName(FileName)
+    , Line(Line)
+    , Column(Column) {}
 
 Locatable::Locatable(const Locatable& loc)
-    : FileName(loc.FileName), Line(loc.Line), Column(loc.Column) {}
+    : FileName(loc.FileName)
+    , Line(loc.Line)
+    , Column(loc.Column) {}
 
 Locatable::~Locatable(void) {}
 

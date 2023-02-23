@@ -14,7 +14,7 @@ struct Declaration {
     Declaration(Locatable loc, TypeSpecifierPtr specifier, DeclaratorPtr declarator)
         : _loc(loc)
         , _specifier(std::move(specifier))
-        , _declarator(std::move(declarator)) {};
+        , _declarator(std::move(declarator)){};
 
     void print(std::ostream& stream);
     friend std::ostream& operator<<(std::ostream& stream, Declaration& declaration);
@@ -28,6 +28,7 @@ struct Declaration {
     Locatable _loc;
     TypeSpecifierPtr _specifier;
     DeclaratorPtr _declarator;
-    private:
+
+  private:
     std::optional<TypeDecl> _typeDecl;
 };
