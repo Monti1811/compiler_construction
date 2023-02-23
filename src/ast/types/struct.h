@@ -46,4 +46,5 @@ struct CompleteStructType: public StructType {
 
     private:
     std::unordered_map<Symbol, size_t> _field_names;
+    std::optional<std::string> _llvm_name;
 };

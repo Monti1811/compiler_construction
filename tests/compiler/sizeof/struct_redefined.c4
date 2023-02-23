@@ -1,0 +1,15 @@
+struct S {
+    int x;
+    char c;
+    int y;
+    struct S* s;
+};
+
+int main(void) {
+    struct S {
+        char c;
+        int x;
+        int* h;
+    };
+    return sizeof(struct S);
+}
