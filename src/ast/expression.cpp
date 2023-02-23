@@ -724,7 +724,7 @@ TypePtr AssignExpression::typecheck(ScopePtr& scope) {
     errorloc(this->loc, "wrong assign");
 }
 
-TypePtr CastExpression::typecheck(ScopePtr& scope) {
+TypePtr CastExpression::typecheck(ScopePtr&) {
     // Cast Expression does not exist during typecheck phase, so just return type that is being cast to
     return this->type;
 }
@@ -751,7 +751,7 @@ llvm::Value* IntConstantExpression::compileRValue(std::shared_ptr<CompileScope> 
     return CompileScopePtr->_Builder.getInt32(this->_value);
 }
 
-llvm::Value* IntConstantExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* IntConstantExpression::compileLValue(std::shared_ptr<CompileScope>) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
@@ -761,7 +761,7 @@ llvm::Value* NullPtrExpression::compileRValue(std::shared_ptr<CompileScope> Comp
     return llvm::ConstantPointerNull::get(type);
 }
 
-llvm::Value* NullPtrExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* NullPtrExpression::compileLValue(std::shared_ptr<CompileScope>) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
@@ -798,7 +798,7 @@ llvm::Value* CharConstantExpression::compileRValue(std::shared_ptr<CompileScope>
     return CompileScopePtr->_Builder.getInt32(this->getChar());
 }
 
-llvm::Value* CharConstantExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* CharConstantExpression::compileLValue(std::shared_ptr<CompileScope>) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
@@ -806,7 +806,7 @@ std::string StringLiteralExpression::getString() {
     auto result = std::string("");
 
     // Loop through all chars, except for the first and last one (those are always double quotes)
-    for (int i = 1; i < this->_value.length() - 1; i++) {
+    for (size_t i = 1; i < this->_value.length() - 1; i++) {
         auto ch = this->_value[i];
         if (ch != '\\') {
             result += ch;
@@ -834,7 +834,7 @@ llvm::Value* StringLiteralExpression::compileRValue(std::shared_ptr<CompileScope
     return CompileScopePtr->_Builder.CreateGlobalStringPtr(this->getString());
 }
 
-llvm::Value* StringLiteralExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* StringLiteralExpression::compileLValue(std::shared_ptr<CompileScope>) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
@@ -1150,9 +1150,6 @@ llvm::Value* UnequalExpression::compileRValue(std::shared_ptr<CompileScope> Comp
 }
 
 llvm::Value* AndExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // Get the current block
-    auto curr_block = CompileScopePtr->_Builder.GetInsertBlock();
-
     llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(CompileScopePtr), CompileScopePtr);
     auto lhs_block = CompileScopePtr->_Builder.GetInsertBlock();
     /* Add a basic block for the consequence of the OrExpression */
@@ -1186,9 +1183,6 @@ llvm::Value* AndExpression::compileRValue(std::shared_ptr<CompileScope> CompileS
 }
 
 llvm::Value* OrExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    // Get the current block
-    auto curr_block = CompileScopePtr->_Builder.GetInsertBlock();
-
     llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(CompileScopePtr), CompileScopePtr);
     auto lhs_block = CompileScopePtr->_Builder.GetInsertBlock();
     /* Add a basic block for the consequence of the OrExpression */

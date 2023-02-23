@@ -16,7 +16,7 @@ bool StructType::strong_equals(TypePtr const& other) {
     return this->equals(other);
 }
 
-llvm::Type* StructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+llvm::Type* StructType::toLLVMType(llvm::IRBuilder<>&, llvm::LLVMContext& Ctx) {
     // declarations of structs should have CompleteStructType already, so this shouldn't get called at all
     auto struct_name = "struct." + *tag.value();
     auto def_structtype = llvm::StructType::getTypeByName(Ctx, struct_name);

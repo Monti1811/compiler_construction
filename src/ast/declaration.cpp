@@ -75,7 +75,7 @@ void Declaration::compile(std::shared_ptr<CompileScope> compile_scope_ptr) {
         std::shared_ptr<FunctionType> func_type_ptr = std::static_pointer_cast<FunctionType>(type);
         auto llvm_type = func_type_ptr->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx);
 
-        llvm::Function* llvm_function = llvm::Function::Create(
+        llvm::Function::Create(
             llvm_type /* FunctionType *Ty */,
             llvm::GlobalValue::ExternalLinkage /* LinkageType */,
             *name /* const Twine &N="" */,

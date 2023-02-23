@@ -26,8 +26,8 @@ struct FunctionDefinition {
 
     void compile(std::shared_ptr<CompileScope> CompileScopePtr);
 
-    BlockStatement _block;
     Declaration _declaration;
+    BlockStatement _block;
     std::unordered_set<Symbol> _labels;
 
   private:

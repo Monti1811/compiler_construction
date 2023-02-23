@@ -87,7 +87,7 @@ void EmptyStatement::print(std::ostream& stream) {
     stream << ';';
 }
 
-void EmptyStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
+void EmptyStatement::compile(std::shared_ptr<CompileScope>) {
     // TODO
 }
 
@@ -355,7 +355,7 @@ void JumpStatement::print(std::ostream& stream) {
     stream << this->_jump_str << ';';
 }
 
-void JumpStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr) {
+void JumpStatement::compile(std::shared_ptr<CompileScope>) {
     // TODO
 }
 
