@@ -38,6 +38,11 @@ struct Expression {
     virtual void print(std::ostream& stream) = 0;
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Expression>& expr);
 
+    // If this is a string literal, return the length of the string
+    virtual std::optional<size_t> getStringLength(void) {
+        return std::nullopt;
+    }
+
     Locatable loc;
     TypePtr type;
 };
@@ -126,6 +131,7 @@ struct StringLiteralExpression: public Expression {
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 
     std::string getString();
+    std::optional<size_t> getStringLength(void);
 
     std::string _value;
 };
@@ -264,6 +270,8 @@ struct ReferenceExpression: public UnaryExpression {
     TypePtr typecheck(ScopePtr& scope);
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
+
+    std::optional<size_t> getStringLength(void);
 };
 
 struct DerefExpression: public UnaryExpression {
@@ -277,6 +285,8 @@ struct DerefExpression: public UnaryExpression {
     bool isLvalue(ScopePtr& scope);
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
+
+    std::optional<size_t> getStringLength(void);
 };
 
 struct NegationExpression: public UnaryExpression {

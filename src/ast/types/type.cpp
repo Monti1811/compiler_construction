@@ -154,6 +154,12 @@ bool Type::isComplete() {
     }
 }
 
+bool Type::isString() {
+    if (this->kind != TypeKind::TY_POINTER) return false;
+    auto pointer_type = static_cast<PointerType*>(this);
+    return pointer_type->inner->kind == TypeKind::TY_CHAR;
+}
+
 std::optional<std::shared_ptr<FunctionType>> Type::unwrapFunctionPointer() {
     if (this->kind != TypeKind::TY_POINTER) {
         return std::nullopt;

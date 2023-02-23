@@ -809,6 +809,10 @@ std::string StringLiteralExpression::getString() {
     return result;
 }
 
+std::optional<size_t> StringLiteralExpression::getStringLength(void) {
+    return this->getString().length() + 1;
+}
+
 llvm::Value* StringLiteralExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     return CompileScopePtr->_Builder.CreateGlobalStringPtr(this->getString());
 }
@@ -935,10 +939,10 @@ llvm::Value* ArrowExpression::compileLValue(std::shared_ptr<CompileScope> Compil
 }
 
 llvm::Value* SizeofExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    if (this->_inner->type == STRING_TYPE) {
-        // TODO: Strings that are like this: *&"foos"
-        auto string = static_cast<StringLiteralExpression*>(this->_inner.get());
-        return CompileScopePtr->_Builder.getInt32(string->_value.length()-1);
+    auto string_length = this->_inner->getStringLength();
+    if (this->_inner->type->isString() && string_length.has_value()) {
+        // String literals and expressions like *&"foo"
+        return CompileScopePtr->_Builder.getInt32(string_length.value());
     }
     auto inner_type = this->_inner->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
     return CompileScopePtr->_Builder.getInt32(CompileScopePtr->_Module.getDataLayout().getTypeAllocSize(inner_type));
@@ -957,12 +961,28 @@ llvm::Value* SizeofTypeExpression::compileLValue(std::shared_ptr<CompileScope>) 
     errorloc(this->loc,"cannot compute l-value of this expression");
 }
 
+std::optional<size_t> ReferenceExpression::getStringLength(void) {
+    auto inner = dynamic_cast<StringLiteralExpression*>(this->_inner.get());
+    if (!inner) {
+        return std::nullopt;
+    }
+    return this->_inner->getStringLength();
+}
+
 llvm::Value* ReferenceExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     return this->_inner->compileLValue(CompileScopePtr);
 }
 
 llvm::Value* ReferenceExpression::compileLValue(std::shared_ptr<CompileScope>) {
     errorloc(this->loc,"cannot compute l-value of this expression");
+}
+
+std::optional<size_t> DerefExpression::getStringLength(void) {
+    auto inner = dynamic_cast<ReferenceExpression*>(this->_inner.get());
+    if (!inner) {
+        return std::nullopt;
+    }
+    return this->_inner->getStringLength();
 }
 
 llvm::Value* DerefExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {

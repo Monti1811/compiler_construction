@@ -9,7 +9,7 @@ entry:
   %3 = alloca i32, align 4
   store i32 5, ptr %3, align 4
   store i32 8, ptr %2, align 4
-  store i32 2096168269, ptr %1, align 4
+  store i32 5, ptr %1, align 4
   store i32 0, ptr %0, align 4
   br label %if-header
 
