@@ -60,7 +60,7 @@ bool Scope::addDeclaration(TypeDecl& decl) {
     auto var_type = var.first;
     auto is_var_new = var.second;
 
-    if (this->_root) {
+    if (this->_root || var_type->second->kind == TypeKind::TY_FUNCTION) {
         // 6.9.2: External definitions may be redefined (for some reason)
         // Only throw an error if type is not the same as previous declaration
         if (var_type != this->vars.end()) {
