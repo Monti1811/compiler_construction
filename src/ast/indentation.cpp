@@ -1,5 +1,12 @@
 #include "indentation.h"
 
+std::ostream& operator<<(std::ostream& stream, const IndentManager& indent_manager) {
+    for (int i = 0; i < indent_manager.currIndent; i++) {
+        stream << '\t';
+    }
+    return stream;
+}
+
 int IndentManager::getCurrIndentation() {
     return this->currIndent;
 }

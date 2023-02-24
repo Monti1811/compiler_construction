@@ -8,13 +8,6 @@ std::ostream& operator<<(std::ostream& stream, const StatementPtr& stat) {
     return stream;
 }
 
-std::ostream& operator<<(std::ostream& stream, const IndentManager& identmanager) {
-    for (int i = 0; i < identmanager.currIndent; i++) {
-        stream << '\t';
-    }
-    return stream;
-}
-
 void LabeledStatement::print(std::ostream& stream) {
     IndentManager& indent = IndentManager::getInstance();
     stream << *this->_name << ':';
