@@ -97,7 +97,7 @@ llvm::Type* CompleteStructType::toLLVMType(CompileScopePtr compile_scope) {
     for (auto field : this->fields) {
         if (field.type->kind == TY_STRUCT) {
             auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(field.type);
-            complete_struct_ty->alt_tag = struct_name + '.' + *field.name.value();
+            complete_struct_ty->_alt_tag = struct_name + '.' + *field.name.value();
             if (!complete_struct_ty->tag.has_value()) {
                 StructMemberTypes.push_back(complete_struct_ty->toLLVMTypeAnonymous(compile_scope));
                 continue;
@@ -112,16 +112,16 @@ llvm::Type* CompleteStructType::toLLVMType(CompileScopePtr compile_scope) {
 
 llvm::Type* CompleteStructType::toLLVMTypeAnonymous(CompileScopePtr compile_scope) {
     // Check if struct already exists
-    auto def_structtype = llvm::StructType::getTypeByName(compile_scope->ctx, this->alt_tag);
+    auto def_structtype = llvm::StructType::getTypeByName(compile_scope->ctx, this->_alt_tag);
     if (def_structtype) {
         return def_structtype;
     }
-    llvm::StructType* StructXType = llvm::StructType::create(compile_scope->ctx, this->alt_tag);
+    llvm::StructType* StructXType = llvm::StructType::create(compile_scope->ctx, this->_alt_tag);
     std::vector<llvm::Type*> StructMemberTypes;
     for (auto field : this->fields) {
         if (field.type->kind == TY_STRUCT) {
             auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(field.type);
-            complete_struct_ty->alt_tag = this->alt_tag + '.' + *field.name.value();
+            complete_struct_ty->_alt_tag = this->_alt_tag + '.' + *field.name.value();
             if (!complete_struct_ty->tag.has_value()) {
                 StructMemberTypes.push_back(complete_struct_ty->toLLVMTypeAnonymous(compile_scope));
                 continue;

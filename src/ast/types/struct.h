@@ -17,10 +17,10 @@ struct StructType : public Type {
     llvm::Type* toLLVMType(CompileScopePtr compile_scope);
 
     std::optional<Symbol> tag;
-
-    // TODO: rename alt_tag -> _llvm_name
-    std::string alt_tag;
     int scope_counter;
+
+  protected:
+    std::string _alt_tag;
 };
 
 struct CompleteStructType : public StructType {
