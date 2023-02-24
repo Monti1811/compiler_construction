@@ -731,6 +731,10 @@ TypePtr CastExpression::typecheck(ScopePtr&) {
     return this->type;
 }
 
+llvm::Value* Expression::compileLValue(CompileScopePtr) {
+    errorloc(this->loc, "Cannot compute lvalue of this expression");
+}
+
 llvm::Value* IdentExpression::compileRValue(CompileScopePtr compile_scope) {
     // identifier should always exist since we typechecked the program already
     llvm::Value* saved_alloca = this->compileLValue(compile_scope);
@@ -753,18 +757,10 @@ llvm::Value* IntConstantExpression::compileRValue(CompileScopePtr compile_scope)
     return compile_scope->builder.getInt32(this->_value);
 }
 
-llvm::Value* IntConstantExpression::compileLValue(CompileScopePtr) {
-    errorloc(this->loc, "cannot compute l-value of this expression");
-}
-
 llvm::Value* NullPtrExpression::compileRValue(CompileScopePtr compile_scope) {
     // We assume that all null pointer constants that are of type int or char have already been cast
     auto type = compile_scope->builder.getPtrTy();
     return llvm::ConstantPointerNull::get(type);
-}
-
-llvm::Value* NullPtrExpression::compileLValue(CompileScopePtr) {
-    errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
 const std::unordered_map<char, char> ESCAPE_CHARS = {
@@ -800,10 +796,6 @@ llvm::Value* CharConstantExpression::compileRValue(CompileScopePtr compile_scope
     return compile_scope->builder.getInt32(this->getChar());
 }
 
-llvm::Value* CharConstantExpression::compileLValue(CompileScopePtr) {
-    errorloc(this->loc, "cannot compute l-value of this expression");
-}
-
 std::string StringLiteralExpression::getString() {
     auto result = std::string("");
 
@@ -834,10 +826,6 @@ std::optional<size_t> StringLiteralExpression::getStringLength(void) {
 
 llvm::Value* StringLiteralExpression::compileRValue(CompileScopePtr compile_scope) {
     return compile_scope->builder.CreateGlobalStringPtr(this->getString());
-}
-
-llvm::Value* StringLiteralExpression::compileLValue(CompileScopePtr) {
-    errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
 llvm::Value* IndexExpression::compileRValue(CompileScopePtr compile_scope) {
@@ -880,10 +868,6 @@ llvm::Value* CallExpression::compileRValue(CompileScopePtr compile_scope) {
     }
 
     return compile_scope->builder.CreateCall(llvm_function_type, fun, llvm::makeArrayRef(args));
-}
-
-llvm::Value* CallExpression::compileLValue(CompileScopePtr) {
-    errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
 llvm::Value* DotExpression::compileRValue(CompileScopePtr compile_scope) {
@@ -965,17 +949,9 @@ llvm::Value* SizeofExpression::compileRValue(CompileScopePtr compile_scope) {
     return compile_scope->builder.getInt32(compile_scope->module.getDataLayout().getTypeAllocSize(inner_type));
 }
 
-llvm::Value* SizeofExpression::compileLValue(CompileScopePtr) {
-    errorloc(this->loc, "cannot compute l-value of this expression");
-}
-
 llvm::Value* SizeofTypeExpression::compileRValue(CompileScopePtr compile_scope) {
     auto llvm_type = this->_inner_type->toLLVMType(compile_scope);
     return compile_scope->builder.getInt32(compile_scope->module.getDataLayout().getTypeAllocSize(llvm_type));
-}
-
-llvm::Value* SizeofTypeExpression::compileLValue(CompileScopePtr) {
-    errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
 std::optional<size_t> ReferenceExpression::getStringLength(void) {
@@ -988,10 +964,6 @@ std::optional<size_t> ReferenceExpression::getStringLength(void) {
 
 llvm::Value* ReferenceExpression::compileRValue(CompileScopePtr compile_scope) {
     return this->_inner->compileLValue(compile_scope);
-}
-
-llvm::Value* ReferenceExpression::compileLValue(CompileScopePtr) {
-    errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
 std::optional<size_t> DerefExpression::getStringLength(void) {
@@ -1036,22 +1008,10 @@ llvm::Value* NegationExpression::compileRValue(CompileScopePtr compile_scope) {
     return compile_scope->builder.CreateMul(compile_scope->builder.getInt32(-1), inner_value);
 }
 
-llvm::Value* NegationExpression::compileLValue(CompileScopePtr) {
-    errorloc(this->loc, "cannot compute l-value of this expression");
-}
-
 llvm::Value* LogicalNegationExpression::compileRValue(CompileScopePtr compile_scope) {
     llvm::Value* inner_value = toBoolTy(this->_inner->compileRValue(compile_scope), compile_scope);
     auto result = compile_scope->builder.CreateICmpEQ(compile_scope->builder.getInt1(0), inner_value);
     return compile_scope->builder.CreateIntCast(result, llvm::Type::getInt32Ty(compile_scope->ctx), false);
-}
-
-llvm::Value* LogicalNegationExpression::compileLValue(CompileScopePtr) {
-    errorloc(this->loc, "cannot compute l-value of this expression");
-}
-
-llvm::Value* BinaryExpression::compileLValue(CompileScopePtr) {
-    errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
 llvm::Value* MultiplyExpression::compileRValue(CompileScopePtr compile_scope) {
@@ -1266,19 +1226,11 @@ llvm::Value* TernaryExpression::compileRValue(CompileScopePtr compile_scope) {
     return phi;
 }
 
-llvm::Value* TernaryExpression::compileLValue(CompileScopePtr) {
-    errorloc(this->loc, "cannot compute l-value of this expression");
-}
-
 llvm::Value* AssignExpression::compileRValue(CompileScopePtr compile_scope) {
     llvm::Value* to_be_stored_in = this->_left->compileLValue(compile_scope);
     llvm::Value* value_to_be_stored = this->_right->compileRValue(compile_scope);
     compile_scope->builder.CreateStore(value_to_be_stored, to_be_stored_in);
     return value_to_be_stored;
-}
-
-llvm::Value* AssignExpression::compileLValue(CompileScopePtr) {
-    errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
 llvm::Value* CastExpression::compileRValue(CompileScopePtr compile_scope) {
