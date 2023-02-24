@@ -10,7 +10,7 @@ struct StructSpecifier : public TypeSpecifier {
         : TypeSpecifier(loc, SpecifierKind::STRUCT)
         , _tag(tag){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
     TypePtr toType(ScopePtr&);
 

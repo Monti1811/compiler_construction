@@ -8,7 +8,7 @@ struct PointerDeclarator : public Declarator {
         : Declarator(loc, inner->isAbstract(), DeclaratorKind::POINTER)
         , _inner(std::move(inner)){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
     std::optional<Symbol> getName();
     TypePtr wrapType(TypePtr const& type, ScopePtr& scope);

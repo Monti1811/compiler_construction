@@ -41,11 +41,11 @@ struct LabeledStatement : public Statement {
         , _name(name)
         , _inner(std::move(inner)){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    void typecheck(ScopePtr& scope);
+    void typecheck(ScopePtr& scope) override;
 
-    void compile(CompileScopePtr compile_scope);
+    void compile(CompileScopePtr compile_scope) override;
 
   private:
     Symbol _name;
@@ -64,12 +64,12 @@ struct BlockStatement : public Statement {
         : Statement(loc, StatementKind::ST_BLOCK)
         , _items(std::move(items)){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    void typecheck(ScopePtr& scope);
+    void typecheck(ScopePtr& scope) override;
     void typecheckInner(ScopePtr& inner_scope);
 
-    void compile(CompileScopePtr compile_scope);
+    void compile(CompileScopePtr compile_scope) override;
 
   private:
     std::vector<StatementPtr> _items;
@@ -79,9 +79,9 @@ struct EmptyStatement : public Statement {
     EmptyStatement(Locatable loc)
         : Statement(loc, StatementKind::ST_EMPTY){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    void compile(CompileScopePtr compile_scope);
+    void compile(CompileScopePtr compile_scope) override;
 
     void typecheck(ScopePtr&) {}
 };
@@ -92,11 +92,11 @@ struct DeclarationStatement : public Statement {
         : Statement(loc, StatementKind::ST_DECLARATION)
         , _declaration(std::move(declaration)){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    void compile(CompileScopePtr compile_scope);
+    void compile(CompileScopePtr compile_scope) override;
 
-    void typecheck(ScopePtr& scope);
+    void typecheck(ScopePtr& scope) override;
 
   private:
     Declaration _declaration;
@@ -108,11 +108,11 @@ struct ExpressionStatement : public Statement {
         : Statement(loc, StatementKind::ST_EXPRESSION)
         , _expr(std::move(expr)){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    void compile(CompileScopePtr compile_scope);
+    void compile(CompileScopePtr compile_scope) override;
 
-    void typecheck(ScopePtr& scope);
+    void typecheck(ScopePtr& scope) override;
 
   private:
     ExpressionPtr _expr;
@@ -132,11 +132,11 @@ struct IfStatement : public Statement {
     IfStatement(Locatable loc, ExpressionPtr condition, StatementPtr then_statement)
         : IfStatement(loc, std::move(condition), std::move(then_statement), std::nullopt){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    void typecheck(ScopePtr& scope);
+    void typecheck(ScopePtr& scope) override;
 
-    void compile(CompileScopePtr compile_scope);
+    void compile(CompileScopePtr compile_scope) override;
 
   private:
     ExpressionPtr _condition;
@@ -152,11 +152,11 @@ struct WhileStatement : public Statement {
         , _condition(std::move(condition))
         , _body(std::move(statement)){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    void typecheck(ScopePtr& scope);
+    void typecheck(ScopePtr& scope) override;
 
-    void compile(CompileScopePtr compile_scope);
+    void compile(CompileScopePtr compile_scope) override;
 
   private:
     ExpressionPtr _condition;
@@ -169,12 +169,9 @@ struct JumpStatement : public Statement {
         : Statement(loc, StatementKind::ST_JUMP)
         , _jump_str(*name){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
     void typecheck(ScopePtr&) {}
-
-    // TODO: make virtual
-    void compile(CompileScopePtr compile_scope);
 
   private:
     const std::string _jump_str;
@@ -186,11 +183,11 @@ struct GotoStatement : public JumpStatement {
         : JumpStatement(loc, name)
         , _ident(ident){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    void typecheck(ScopePtr& scope);
+    void typecheck(ScopePtr& scope) override;
 
-    void compile(CompileScopePtr compile_scope);
+    void compile(CompileScopePtr compile_scope) override;
 
   private:
     Symbol _ident;
@@ -201,9 +198,9 @@ struct ContinueStatement : public JumpStatement {
     ContinueStatement(Locatable loc, Symbol name)
         : JumpStatement(loc, name){};
 
-    void typecheck(ScopePtr& scope);
+    void typecheck(ScopePtr& scope) override;
 
-    void compile(CompileScopePtr compile_scope);
+    void compile(CompileScopePtr compile_scope) override;
 };
 
 // break; (in loops)
@@ -211,9 +208,9 @@ struct BreakStatement : public JumpStatement {
     BreakStatement(Locatable loc, Symbol name)
         : JumpStatement(loc, name){};
 
-    void typecheck(ScopePtr& scope);
+    void typecheck(ScopePtr& scope) override;
 
-    void compile(CompileScopePtr compile_scope);
+    void compile(CompileScopePtr compile_scope) override;
 };
 
 // return;
@@ -227,11 +224,11 @@ struct ReturnStatement : public JumpStatement {
         : JumpStatement(loc, name)
         , _expr(std::make_optional(std::move(expr))){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    void typecheck(ScopePtr& scope);
+    void typecheck(ScopePtr& scope) override;
 
-    void compile(CompileScopePtr compile_scope);
+    void compile(CompileScopePtr compile_scope) override;
 
   private:
     std::optional<ExpressionPtr> _expr;

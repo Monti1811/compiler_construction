@@ -337,8 +337,6 @@ void JumpStatement::print(std::ostream& stream) {
     stream << this->_jump_str << ';';
 }
 
-void JumpStatement::compile(CompileScopePtr) {}
-
 void GotoStatement::print(std::ostream& stream) {
     stream << "goto " << *this->_ident << ';';
 }

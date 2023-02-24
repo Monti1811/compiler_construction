@@ -98,6 +98,10 @@ bool Expression::isLvalue(ScopePtr&) {
     return false;
 }
 
+std::optional<size_t> Expression::getStringLength(void) {
+    return std::nullopt;
+}
+
 TypePtr IdentExpression::typecheck(ScopePtr& scope) {
     auto type = scope->getVarType(this->_ident);
     if (!type.has_value()) {

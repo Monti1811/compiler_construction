@@ -44,7 +44,7 @@ struct PrimitiveDeclarator : public Declarator {
         : Declarator(loc, true, DeclaratorKind::PRIMITIVE)
         , _ident(std::nullopt){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
     std::optional<Symbol> getName();
     TypePtr wrapType(TypePtr const& type, ScopePtr&);

@@ -39,9 +39,7 @@ struct Expression {
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Expression>& expr);
 
     // If this is a string literal, return the length of the string
-    virtual std::optional<size_t> getStringLength(void) {
-        return std::nullopt;
-    }
+    virtual std::optional<size_t> getStringLength(void);
 
     Locatable loc;
     TypePtr type;
@@ -57,13 +55,13 @@ struct IdentExpression : public Expression {
         : Expression(loc)
         , _ident(ident){};
 
-    TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue(ScopePtr& scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    bool isLvalue(ScopePtr& scope) override;
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<IdentExpression>& expr);
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 
   private:
     Symbol _ident;
@@ -75,11 +73,11 @@ struct IntConstantExpression : public Expression {
         : Expression(loc)
         , _value(std::stoull(*value)){};
 
-    TypePtr typecheck(ScopePtr&);
+    TypePtr typecheck(ScopePtr&) override;
 
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
-    void print(std::ostream& stream);
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
+    void print(std::ostream& stream) override;
 
   private:
     unsigned long long _value;
@@ -90,12 +88,12 @@ struct NullPtrExpression : public Expression {
     NullPtrExpression(Locatable loc)
         : Expression(loc){};
 
-    TypePtr typecheck(ScopePtr&);
+    TypePtr typecheck(ScopePtr&) override;
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 };
 
 struct CharConstantExpression : public Expression {
@@ -104,12 +102,12 @@ struct CharConstantExpression : public Expression {
         : Expression(loc)
         , _value((*value)){};
 
-    TypePtr typecheck(ScopePtr&);
+    TypePtr typecheck(ScopePtr&) override;
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 
     char getChar();
 
@@ -123,16 +121,16 @@ struct StringLiteralExpression : public Expression {
         : Expression(loc)
         , _value(*value){};
 
-    TypePtr typecheck(ScopePtr&);
-    bool isLvalue(ScopePtr& scope);
+    TypePtr typecheck(ScopePtr&) override;
+    bool isLvalue(ScopePtr& scope) override;
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 
     std::string getString();
-    std::optional<size_t> getStringLength(void);
+    std::optional<size_t> getStringLength(void) override;
 
   private:
     std::string _value;
@@ -145,13 +143,13 @@ struct IndexExpression : public Expression {
         , _expression(std::move(expression))
         , _index(std::move(index)){};
 
-    TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue(ScopePtr&);
+    TypePtr typecheck(ScopePtr& scope) override;
+    bool isLvalue(ScopePtr&) override;
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 
   private:
     // expression[index]
@@ -167,12 +165,12 @@ struct CallExpression : public Expression {
         , _expression(std::move(expression))
         , _arguments(std::move(arguments)){};
 
-    TypePtr typecheck(ScopePtr& scope);
+    TypePtr typecheck(ScopePtr& scope) override;
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 
   private:
     // expression(arguments)
@@ -187,13 +185,13 @@ struct DotExpression : public Expression {
         , _expression(std::move(expression))
         , _ident(std::move(ident)){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue(ScopePtr& scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    bool isLvalue(ScopePtr& scope) override;
 
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 
   private:
     // expression.ident
@@ -208,13 +206,13 @@ struct ArrowExpression : public Expression {
         , _expression(std::move(expression))
         , _ident(std::move(ident)){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue(ScopePtr& scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    bool isLvalue(ScopePtr& scope) override;
 
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 
   private:
     // expression->ident
@@ -229,7 +227,7 @@ struct UnaryExpression : public Expression {
         , _inner(std::move(inner))
         , _op_str(op_str){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
   protected:
     ExpressionPtr _inner;
@@ -245,9 +243,9 @@ struct SizeofExpression : public UnaryExpression {
     SizeofExpression(Locatable loc, ExpressionPtr inner)
         : UnaryExpression(loc, std::move(inner), "sizeof "){};
 
-    TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 };
 
 struct SizeofTypeExpression : public Expression {
@@ -256,12 +254,12 @@ struct SizeofTypeExpression : public Expression {
         : Expression(loc)
         , _decl(std::move(decl)){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    TypePtr typecheck(ScopePtr& scope);
+    TypePtr typecheck(ScopePtr& scope) override;
 
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 
   private:
     // sizeof (inner)
@@ -276,11 +274,11 @@ struct ReferenceExpression : public UnaryExpression {
     ReferenceExpression(Locatable loc, ExpressionPtr inner)
         : UnaryExpression(loc, std::move(inner), "&"){};
 
-    TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 
-    std::optional<size_t> getStringLength(void);
+    std::optional<size_t> getStringLength(void) override;
 };
 
 struct DerefExpression : public UnaryExpression {
@@ -290,12 +288,12 @@ struct DerefExpression : public UnaryExpression {
     DerefExpression(Locatable loc, ExpressionPtr inner)
         : UnaryExpression(loc, std::move(inner), "*"){};
 
-    TypePtr typecheck(ScopePtr& scope);
-    bool isLvalue(ScopePtr& scope);
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    bool isLvalue(ScopePtr& scope) override;
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 
-    std::optional<size_t> getStringLength(void);
+    std::optional<size_t> getStringLength(void) override;
 };
 
 struct NegationExpression : public UnaryExpression {
@@ -305,9 +303,9 @@ struct NegationExpression : public UnaryExpression {
     NegationExpression(Locatable loc, ExpressionPtr inner)
         : UnaryExpression(loc, std::move(inner), "-"){};
 
-    TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 };
 
 struct LogicalNegationExpression : public UnaryExpression {
@@ -317,9 +315,9 @@ struct LogicalNegationExpression : public UnaryExpression {
     LogicalNegationExpression(Locatable loc, ExpressionPtr inner)
         : UnaryExpression(loc, std::move(inner), "!"){};
 
-    TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 };
 
 struct BinaryExpression : public Expression {
@@ -330,11 +328,11 @@ struct BinaryExpression : public Expression {
         , _right(std::move(right))
         , _op_str(op_str){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    TypePtr typecheck(ScopePtr& scope);
+    TypePtr typecheck(ScopePtr& scope) override;
 
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
 
   protected:
     ExpressionPtr _left;
@@ -350,7 +348,7 @@ struct MultiplyExpression : public BinaryExpression {
   public:
     MultiplyExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "*"){};
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 };
 
 struct AddExpression : public BinaryExpression {
@@ -360,8 +358,8 @@ struct AddExpression : public BinaryExpression {
     AddExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "+"){};
 
-    TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 };
 
 struct SubtractExpression : public BinaryExpression {
@@ -371,8 +369,8 @@ struct SubtractExpression : public BinaryExpression {
     SubtractExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "-"){};
 
-    TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 };
 
 struct LessThanExpression : public BinaryExpression {
@@ -382,8 +380,8 @@ struct LessThanExpression : public BinaryExpression {
     LessThanExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "<"){};
 
-    TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 };
 
 struct EqualExpression : public BinaryExpression {
@@ -393,8 +391,8 @@ struct EqualExpression : public BinaryExpression {
     EqualExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "=="){};
 
-    TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 };
 
 struct UnequalExpression : public BinaryExpression {
@@ -404,8 +402,8 @@ struct UnequalExpression : public BinaryExpression {
     UnequalExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "!="){};
 
-    TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 };
 
 struct AndExpression : public BinaryExpression {
@@ -415,8 +413,8 @@ struct AndExpression : public BinaryExpression {
     AndExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "&&"){};
 
-    TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 };
 
 struct OrExpression : public BinaryExpression {
@@ -426,8 +424,8 @@ struct OrExpression : public BinaryExpression {
     OrExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "||"){};
 
-    TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 };
 
 struct TernaryExpression : public Expression {
@@ -440,12 +438,12 @@ struct TernaryExpression : public Expression {
         , _left(std::move(left))
         , _right(std::move(right)){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    TypePtr typecheck(ScopePtr& scope);
+    TypePtr typecheck(ScopePtr& scope) override;
 
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 
   private:
     ExpressionPtr _condition;
@@ -460,9 +458,9 @@ struct AssignExpression : public BinaryExpression {
     AssignExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "="){};
 
-    TypePtr typecheck(ScopePtr& scope);
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    TypePtr typecheck(ScopePtr& scope) override;
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 };
 
 struct CastExpression : public Expression {
@@ -473,12 +471,12 @@ struct CastExpression : public Expression {
         : Expression(loc)
         , _inner(std::move(inner)){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
-    TypePtr typecheck(ScopePtr& scope);
+    TypePtr typecheck(ScopePtr& scope) override;
 
-    llvm::Value* compileLValue(CompileScopePtr compile_scope);
-    llvm::Value* compileRValue(CompileScopePtr compile_scope);
+    llvm::Value* compileLValue(CompileScopePtr compile_scope) override;
+    llvm::Value* compileRValue(CompileScopePtr compile_scope) override;
 
     std::optional<llvm::Value*> convertNullptrs(CompileScopePtr compile_scope);
     llvm::Value* castArithmetics(CompileScopePtr compile_scope, llvm::Value* value);

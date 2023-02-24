@@ -11,7 +11,7 @@ struct FunctionDeclarator : public Declarator {
         : Declarator(loc, decl->isAbstract(), DeclaratorKind::FUNCTION)
         , _name(std::move(decl)){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
     std::optional<Symbol> getName();
     TypePtr wrapType(TypePtr const& type, ScopePtr& scope);
