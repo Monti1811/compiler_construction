@@ -6,7 +6,7 @@
 
 #include "compile_scope.h"
 #include "declaration.h"
-#include "expression.h"
+#include "expressions.h"
 #include "statement.h"
 
 struct FunctionDefinition {

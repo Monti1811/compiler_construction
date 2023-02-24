@@ -9,7 +9,7 @@
 #include "../util/symbol_internalizer.h"
 
 #include "declarators.h"
-#include "expression.h"
+#include "expressions.h"
 #include "scope.h"
 #include "types.h"
 
@@ -83,7 +83,7 @@ struct EmptyStatement : public Statement {
 
     void compile(CompileScopePtr compile_scope) override;
 
-    void typecheck(ScopePtr&) {}
+    void typecheck(ScopePtr&) override {}
 };
 
 // int y;
@@ -170,8 +170,6 @@ struct JumpStatement : public Statement {
         , _jump_str(*name){};
 
     void print(std::ostream& stream) override;
-
-    void typecheck(ScopePtr&) {}
 
   private:
     const std::string _jump_str;

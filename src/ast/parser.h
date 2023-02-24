@@ -9,7 +9,7 @@
 #include "../util/diagnostic.h"
 
 #include "declarators/declarator.h"
-#include "expression.h"
+#include "expressions.h"
 #include "program.h"
 #include "statement.h"
 
