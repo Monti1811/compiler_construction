@@ -50,86 +50,104 @@ void IfStatement::typecheck(ScopePtr& scope) {
 }
 
 void IfStatement::compile(CompileScopePtr compile_scope) {
-    /* Add a basic block for the header of the IfStmt */
-    llvm::BasicBlock* IfHeaderBlock = llvm::BasicBlock::Create(
-        compile_scope->ctx /* LLVMContext &Context */,
-        "if-header" /* const Twine &Name="" */,
-        compile_scope->function.value() /* Function *Parent=0 */,
-        0 /* BasicBlock *InsertBefore=0 */
+    // Add a basic block for the header of the if statement
+    llvm::BasicBlock* if_header_block = llvm::BasicBlock::Create(
+        compile_scope->ctx,
+        "if-header",
+        compile_scope->function.value()
     );
-    /* Insert a branch from the current basic block to the header of the IfStmt */
-    compile_scope->builder.CreateBr(IfHeaderBlock);
-    /* Set the header of the IfStmt as the new insert point */
-    compile_scope->builder.SetInsertPoint(IfHeaderBlock);
+
+    // Insert a branch from the current basic block to the header of the if statement
+    compile_scope->builder.CreateBr(if_header_block);
+
+    // Set the header of the if statement as the new insert point
+    compile_scope->builder.SetInsertPoint(if_header_block);
+
+    // Compile the condition:
     llvm::Value* value_condition = this->_condition->compileRValue(compile_scope);
-    // If the condition is an int32 (int1 are bools), make a check if it's not equal 0 (true) or equal 0 (false)
+
+    // Check whether the condition is equal or not equal to 0
     if (value_condition->getType()->isIntegerTy(32)) {
         value_condition = compile_scope->builder.CreateICmpNE(value_condition, compile_scope->builder.getInt32(0));
     } else if (value_condition->getType()->isIntegerTy(8)) {
         value_condition = compile_scope->builder.CreateICmpNE(value_condition, compile_scope->builder.getInt8(0));
     } else if (value_condition->getType()->isPointerTy()) {
-        // return 0 if nullptr, 1 otherwise
+        // Convert pointer to int for the comparison
         value_condition = compile_scope->builder.CreatePtrToInt(value_condition, compile_scope->builder.getInt32Ty());
         value_condition = compile_scope->builder.CreateICmpNE(compile_scope->builder.getInt32(0), value_condition);
     }
-    /* Change the name of the IfStmt condition (after the creation) */
+
+    // Change the name of the if statement condition (after its creation)
     value_condition->setName("if-condition");
-    /* Add a basic block for the consequence of the IfStmt */
-    llvm::BasicBlock* IfConsequenceBlock = llvm::BasicBlock::Create(
-        compile_scope->ctx /* LLVMContext &Context */,
-        "if-consequence" /* const Twine &Name="" */,
-        compile_scope->function.value() /* Function *Parent=0 */,
-        0 /* BasicBlock *InsertBefore=0 */
+
+    // Add a basic block for the then case of the if statement
+    llvm::BasicBlock* then_block = llvm::BasicBlock::Create(
+        compile_scope->ctx,
+        "if-consequence",
+        compile_scope->function.value()
     );
+
     if (this->_else_statement.has_value()) {
-        /* Add a basic block for the alternative of the IfStmt */
-        llvm::BasicBlock* IfAlternativeBlock = llvm::BasicBlock::Create(
-            compile_scope->ctx /* LLVMContext &Context */,
-            "if-alternative" /* const Twine &Name="" */,
-            compile_scope->function.value() /* Function *Parent=0 */,
-            0 /* BasicBlock *InsertBefore=0 */
+        // Code generation for if-else statement
+
+        // Add a basic block for the else case of the if statement
+        llvm::BasicBlock* else_block = llvm::BasicBlock::Create(
+            compile_scope->ctx,
+            "if-alternative",
+            compile_scope->function.value()
         );
-        /* Add a basic block for the end of the IfStmt (after the if) */
-        llvm::BasicBlock* IfEndBlock = llvm::BasicBlock::Create(
-            compile_scope->ctx /* LLVMContext &Context */,
-            "if-end" /* const Twine &Name="" */,
-            compile_scope->function.value() /* Function *Parent=0 */,
-            0 /* BasicBlock *InsertBefore=0 */
+
+        // Add a basic block for the end of the IfStatement
+        llvm::BasicBlock* end_block = llvm::BasicBlock::Create(
+            compile_scope->ctx,
+            "if-end",
+            compile_scope->function.value()
         );
-        /* Create the conditional branch */
-        compile_scope->builder.CreateCondBr(value_condition, IfConsequenceBlock, IfAlternativeBlock);
-        /* Set the header of the IfConsequenceBlock as the new insert point */
-        compile_scope->builder.SetInsertPoint(IfConsequenceBlock);
-        auto consequence_compile_scope = std::make_shared<CompileScope>(compile_scope);
-        this->_then_statement->compile(consequence_compile_scope);
-        /* Insert the jump to the if end block */
-        compile_scope->builder.CreateBr(IfEndBlock);
-        /* Set the header of the IfAlternativeBlock as the new insert point */
-        compile_scope->builder.SetInsertPoint(IfAlternativeBlock);
-        auto alternative_compile_scope = std::make_shared<CompileScope>(compile_scope);
-        this->_else_statement.value()->compile(alternative_compile_scope);
-        /* Insert the jump to the if end block */
-        compile_scope->builder.CreateBr(IfEndBlock);
-        /* Continue in the if end block */
-        compile_scope->builder.SetInsertPoint(IfEndBlock);
+
+        // Create the conditional branch
+        compile_scope->builder.CreateCondBr(value_condition, then_block, else_block);
+
+        // Compile the then statement
+        compile_scope->builder.SetInsertPoint(then_block);
+        auto then_scope = std::make_shared<CompileScope>(compile_scope);
+        this->_then_statement->compile(then_scope);
+
+        // Insert the jump to the end block
+        compile_scope->builder.CreateBr(end_block);
+
+        // Compile the else statement
+        compile_scope->builder.SetInsertPoint(else_block);
+        auto else_scope = std::make_shared<CompileScope>(compile_scope);
+        this->_else_statement.value()->compile(else_scope);
+
+        // Insert the jump to the end block
+        compile_scope->builder.CreateBr(end_block);
+
+        // Continue in the if end block
+        compile_scope->builder.SetInsertPoint(end_block);
     } else {
-        /* Add a basic block for the end of the IfStmt (after the if) */
-        llvm::BasicBlock* IfEndBlock = llvm::BasicBlock::Create(
-            compile_scope->ctx /* LLVMContext &Context */,
-            "if-end" /* const Twine &Name="" */,
-            compile_scope->function.value() /* Function *Parent=0 */,
-            0 /* BasicBlock *InsertBefore=0 */
+        // Code generation for if statement without else case
+
+        // Add a basic block for the end of the IfStatement
+        llvm::BasicBlock* end_block = llvm::BasicBlock::Create(
+            compile_scope->ctx,
+            "if-end",
+            compile_scope->function.value()
         );
-        /* Create the conditional branch */
-        compile_scope->builder.CreateCondBr(value_condition, IfConsequenceBlock, IfEndBlock);
-        /* Set the header of the IfConsequenceBlock as the new insert point */
-        compile_scope->builder.SetInsertPoint(IfConsequenceBlock);
-        auto consequence_compile_scope = std::make_shared<CompileScope>(compile_scope);
-        this->_then_statement->compile(consequence_compile_scope);
-        /* Insert the jump to the if end block */
-        compile_scope->builder.CreateBr(IfEndBlock);
-        /* Set the header of the IfAlternativeBlock as the new insert point */
-        compile_scope->builder.SetInsertPoint(IfEndBlock);
+
+        // Create the conditional branch
+        compile_scope->builder.CreateCondBr(value_condition, then_block, end_block);
+
+        // Compile the then statement
+        compile_scope->builder.SetInsertPoint(then_block);
+        auto then_scope = std::make_shared<CompileScope>(compile_scope);
+        this->_then_statement->compile(then_scope);
+
+        // Insert the jump to the end block
+        compile_scope->builder.CreateBr(end_block);
+
+        // Continue in the if end block
+        compile_scope->builder.SetInsertPoint(end_block);
     }
 }
 
@@ -162,58 +180,60 @@ void WhileStatement::typecheck(ScopePtr& scope) {
 }
 
 void WhileStatement::compile(CompileScopePtr compile_scope) {
-    /* Add a basic block for the header of the WhileStmt */
-    llvm::BasicBlock* WhileHeaderBlock = llvm::BasicBlock::Create(
-        compile_scope->ctx /* LLVMContext &Context */,
-        "while-header" /* const Twine &Name="" */,
-        compile_scope->function.value() /* Function *Parent=0 */,
-        0 /* BasicBlock *InsertBefore=0 */
+    // Add a basic block for the header of the while statement
+    llvm::BasicBlock* while_header_block = llvm::BasicBlock::Create(
+        compile_scope->ctx,
+        "while-header",
+        compile_scope->function.value()
     );
-    /* Insert a branch from the current basic block to the header of the WhileStmt */
-    compile_scope->builder.CreateBr(WhileHeaderBlock);
 
-    /* Set the header of the WhileStmt as the new insert point */
-    compile_scope->builder.SetInsertPoint(WhileHeaderBlock);
+    // Insert a branch from the current basic block to the header of the while statement
+    compile_scope->builder.CreateBr(while_header_block);
 
+    // Set the header of the while statement as the new insert point
+    compile_scope->builder.SetInsertPoint(while_header_block);
+
+    // Compile the condition:
     llvm::Value* while_condition = this->_condition->compileRValue(compile_scope);
-    // If the condition is an int32 (int1 are bools), make a check if it's not equal 0 (true) or equal 0 (false)
+
+    // Check whether the condition is equal or not equal to 0
     if (while_condition->getType()->isIntegerTy(32)) {
         while_condition = compile_scope->builder.CreateICmpNE(while_condition, compile_scope->builder.getInt32(0));
     } else if (while_condition->getType()->isIntegerTy(8)) {
         while_condition = compile_scope->builder.CreateICmpNE(while_condition, compile_scope->builder.getInt8(0));
     } else if (while_condition->getType()->isPointerTy()) {
-        // return 0 if nullptr, 1 otherwise
+        // Convert pointer to int for the comparison
         while_condition = compile_scope->builder.CreatePtrToInt(while_condition, compile_scope->builder.getInt32Ty());
         while_condition = compile_scope->builder.CreateICmpNE(compile_scope->builder.getInt32(0), while_condition);
     }
 
-    /* Add a basic block for the consequence of the WhileStmt */
-    llvm::BasicBlock* WhileBodyBlock = llvm::BasicBlock::Create(
-        compile_scope->ctx /* LLVMContext &Context */,
-        "while-body" /* const Twine &Name="" */,
-        compile_scope->function.value() /* Function *Parent=0 */,
-        0 /* BasicBlock *InsertBefore=0 */
-    );
-    /* Add a basic block for the alternative of the IfStmt */
-    llvm::BasicBlock* WhileEndBlock = llvm::BasicBlock::Create(
-        compile_scope->ctx /* LLVMContext &Context */,
-        "while-end" /* const Twine &Name="" */,
-        compile_scope->function.value() /* Function *Parent=0 */,
-        0 /* BasicBlock *InsertBefore=0 */
+    // Add a basic block for the loop statement
+    llvm::BasicBlock* loop_block = llvm::BasicBlock::Create(
+        compile_scope->ctx,
+        "while-body",
+        compile_scope->function.value()
     );
 
-    /* Create the conditional branch */
-    compile_scope->builder.CreateCondBr(while_condition, WhileBodyBlock, WhileEndBlock);
+    // Add a basic block for the end of the WhileStatement
+    llvm::BasicBlock* end_block = llvm::BasicBlock::Create(
+        compile_scope->ctx,
+        "while-end",
+        compile_scope->function.value()
+    );
 
-    /* Start inserting in the while body block */
-    compile_scope->builder.SetInsertPoint(WhileBodyBlock);
-    auto inner_compile_scope = std::make_shared<CompileScope>(compile_scope);
-    inner_compile_scope->setBreakBlock(WhileEndBlock);
-    inner_compile_scope->setContinueBlock(WhileHeaderBlock);
-    this->_body->compile(inner_compile_scope);
-    /* Insert the back loop edge (the branch back to the header) */
-    compile_scope->builder.CreateBr(WhileHeaderBlock);
+    // Create the conditional branch
+    compile_scope->builder.CreateCondBr(while_condition, loop_block, end_block);
 
-    /* The while was created, adjust the inserting point to the while end block */
-    compile_scope->builder.SetInsertPoint(WhileEndBlock);
+    // Compile the loop statement
+    compile_scope->builder.SetInsertPoint(loop_block);
+    auto loop_scope = std::make_shared<CompileScope>(compile_scope);
+    loop_scope->setBreakBlock(end_block);
+    loop_scope->setContinueBlock(while_header_block);
+    this->_body->compile(loop_scope);
+
+    // Insert the back loop edge (the branch back to the header)
+    compile_scope->builder.CreateBr(while_header_block);
+
+    // The while was created, adjust the inserting point to the while end block
+    compile_scope->builder.SetInsertPoint(end_block);
 }

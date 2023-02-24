@@ -56,9 +56,9 @@ TypeDecl Declaration::toType(ScopePtr& scope) {
 }
 
 void Declaration::compile(CompileScopePtr compile_scope) {
-    // does not declare a variable
+    // For abstract declarators, we generally don't need to generate any code
     if (this->declarator->isAbstract()) {
-        // If it's a struct, add it to the declared structs
+        // However, if it's a struct, we need to add it to the declared structs
         if (this->specifier->kind == SpecifierKind::STRUCT) {
             std::shared_ptr<Type> type = this->getTypeDecl().type;
             type->toLLVMType(compile_scope);
@@ -66,39 +66,29 @@ void Declaration::compile(CompileScopePtr compile_scope) {
         return;
     }
 
-    // The same thing as for concrete function definitions
     auto type_decl = this->getTypeDecl();
-    std::shared_ptr<Type> type = type_decl.type;
+    TypePtr type = type_decl.type;
     auto name = type_decl.name.value();
 
     if (type->kind == TypeKind::TY_FUNCTION) {
-        std::shared_ptr<FunctionType> func_type_ptr = std::static_pointer_cast<FunctionType>(type);
-        auto llvm_type = func_type_ptr->toLLVMType(compile_scope);
+        // If the declaration declares a function, create the new LLVM function
+        std::shared_ptr<FunctionType> function_type = std::static_pointer_cast<FunctionType>(type);
+        auto llvm_type = function_type->toLLVMType(compile_scope);
 
-        llvm::Function::Create(
-            llvm_type /* FunctionType *Ty */,
-            llvm::GlobalValue::ExternalLinkage /* LinkageType */,
-            *name /* const Twine &N="" */,
-            compile_scope->module /* Module *M=0 */
-        );
+        llvm::Function::Create(llvm_type, llvm::GlobalValue::ExternalLinkage, *name, compile_scope->module);
     } else {
+        // Otherwise, declare a variable
         llvm::Type* llvm_type = type->toLLVMType(compile_scope);
-
         compile_scope->addType(name, llvm_type);
 
         /* Create a global variable */
         new llvm::GlobalVariable(
-            compile_scope->module /* Module & */,
-            llvm_type /* Type * */,
-            false /* bool isConstant */,
-            llvm::GlobalValue::CommonLinkage /* LinkageType */,
-            llvm::Constant::getNullValue(llvm_type) /* Constant * Initializer */,
-            *name /* const Twine &Name = "" */,
-            /* --------- We do not need this part (=> use defaults) ---------- */
-            0 /* GlobalVariable *InsertBefore = 0 */,
-            llvm::GlobalVariable::NotThreadLocal /* ThreadLocalMode TLMode = NotThreadLocal */,
-            0 /* unsigned AddressSpace = 0 */,
-            false /* bool isExternallyInitialized = false */
+            compile_scope->module,
+            llvm_type,
+            /* isConstant: */ false,
+            llvm::GlobalValue::CommonLinkage,
+            /* initializer: */ llvm::Constant::getNullValue(llvm_type),
+            *name
         );
     }
 }

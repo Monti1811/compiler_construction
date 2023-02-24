@@ -163,19 +163,22 @@ void DotExpression::print(std::ostream& stream) {
 
 TypePtr DotExpression::typecheck(ScopePtr& scope) {
     auto expr_type = _expression->typecheckWrap(scope);
+
     if (expr_type->kind != TypeKind::TY_STRUCT) {
         errorloc(this->loc, "Cannot access a field of a non-struct expression");
     }
+
     if (!expr_type->isComplete()) {
         errorloc(this->loc, "Cannot access a field of an incomplete type");
     }
+
     auto struct_type = std::static_pointer_cast<CompleteStructType>(expr_type);
 
     auto field_type = struct_type->typeOfField(this->_ident);
-
     if (!field_type.has_value()) {
         errorloc(this->loc, "Field ", *this->_ident, " does not exist on ", expr_type);
     }
+
     this->type = field_type.value();
     return this->type;
 }
@@ -193,22 +196,22 @@ llvm::Value* DotExpression::compileLValue(CompileScopePtr compile_scope) {
         errorloc(this->loc, "Tried to access field of non-struct during codegen");
     }
 
-    auto struct_ty = std::static_pointer_cast<StructType>(expr_type);
-    if (!struct_ty->isComplete()) {
+    auto struct_type = std::static_pointer_cast<StructType>(expr_type);
+    if (!struct_type->isComplete()) {
         errorloc(this->loc, "Tried to access field of incomplete struct during codegen");
     }
 
-    auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(struct_ty);
-    auto index = complete_struct_ty->getIndexOfField(this->_ident);
+    auto complete_struct_type = std::static_pointer_cast<CompleteStructType>(struct_type);
+    auto index = complete_struct_type->getIndexOfField(this->_ident);
 
-    std::vector<llvm::Value*> ElementIndexes;
-    ElementIndexes.push_back(compile_scope->builder.getInt32(0));
-    ElementIndexes.push_back(compile_scope->builder.getInt32(index));
+    std::vector<llvm::Value*> element_indexes;
+    element_indexes.push_back(compile_scope->builder.getInt32(0));
+    element_indexes.push_back(compile_scope->builder.getInt32(index));
 
-    llvm::Type* struct_type = complete_struct_ty->toLLVMType(compile_scope);
+    llvm::Type* llvm_struct_type = complete_struct_type->toLLVMType(compile_scope);
     llvm::Value* struct_alloca = this->_expression->compileLValue(compile_scope);
 
-    return compile_scope->builder.CreateInBoundsGEP(struct_type, struct_alloca, ElementIndexes);
+    return compile_scope->builder.CreateInBoundsGEP(llvm_struct_type, struct_alloca, element_indexes);
 }
 
 llvm::Value* DotExpression::compileRValue(CompileScopePtr compile_scope) {
@@ -229,12 +232,14 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
     if (expr_type->kind != TypeKind::TY_POINTER) {
         errorloc(this->loc, "Cannot access non-pointers using the arrow operator");
     }
-    auto pointer_type = std::static_pointer_cast<PointerType>(expr_type);
 
-    if (pointer_type->inner->kind != TypeKind::TY_STRUCT) {
+    auto pointer_type = std::static_pointer_cast<PointerType>(expr_type);
+    auto inner_type = pointer_type->inner;
+
+    if (inner_type->kind != TypeKind::TY_STRUCT) {
         errorloc(this->loc, "Cannot access a field of a non-struct expression");
     }
-    auto inner_type = pointer_type->inner;
+
     // Check if the struct has a pointer to a struct as a field
     if (inner_type->kind == TY_STRUCT && !inner_type->isComplete()) {
         auto struct_type = std::static_pointer_cast<StructType>(inner_type);
@@ -247,16 +252,18 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
             inner_type = complete_type.value();
         }
     }
+
     if (!inner_type->isComplete()) {
         errorloc(this->loc, "Cannot access a field of an incomplete type");
     }
+
     auto struct_type = std::static_pointer_cast<CompleteStructType>(inner_type);
 
     auto field_type = struct_type->typeOfField(this->_ident);
-
     if (!field_type.has_value()) {
         errorloc(this->loc, "Field ", *this->_ident, " does not exist on ", inner_type);
     }
+
     this->type = field_type.value();
     return this->type;
 }
@@ -269,32 +276,33 @@ bool ArrowExpression::isLvalue(ScopePtr&) {
 
 llvm::Value* ArrowExpression::compileLValue(CompileScopePtr compile_scope) {
     auto expr_type = this->_expression->type;
-
     if (expr_type->kind != TY_POINTER) {
         errorloc(this->loc, "Tried to access field of non-pointer during codegen");
     }
 
-    auto struct_ptr_ty = std::static_pointer_cast<PointerType>(expr_type);
-    if (struct_ptr_ty->inner->kind != TY_STRUCT) {
+    auto pointer_type = std::static_pointer_cast<PointerType>(expr_type);
+    auto inner_type = pointer_type->inner;
+
+    if (inner_type->kind != TY_STRUCT) {
         errorloc(this->loc, "Tried to access field of non-struct during codegen");
     }
-    auto struct_ty = std::static_pointer_cast<StructType>(struct_ptr_ty->inner);
-    if (!struct_ty->isComplete()) {
+
+    auto struct_type = std::static_pointer_cast<StructType>(inner_type);
+    if (!struct_type->isComplete()) {
         errorloc(this->loc, "Tried to access field of incomplete struct during codegen");
     }
 
-    auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(struct_ty);
-    auto index = complete_struct_ty->getIndexOfField(this->_ident);
+    auto complete_struct_type = std::static_pointer_cast<CompleteStructType>(struct_type);
+    auto index = complete_struct_type->getIndexOfField(this->_ident);
 
-    std::vector<llvm::Value*> ElementIndexes;
-    ElementIndexes.push_back(compile_scope->builder.getInt32(0));
-    ElementIndexes.push_back(compile_scope->builder.getInt32(index));
+    std::vector<llvm::Value*> element_indexes;
+    element_indexes.push_back(compile_scope->builder.getInt32(0));
+    element_indexes.push_back(compile_scope->builder.getInt32(index));
 
-    llvm::Type* struct_type = complete_struct_ty->toLLVMType(compile_scope);
+    llvm::Type* llvm_struct_type = complete_struct_type->toLLVMType(compile_scope);
     llvm::Value* struct_alloca = this->_expression->compileRValue(compile_scope);
-    // llvm::Value* struct_alloca = compile_scope->builder.CreateLoad(struct_type, struct_alloca_ptr);
 
-    return compile_scope->builder.CreateInBoundsGEP(struct_type, struct_alloca, ElementIndexes);
+    return compile_scope->builder.CreateInBoundsGEP(llvm_struct_type, struct_alloca, element_indexes);
 }
 
 llvm::Value* ArrowExpression::compileRValue(CompileScopePtr compile_scope) {

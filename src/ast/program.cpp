@@ -94,15 +94,19 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
     llvm::sys::PrintStackTraceOnErrorSignal(filename);
     llvm::PrettyStackTraceProgram X(argc, argv);
 
-    /* Make a global context (only one needed) */
-    llvm::LLVMContext Ctx;
+    // Make a global context
+    llvm::LLVMContext llvm_ctx;
 
-    /* Create a Module (only one needed) */
-    llvm::Module M(filename, Ctx);
+    // Create a module
+    llvm::Module module(filename, llvm_ctx);
 
-    /* Two IR-Builder to output intermediate instructions but also types, ... */
-    llvm::IRBuilder<> Builder(Ctx), AllocaBuilder(Ctx);
-    auto compile_scope = std::make_shared<CompileScope>(Builder, AllocaBuilder, M, Ctx);
+    // Two IRBuilders to output intermediate instructions but also types etc.
+    llvm::IRBuilder<> Builder(llvm_ctx), AllocaBuilder(llvm_ctx);
+
+    // Create the compile scope
+    auto compile_scope = std::make_shared<CompileScope>(Builder, AllocaBuilder, module, llvm_ctx);
+
+    // Iterate through all declarations and function definitions, and compile them
     auto decl_iter = this->_declarations.begin();
     auto func_iter = this->_functions.begin();
 
@@ -121,10 +125,12 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
             func_iter++;
         }
     }
-    /* Ensure that we created a 'valid' module */
-    verifyModule(M);
 
+    // Ensure that we created a 'valid' module
+    verifyModule(module);
+
+    // Print resulting module to file
     std::error_code EC;
     llvm::raw_fd_ostream stream(filename_to_print, EC, llvm::sys::fs::OpenFlags::OF_Text);
-    M.print(stream, nullptr); /* M is a llvm::Module */
+    module.print(stream, nullptr);
 }

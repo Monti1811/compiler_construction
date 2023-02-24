@@ -52,78 +52,78 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
 }
 
 void FunctionDefinition::compile(CompileScopePtr compile_scope) {
-    // TODO cleanup needed
-    std::shared_ptr<FunctionType> func_type_ptr = this->_type;
     auto llvm_type = this->_type->toLLVMType(compile_scope);
-    std::string name(*(this->_declaration.declarator->getName().value()));
-    // Check if function was already declared, if yes, choose it, otherwise create a new one
-    llvm::Function* Func = compile_scope->module.getFunction(name);
-    if (Func == nullptr) {
-        Func = llvm::Function::Create(
-            llvm_type /* FunctionType *Ty */,
-            llvm::GlobalValue::ExternalLinkage /* LinkageType */,
-            name /* const Twine &N="" */,
-            compile_scope->module /* Module *M=0 */
-        );
+
+    std::string function_name(*(this->_declaration.declarator->getName().value()));
+
+    // Get the function from the compile scope if it was already declared, otherwise create a new one
+    llvm::Function* llvm_function = compile_scope->module.getFunction(function_name);
+    if (llvm_function == nullptr) {
+        llvm_function =
+            llvm::Function::Create(llvm_type, llvm::GlobalValue::ExternalLinkage, function_name, compile_scope->module);
     }
 
-    llvm::Function::arg_iterator FuncArgIt = Func->arg_begin();
-    auto inner_compile_scope = std::make_shared<CompileScope>(compile_scope, Func);
+    llvm::Function::arg_iterator llvm_arg_iter = llvm_function->arg_begin();
+    auto inner_compile_scope = std::make_shared<CompileScope>(compile_scope, llvm_function);
 
-    int count = 0;
-    auto param_func_type = std::static_pointer_cast<ParamFunctionType>(func_type_ptr);
-    while (FuncArgIt != Func->arg_end()) {
-        llvm::Argument* Arg = FuncArgIt;
-        if (param_func_type->params[count].name.has_value()) {
-            Arg->setName(*(param_func_type->params[count].name.value()));
+    int param_count = 0;
+
+    // Set the parameter names
+    // FIXME: This crashes when we don't have a ParamFunctionType here
+    auto param_function_type = std::static_pointer_cast<ParamFunctionType>(this->_type);
+    while (llvm_arg_iter != llvm_function->arg_end()) {
+        llvm::Argument* llvm_arg = llvm_arg_iter;
+        auto arg_name = param_function_type->params[param_count].name;
+        if (arg_name.has_value()) {
+            llvm_arg->setName(*arg_name.value());
         } else {
-            Arg->setName("");
+            llvm_arg->setName("");
         }
-        FuncArgIt++;
-        count++;
+        llvm_arg_iter++;
+        param_count++;
     }
-    llvm::BasicBlock* FuncEntryBB = llvm::BasicBlock::Create(
-        compile_scope->ctx /* LLVMContext &Context */,
-        "entry" /* const Twine &Name="" */,
-        Func /* Function *Parent=0 */,
-        0 /* BasicBlock *InsertBefore=0 */
-    );
-    compile_scope->builder.SetInsertPoint(FuncEntryBB);
-    compile_scope->alloca_builder.SetInsertPoint(FuncEntryBB);
 
-    count = 0;
-    FuncArgIt = Func->arg_begin();
-    auto FuncLLVMTypeIt = llvm_type->param_begin();
-    while (FuncArgIt != Func->arg_end()) {
+    llvm::BasicBlock* function_entry_block = llvm::BasicBlock::Create(compile_scope->ctx, "entry", llvm_function);
+    compile_scope->builder.SetInsertPoint(function_entry_block);
+    compile_scope->alloca_builder.SetInsertPoint(function_entry_block);
+
+    param_count = 0;
+    llvm_arg_iter = llvm_function->arg_begin();
+
+    // Store all the function arguments in allocas
+    auto llvm_type_iter = llvm_type->param_begin();
+    while (llvm_arg_iter != llvm_function->arg_end()) {
         compile_scope->alloca_builder.SetInsertPoint(
             compile_scope->alloca_builder.GetInsertBlock(), compile_scope->alloca_builder.GetInsertBlock()->begin()
         );
-        llvm::Argument* Arg = FuncArgIt;
-        llvm::Value* ArgVarPtr = compile_scope->alloca_builder.CreateAlloca(Arg->getType());
-        compile_scope->builder.CreateStore(Arg, ArgVarPtr);
+        llvm::Argument* llvm_arg = llvm_arg_iter;
+        llvm::Value* llvm_arg_ptr = compile_scope->alloca_builder.CreateAlloca(llvm_arg->getType());
+        compile_scope->builder.CreateStore(llvm_arg, llvm_arg_ptr);
+
         // fill compile_scope
-        auto name = param_func_type->params[count].name.value();
-        inner_compile_scope->addAlloca(name, ArgVarPtr);
-        inner_compile_scope->addType(name, FuncLLVMTypeIt[count]);
-        FuncArgIt++;
-        count++;
+        auto name = param_function_type->params[param_count].name.value();
+        inner_compile_scope->addAlloca(name, llvm_arg_ptr);
+        inner_compile_scope->addType(name, llvm_type_iter[param_count]);
+
+        llvm_arg_iter++;
+        param_count++;
     }
 
     for (auto label : this->_labels) {
-        llvm::BasicBlock* labeledBlock = llvm::BasicBlock::Create(
+        llvm::BasicBlock* labeled_block = llvm::BasicBlock::Create(
             inner_compile_scope->ctx, *label + "_BLOCK", inner_compile_scope->function.value()
         );
-        inner_compile_scope->addLabeledBlock(label, labeledBlock);
+        inner_compile_scope->addLabeledBlock(label, labeled_block);
     }
 
     this->_block.compile(inner_compile_scope);
 
     if (compile_scope->builder.GetInsertBlock()->getTerminator() == nullptr) {
-        llvm::Type* CurFuncReturnType = compile_scope->builder.getCurrentFunctionReturnType();
-        if (CurFuncReturnType->isVoidTy()) {
+        llvm::Type* llvm_return_type = compile_scope->builder.getCurrentFunctionReturnType();
+        if (llvm_return_type->isVoidTy()) {
             compile_scope->builder.CreateRetVoid();
         } else {
-            compile_scope->builder.CreateRet(llvm::Constant::getNullValue(CurFuncReturnType));
+            compile_scope->builder.CreateRet(llvm::Constant::getNullValue(llvm_return_type));
         }
     }
 }

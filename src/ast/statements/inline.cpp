@@ -19,13 +19,18 @@ void LabeledStatement::typecheck(ScopePtr& scope) {
 }
 
 void LabeledStatement::compile(CompileScopePtr compile_scope) {
-    auto labeledBlockOpt = compile_scope->getLabeledBlock(this->_name);
-    if (!labeledBlockOpt.has_value()) {
+    // Retrieve the block with this label
+    auto labeled_block_opt = compile_scope->getLabeledBlock(this->_name);
+    if (!labeled_block_opt.has_value()) {
         errorloc(this->loc, "Unknown label ", *this->_name);
     }
-    auto labeledBlock = labeledBlockOpt.value();
-    compile_scope->builder.CreateBr(labeledBlock);
-    compile_scope->builder.SetInsertPoint(labeledBlock);
+    auto labeled_block = labeled_block_opt.value();
+
+    // Create a jump to the label
+    compile_scope->builder.CreateBr(labeled_block);
+    compile_scope->builder.SetInsertPoint(labeled_block);
+
+    // Compile the inner statement
     auto inner_compile_scope = std::make_shared<CompileScope>(compile_scope);
     this->_inner->compile(inner_compile_scope);
 }
@@ -41,22 +46,28 @@ void DeclarationStatement::typecheck(ScopePtr& scope) {
 }
 
 void DeclarationStatement::compile(CompileScopePtr compile_scope) {
+    // Retrieve type and name of the declaration
     TypePtr type_dcl = this->_declaration.getTypeDecl().type;
     auto name = this->_declaration.getTypeDecl().name;
-    // do nothing if it is abstract
-    if (name.has_value()) {
 
-        llvm::Type* llvm_type = type_dcl->toLLVMType(compile_scope);
-        /* Allocate stack space for the variable */
-        llvm::Value* LocalVarPtr = compile_scope->alloca_builder.CreateAlloca(llvm_type);
-        /* Reset the alloca builder each time before using it */
-        compile_scope->alloca_builder.SetInsertPoint(
-            compile_scope->alloca_builder.GetInsertBlock(), compile_scope->alloca_builder.GetInsertBlock()->begin()
-        );
-        // fill compilescope
-        compile_scope->addAlloca(name.value(), LocalVarPtr);
-        compile_scope->addType(name.value(), llvm_type);
+    // Do nothing if it is abstract
+    if (!name.has_value()) {
+        return;
     }
+
+    llvm::Type* llvm_type = type_dcl->toLLVMType(compile_scope);
+
+    // Allocate stack space for the variable
+    llvm::Value* LocalVarPtr = compile_scope->alloca_builder.CreateAlloca(llvm_type);
+
+    // Reset the alloca builder each time before using it
+    compile_scope->alloca_builder.SetInsertPoint(
+        compile_scope->alloca_builder.GetInsertBlock(), compile_scope->alloca_builder.GetInsertBlock()->begin()
+    );
+
+    // Fill the compile scope
+    compile_scope->addAlloca(name.value(), LocalVarPtr);
+    compile_scope->addType(name.value(), llvm_type);
 }
 
 // ExpressionStatement

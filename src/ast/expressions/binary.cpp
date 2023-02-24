@@ -312,33 +312,39 @@ TypePtr AndExpression::typecheck(ScopePtr& scope) {
 llvm::Value* AndExpression::compileRValue(CompileScopePtr compile_scope) {
     llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(compile_scope), compile_scope);
     auto lhs_block = compile_scope->builder.GetInsertBlock();
-    /* Add a basic block for the consequence of the OrExpression */
-    llvm::BasicBlock* OrConsequenceBlock = llvm::BasicBlock::Create(
-        compile_scope->ctx /* LLVMContext &Context */,
-        "and-consequence" /* const Twine &Name="" */,
-        compile_scope->function.value() /* Function *Parent=0 */,
-        0 /* BasicBlock *InsertBefore=0 */
+
+    // Add a basic block for the rhs expression
+    llvm::BasicBlock* rhs_block = llvm::BasicBlock::Create(
+        compile_scope->ctx,
+        "and-consequence",
+        compile_scope->function.value()
     );
-    /* Add a basic block for the end of the TernaryExpression (after the Ternary) */
-    llvm::BasicBlock* OrEndBlock = llvm::BasicBlock::Create(
-        compile_scope->ctx /* LLVMContext &Context */,
-        "and-end" /* const Twine &Name="" */,
-        compile_scope->function.value() /* Function *Parent=0 */,
-        0 /* BasicBlock *InsertBefore=0 */
+
+    // Add a basic block for the end of the AndExpression
+    llvm::BasicBlock* end_block = llvm::BasicBlock::Create(
+        compile_scope->ctx,
+        "and-end",
+        compile_scope->function.value()
     );
-    // If first expr is true, we jump to the second term, otherwise we skip the second term.
-    compile_scope->builder.CreateCondBr(value_lhs, OrConsequenceBlock, OrEndBlock);
-    // Create the compiled value of the second term
-    compile_scope->builder.SetInsertPoint(OrConsequenceBlock);
+
+    // If the lhs expr is true, we jump to the rhs expression, otherwise we skip to the end
+    compile_scope->builder.CreateCondBr(value_lhs, rhs_block, end_block);
+
+    // Compile the rhs expr
+    compile_scope->builder.SetInsertPoint(rhs_block);
     llvm::Value* value_rhs = toBoolTy(this->_right->compileRValue(compile_scope), compile_scope);
-    auto rhs_block = compile_scope->builder.GetInsertBlock();
-    /* Insert the jump to the Ternary end block */
-    compile_scope->builder.CreateBr(OrEndBlock);
-    /* Continue in the Ternary end block */
-    compile_scope->builder.SetInsertPoint(OrEndBlock);
+    rhs_block = compile_scope->builder.GetInsertBlock();
+
+    // Insert the jump to the end block
+    compile_scope->builder.CreateBr(end_block);
+
+    // Continue in the end block and combine the result of lhs and rhs
+    compile_scope->builder.SetInsertPoint(end_block);
+
     llvm::PHINode* phi = compile_scope->builder.CreatePHI(compile_scope->builder.getInt1Ty(), 2);
     phi->addIncoming(value_lhs, lhs_block);
     phi->addIncoming(value_rhs, rhs_block);
+
     return compile_scope->builder.CreateIntCast(phi, llvm::Type::getInt32Ty(compile_scope->ctx), false);
 }
 
@@ -374,33 +380,39 @@ TypePtr OrExpression::typecheck(ScopePtr& scope) {
 llvm::Value* OrExpression::compileRValue(CompileScopePtr compile_scope) {
     llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(compile_scope), compile_scope);
     auto lhs_block = compile_scope->builder.GetInsertBlock();
-    /* Add a basic block for the consequence of the OrExpression */
-    llvm::BasicBlock* OrConsequenceBlock = llvm::BasicBlock::Create(
-        compile_scope->ctx /* LLVMContext &Context */,
-        "or-consequence" /* const Twine &Name="" */,
-        compile_scope->function.value() /* Function *Parent=0 */,
-        0 /* BasicBlock *InsertBefore=0 */
+
+    // Add a basic block for the rhs expression
+    llvm::BasicBlock* rhs_block = llvm::BasicBlock::Create(
+        compile_scope->ctx,
+        "or-consequence",
+        compile_scope->function.value()
     );
-    /* Add a basic block for the end of the TernaryExpression (after the Ternary) */
-    llvm::BasicBlock* OrEndBlock = llvm::BasicBlock::Create(
-        compile_scope->ctx /* LLVMContext &Context */,
-        "or-end" /* const Twine &Name="" */,
-        compile_scope->function.value() /* Function *Parent=0 */,
-        0 /* BasicBlock *InsertBefore=0 */
+
+    // Add a basic block for the end of the OrExpression
+    llvm::BasicBlock* end_block = llvm::BasicBlock::Create(
+        compile_scope->ctx,
+        "or-end",
+        compile_scope->function.value()
     );
-    // If first expr is true, we skip the second term, otherwise we jump to the second term.
-    compile_scope->builder.CreateCondBr(value_lhs, OrEndBlock, OrConsequenceBlock);
-    // Create the compiled value of the second term
-    compile_scope->builder.SetInsertPoint(OrConsequenceBlock);
+
+    // If the lhs expr is true, we skip to the end, otherwise we jump to the rhs expr
+    compile_scope->builder.CreateCondBr(value_lhs, end_block, rhs_block);
+
+    // Compile the rhs expr
+    compile_scope->builder.SetInsertPoint(rhs_block);
     llvm::Value* value_rhs = toBoolTy(this->_right->compileRValue(compile_scope), compile_scope);
-    auto rhs_block = compile_scope->builder.GetInsertBlock();
-    /* Insert the jump to the Ternary end block */
-    compile_scope->builder.CreateBr(OrEndBlock);
-    /* Continue in the Ternary end block */
-    compile_scope->builder.SetInsertPoint(OrEndBlock);
+    rhs_block = compile_scope->builder.GetInsertBlock();
+
+    // Insert the jump to the end block
+    compile_scope->builder.CreateBr(end_block);
+
+    // Continue in the end block and combine the result of lhs and rhs
+    compile_scope->builder.SetInsertPoint(end_block);
+
     llvm::PHINode* phi = compile_scope->builder.CreatePHI(compile_scope->builder.getInt1Ty(), 2);
     phi->addIncoming(value_lhs, lhs_block);
     phi->addIncoming(value_rhs, rhs_block);
+
     return compile_scope->builder.CreateIntCast(phi, llvm::Type::getInt32Ty(compile_scope->ctx), false);
 }
 // AssignExpression

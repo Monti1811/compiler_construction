@@ -35,13 +35,16 @@ TypePtr SizeofExpression::typecheck(ScopePtr& scope) {
 }
 
 llvm::Value* SizeofExpression::compileRValue(CompileScopePtr compile_scope) {
+    // For string literals and expressions like *&"foo", return length of the string
     auto string_length = this->_inner->getStringLength();
     if (this->_inner->type->isString() && string_length.has_value()) {
-        // String literals and expressions like *&"foo"
         return compile_scope->builder.getInt32(string_length.value());
     }
-    auto inner_type = this->_inner->type->toLLVMType(compile_scope);
-    return compile_scope->builder.getInt32(compile_scope->module.getDataLayout().getTypeAllocSize(inner_type));
+
+    // Otherwise, return size of the expression's type
+    auto llvm_type = this->_inner->type->toLLVMType(compile_scope);
+    auto type_size = compile_scope->module.getDataLayout().getTypeAllocSize(llvm_type);
+    return compile_scope->builder.getInt32(type_size);
 }
 
 // SizeofTypeExpression
@@ -58,7 +61,8 @@ TypePtr SizeofTypeExpression::typecheck(ScopePtr& scope) {
 
 llvm::Value* SizeofTypeExpression::compileRValue(CompileScopePtr compile_scope) {
     auto llvm_type = this->_inner_type->toLLVMType(compile_scope);
-    return compile_scope->builder.getInt32(compile_scope->module.getDataLayout().getTypeAllocSize(llvm_type));
+    auto type_size = compile_scope->module.getDataLayout().getTypeAllocSize(llvm_type);
+    return compile_scope->builder.getInt32(type_size);
 }
 
 // ReferenceExpression
@@ -119,27 +123,27 @@ llvm::Value* DerefExpression::compileLValue(CompileScopePtr compile_scope) {
 }
 
 llvm::Value* DerefExpression::compileRValue(CompileScopePtr compile_scope) {
-    auto expr_value = this->compileLValue(compile_scope);
+    auto lvalue = this->compileLValue(compile_scope);
     auto expr_type = this->_inner->type;
 
     // If we try to dereference a function, don't do anything and just return the function
     if (expr_type->kind == TypeKind::TY_FUNCTION) {
-        return expr_value;
+        return lvalue;
     }
 
     if (expr_type->kind != TypeKind::TY_POINTER) {
         errorloc(this->loc, "Tried to dereference an expression of type ", expr_type, " during codegen");
     }
 
-    auto ptr_ty = std::static_pointer_cast<PointerType>(expr_type);
+    auto pointer_type = std::static_pointer_cast<PointerType>(expr_type);
 
-    // If we try to dereference a function, don't do anything and just return the function
-    if (ptr_ty->inner->kind == TypeKind::TY_FUNCTION) {
-        return expr_value;
+    // If we try to dereference a function, don't do anything and just return the function pointer
+    if (pointer_type->inner->kind == TypeKind::TY_FUNCTION) {
+        return lvalue;
     }
 
-    auto inner_expr_type = ptr_ty->inner->toLLVMType(compile_scope);
-    return compile_scope->builder.CreateLoad(inner_expr_type, expr_value);
+    auto llvm_inner_type = pointer_type->inner->toLLVMType(compile_scope);
+    return compile_scope->builder.CreateLoad(llvm_inner_type, lvalue);
 }
 
 std::optional<size_t> DerefExpression::getStringLength(void) {

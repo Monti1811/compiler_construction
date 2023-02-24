@@ -22,17 +22,19 @@ void GotoStatement::typecheck(ScopePtr& scope) {
 }
 
 void GotoStatement::compile(CompileScopePtr compile_scope) {
-    std::optional<llvm::BasicBlock*> labeledBlock = compile_scope->getLabeledBlock(this->_ident);
-    if (labeledBlock.has_value()) {
-        compile_scope->builder.CreateBr(labeledBlock.value());
+    // Retrieve the labeled block
+    std::optional<llvm::BasicBlock*> labled_block = compile_scope->getLabeledBlock(this->_ident);
+    if (labled_block.has_value()) {
+        compile_scope->builder.CreateBr(labled_block.value());
     }
-    llvm::BasicBlock* ReturnDeadBlock = llvm::BasicBlock::Create(
-        compile_scope->ctx /* LLVMContext &Context */,
-        "DEAD_BLOCK" /* const Twine &Name="" */,
-        compile_scope->function.value() /* Function *Parent=0 */,
-        0 /* BasicBlock *InsertBefore=0 */
+
+    // Create an extra dead block that extra code after the goto statement is added to
+    llvm::BasicBlock* return_dead_block = llvm::BasicBlock::Create(
+        compile_scope->ctx,
+        "DEAD_BLOCK",
+        compile_scope->function.value()
     );
-    compile_scope->builder.SetInsertPoint(ReturnDeadBlock);
+    compile_scope->builder.SetInsertPoint(return_dead_block);
 }
 
 // ContinueStatement
@@ -44,17 +46,19 @@ void ContinueStatement::typecheck(ScopePtr& scope) {
 }
 
 void ContinueStatement::compile(CompileScopePtr compile_scope) {
-    std::optional<llvm::BasicBlock*> ContinueBlock = compile_scope->getContinueBlock();
-    if (ContinueBlock.has_value()) {
-        compile_scope->builder.CreateBr(ContinueBlock.value());
+    // Retrieve the block to continue at
+    std::optional<llvm::BasicBlock*> continue_block = compile_scope->getContinueBlock();
+    if (continue_block.has_value()) {
+        compile_scope->builder.CreateBr(continue_block.value());
     }
-    llvm::BasicBlock* ReturnDeadBlock = llvm::BasicBlock::Create(
-        compile_scope->ctx /* LLVMContext &Context */,
-        "DEAD_BLOCK" /* const Twine &Name="" */,
-        compile_scope->function.value() /* Function *Parent=0 */,
-        0 /* BasicBlock *InsertBefore=0 */
+
+    // Create an extra dead block that extra code after the continue statement is added to
+    llvm::BasicBlock* return_dead_block = llvm::BasicBlock::Create(
+        compile_scope->ctx,
+        "DEAD_BLOCK",
+        compile_scope->function.value()
     );
-    compile_scope->builder.SetInsertPoint(ReturnDeadBlock);
+    compile_scope->builder.SetInsertPoint(return_dead_block);
 }
 
 // BreakStatement
@@ -66,17 +70,19 @@ void BreakStatement::typecheck(ScopePtr& scope) {
 }
 
 void BreakStatement::compile(CompileScopePtr compile_scope) {
-    std::optional<llvm::BasicBlock*> BreakBlock = compile_scope->getBreakBlock();
-    if (BreakBlock.has_value()) {
-        compile_scope->builder.CreateBr(BreakBlock.value());
+    // Retrieve the block to break to
+    std::optional<llvm::BasicBlock*> break_block = compile_scope->getBreakBlock();
+    if (break_block.has_value()) {
+        compile_scope->builder.CreateBr(break_block.value());
     }
-    llvm::BasicBlock* ReturnDeadBlock = llvm::BasicBlock::Create(
-        compile_scope->ctx /* LLVMContext &Context */,
-        "DEAD_BLOCK" /* const Twine &Name="" */,
-        compile_scope->function.value() /* Function *Parent=0 */,
-        0 /* BasicBlock *InsertBefore=0 */
+
+    // Create an extra dead block that extra code after the break statement is added to
+    llvm::BasicBlock* return_dead_block = llvm::BasicBlock::Create(
+        compile_scope->ctx,
+        "DEAD_BLOCK",
+        compile_scope->function.value()
     );
-    compile_scope->builder.SetInsertPoint(ReturnDeadBlock);
+    compile_scope->builder.SetInsertPoint(return_dead_block);
 }
 
 // ReturnStatement
@@ -121,10 +127,11 @@ void ReturnStatement::typecheck(ScopePtr& scope) {
 void ReturnStatement::compile(CompileScopePtr compile_scope) {
     if (this->_expr.has_value()) {
         llvm::Value* return_value = this->_expr.value()->compileRValue(compile_scope);
+
         // If return type is a bool, cast it to int32
         if (return_value->getType()->isIntegerTy(1)) {
-            return_value =
-                compile_scope->builder.CreateIntCast(return_value, llvm::Type::getInt32Ty(compile_scope->ctx), false);
+            auto int_type = llvm::Type::getInt32Ty(compile_scope->ctx);
+            return_value = compile_scope->builder.CreateIntCast(return_value, int_type, false);
         }
 
         compile_scope->builder.CreateRet(return_value);
@@ -132,16 +139,11 @@ void ReturnStatement::compile(CompileScopePtr compile_scope) {
         compile_scope->builder.CreateRetVoid();
     }
 
-    /* Always create a new block after a return statement
-     *
-     *  This will prevent you from inserting code after a block terminator (here
-     *  the return instruction), but it will create a dead basic block instead.
-     */
-    llvm::BasicBlock* ReturnDeadBlock = llvm::BasicBlock::Create(
-        compile_scope->ctx /* LLVMContext &Context */,
-        "DEAD_BLOCK" /* const Twine &Name="" */,
-        compile_scope->function.value() /* Function *Parent=0 */,
-        0 /* BasicBlock *InsertBefore=0 */
+    // Create an extra dead block that extra code after the return statement is added to
+    llvm::BasicBlock* return_dead_block = llvm::BasicBlock::Create(
+        compile_scope->ctx,
+        "DEAD_BLOCK",
+        compile_scope->function.value()
     );
-    compile_scope->builder.SetInsertPoint(ReturnDeadBlock);
+    compile_scope->builder.SetInsertPoint(return_dead_block);
 }
