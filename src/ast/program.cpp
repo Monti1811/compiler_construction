@@ -261,6 +261,4 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
     llvm::raw_fd_ostream stream(filename_to_print, EC, llvm::sys::fs::OpenFlags::OF_Text);
     M.print(stream, nullptr); /* M is a llvm::Module */
 
-    /* Dump the final module to std::cerr */
-    // M.dump();
 }

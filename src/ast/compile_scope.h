@@ -13,107 +13,35 @@
 */
 struct CompileScope {
     // Constructor for first CompileScope
-    CompileScope(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::LLVMContext& Ctx) :
-    _Parent(std::nullopt), _Builder(Builder), _AllocaBuilder(AllocaBuilder), _Module(Module), _Ctx(Ctx) {};
+    CompileScope(llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::LLVMContext& Ctx);
     // Construct for CompileScopes with Parent and ParentFunction
-    CompileScope(std::shared_ptr<CompileScope> Parent, llvm::Function* ParentFunction) :
-    _Parent(Parent), _Builder(Parent->_Builder), _AllocaBuilder(Parent->_AllocaBuilder), _Module(Parent->_Module), _Ctx(Parent->_Ctx), 
-    _ParentFunction(ParentFunction), _BreakBlock(Parent->getBreakBlock()), _ContinueBlock(Parent->getContinueBlock()) {};
+    CompileScope(std::shared_ptr<CompileScope> Parent, llvm::Function* ParentFunction);
     // Construct for CompileScopes with Parent
-    CompileScope(std::shared_ptr<CompileScope> Parent) :
-    _Parent(Parent), _Builder(Parent->_Builder), _AllocaBuilder(Parent->_AllocaBuilder), _Module(Parent->_Module), _Ctx(Parent->_Ctx), 
-    _ParentFunction(Parent->_ParentFunction), _BreakBlock(Parent->getBreakBlock()), _ContinueBlock(Parent->getContinueBlock()) {};
+    CompileScope(std::shared_ptr<CompileScope> Parent);
     
-    std::optional<llvm::Value*> getAlloca(Symbol var) {
-        if (this->_Allocas.find(var) == this->_Allocas.end()) {
-            if (!this->_Parent.has_value()) {
-                auto var_alloc = _Module.getGlobalVariable(*var);
-                if (var_alloc != NULL) {
-                    return var_alloc;
-                }
-                auto function_alloc = _Module.getFunction(*var);
-                if (function_alloc != NULL) {
-                    return function_alloc;
-                }
-                return std::nullopt;
-            }
-            return this->_Parent.value()->getAlloca(var);
-        }
-        return this->_Allocas.at(var);
-    }
+    std::optional<llvm::Value*> getAlloca(Symbol var);
 
-    void addAlloca(Symbol var, llvm::Value* allocaa) {
-        this->_Allocas.insert({var, allocaa});
-    }
+    void addAlloca(Symbol var, llvm::Value* alloca);
 
-    std::optional<llvm::Type*> getType(Symbol var) {
-        if (this->_Types.find(var) != this->_Types.end()) {
-            return this->_Types.at(var);
-        }
+    std::optional<llvm::Type*> getType(Symbol var);
 
-        if (this->_Parent.has_value()) {
-            return this->_Parent.value()->getType(var);
-        }
+    void addType(Symbol var, llvm::Type* type);
 
-        auto var_alloc = _Module.getGlobalVariable(*var);
-        if (var_alloc != NULL) {
-            return var_alloc->getType();
-        }
-        auto function_alloc = _Module.getFunction(*var);
-        if (function_alloc != NULL) {
-            return function_alloc->getFunctionType();
-        }
-        return std::nullopt;
-    }
+    void addLabeledBlock(Symbol name, llvm::BasicBlock* LabeledBlock);
 
-    void addType(Symbol var, llvm::Type* type) {
-        this->_Types.insert({var, type});
-    }
+    std::optional<llvm::BasicBlock*> getLabeledBlock(Symbol name);
 
-    void addLabeledBlock(Symbol name, llvm::BasicBlock* LabeledBlock) {
-        this->_LabeledBlocks.insert({name, LabeledBlock});
-    }
+    void setBreakBlock(llvm::BasicBlock *BreakBlock);
 
-    std::optional<llvm::BasicBlock*> getLabeledBlock(Symbol name) {
-        if (this->_LabeledBlocks.find(name) == this->_LabeledBlocks.end()) {
-            if (!this->_Parent.has_value()) {
-                return std::nullopt;
-            }
-            return this->_Parent.value()->getLabeledBlock(name);
-        }
-        return this->_LabeledBlocks.at(name);
-    }
+    std::optional<llvm::BasicBlock*> getBreakBlock();
 
-    void setBreakBlock(llvm::BasicBlock *BreakBlock) {
-        this->_BreakBlock = BreakBlock;
-    }
-    std::optional<llvm::BasicBlock*> getBreakBlock() {
-        return this->_BreakBlock;
-    }
-    void setContinueBlock(llvm::BasicBlock *ContinueBlock) {
-        this->_ContinueBlock = ContinueBlock;
-    }
-    std::optional<llvm::BasicBlock*> getContinueBlock() {
-        return this->_ContinueBlock;
-    }
+    void setContinueBlock(llvm::BasicBlock *ContinueBlock);
 
-    void addFunctionPointer(std::string var, std::string function) {
-        this->_FunctionPointers.insert({var, function});
-    }
+    std::optional<llvm::BasicBlock*> getContinueBlock();
 
-    std::optional<llvm::Function*> getFunctionPointer(std::string var) {
-        if (this->_FunctionPointers.find(var) == this->_FunctionPointers.end()) {
-            if (!this->_Parent.has_value()) {
-                auto function_alloc = _Module.getFunction(var);
-                if (function_alloc != NULL) {
-                    return function_alloc;
-                }
-                return std::nullopt;
-            }
-            return this->_Parent.value()->getFunctionPointer(var);
-        }
-        return this->getFunctionPointer(this->_FunctionPointers.at(var));
-    }
+    void addFunctionPointer(std::string var, std::string function);
+
+    std::optional<llvm::Function*> getFunctionPointer(std::string var);
 
     std::optional<std::shared_ptr<CompileScope>> _Parent;
     llvm::IRBuilder<>& _Builder;
@@ -129,5 +57,3 @@ struct CompileScope {
     std::optional<llvm::BasicBlock*> _BreakBlock;
     std::optional<llvm::BasicBlock*> _ContinueBlock;
 };
-
-// std::shared_ptr<CompileScope> CompileScopePtr;
