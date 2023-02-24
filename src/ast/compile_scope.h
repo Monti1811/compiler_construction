@@ -43,10 +43,6 @@ struct CompileScope {
 
     std::optional<llvm::BasicBlock*> getContinueBlock();
 
-    void addFunctionPointer(std::string var, std::string function);
-
-    std::optional<llvm::Function*> getFunctionPointer(std::string var);
-
     llvm::IRBuilder<>& builder;
     llvm::IRBuilder<>& alloca_builder;
     llvm::Module& module;
@@ -59,7 +55,6 @@ struct CompileScope {
     std::unordered_map<Symbol, llvm::Value*> _allocas;
     std::unordered_map<Symbol, llvm::Type*> _types;
     std::unordered_map<Symbol, llvm::BasicBlock*> _labeled_blocks;
-    std::unordered_map<std::string, std::string> _function_pointers;
     std::optional<llvm::BasicBlock*> _break_block;
     std::optional<llvm::BasicBlock*> _continue_block;
 };

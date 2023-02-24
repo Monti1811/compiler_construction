@@ -4,8 +4,7 @@
 CompileScope::CompileScope(
     llvm::IRBuilder<>& builder, llvm::IRBuilder<>& alloca_builder, llvm::Module& module, llvm::LLVMContext& ctx
 )
-    : _parent(std::nullopt)
-    , builder(builder)
+    : builder(builder)
     , alloca_builder(alloca_builder)
     , module(module)
     , ctx(ctx){};
@@ -103,22 +102,4 @@ void CompileScope::setContinueBlock(llvm::BasicBlock* ContinueBlock) {
 }
 std::optional<llvm::BasicBlock*> CompileScope::getContinueBlock() {
     return this->_continue_block;
-}
-
-void CompileScope::addFunctionPointer(std::string var, std::string function) {
-    this->_function_pointers.insert({var, function});
-}
-
-std::optional<llvm::Function*> CompileScope::getFunctionPointer(std::string var) {
-    if (this->_function_pointers.find(var) == this->_function_pointers.end()) {
-        if (!this->_parent.has_value()) {
-            auto function_alloc = this->module.getFunction(var);
-            if (function_alloc != NULL) {
-                return function_alloc;
-            }
-            return std::nullopt;
-        }
-        return this->_parent.value()->getFunctionPointer(var);
-    }
-    return this->getFunctionPointer(this->_function_pointers.at(var));
 }
