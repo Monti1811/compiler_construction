@@ -440,7 +440,7 @@ TypePtr AddExpression::typecheck(ScopePtr& scope) {
     errorloc(this->loc, "Illegal addition operation");
 }
 
-TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
+TypePtr SubtractExpression::typecheck(ScopePtr& scope) {
     auto left_type = _left->typecheckWrap(scope);
     auto right_type = _right->typecheckWrap(scope);
 
@@ -478,20 +478,20 @@ TypePtr SubstractExpression::typecheck(ScopePtr& scope) {
         auto pointer_type = std::static_pointer_cast<PointerType>(left_type);
         // not an object type
         if (!pointer_type->inner->isObjectType()) {
-            errorloc(this->loc, "Illegal substraction operation");
+            errorloc(this->loc, "Illegal subtraction operation");
         }
         if (pointer_type->inner->kind == TY_STRUCT) {
             // not a complete object
             auto struct_type = std::static_pointer_cast<StructType>(pointer_type->inner);
             if (!struct_type->isComplete()) {
-                errorloc(this->loc, "Illegal substraction operation");
+                errorloc(this->loc, "Illegal subtraction operation");
             }
         }
         this->type = left_type;
         return this->type;
     }
 
-    errorloc(this->loc, "Illegal substraction operation");
+    errorloc(this->loc, "Illegal subtraction operation");
 }
 
 TypePtr LessThanExpression::typecheck(ScopePtr& scope) {
@@ -1094,7 +1094,7 @@ llvm::Value* AddExpression::compileRValue(std::shared_ptr<CompileScope> CompileS
     );
 }
 
-llvm::Value* SubstractExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* SubtractExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
     llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
     llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
 

@@ -374,7 +374,7 @@ ExpressionPtr Parser::parseBinaryExpression(int minPrec = 0, std::optional<Expre
             }
             // binaryOp = -
             case TK_MINUS: {
-                auto subExpr = std::make_unique<SubstractExpression>(token, std::move(left.value()), std::move(right));
+                auto subExpr = std::make_unique<SubtractExpression>(token, std::move(left.value()), std::move(right));
                 return parseBinaryExpression(minPrec, std::move(subExpr));
             }
             // binaryOp = +

@@ -355,11 +355,11 @@ struct AddExpression : public BinaryExpression {
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
 };
 
-struct SubstractExpression : public BinaryExpression {
+struct SubtractExpression : public BinaryExpression {
     // left - right
 
   public:
-    SubstractExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
+    SubtractExpression(Locatable loc, ExpressionPtr left, ExpressionPtr right)
         : BinaryExpression(loc, std::move(left), std::move(right), "-"){};
 
     TypePtr typecheck(ScopePtr& scope);
