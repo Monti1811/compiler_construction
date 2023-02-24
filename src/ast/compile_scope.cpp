@@ -2,70 +2,72 @@
 
 // Constructor for first CompileScope
 CompileScope::CompileScope(
-    llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::LLVMContext& Ctx
+    llvm::IRBuilder<>& builder, llvm::IRBuilder<>& alloca_builder, llvm::Module& module, llvm::LLVMContext& ctx
 )
-    : _Parent(std::nullopt)
-    , _Builder(Builder)
-    , _AllocaBuilder(AllocaBuilder)
-    , _Module(Module)
-    , _Ctx(Ctx){};
-// Construct for CompileScopes with Parent and ParentFunction
-CompileScope::CompileScope(CompileScopePtr Parent, llvm::Function* ParentFunction)
-    : _Parent(Parent)
-    , _Builder(Parent->_Builder)
-    , _AllocaBuilder(Parent->_AllocaBuilder)
-    , _Module(Parent->_Module)
-    , _Ctx(Parent->_Ctx)
-    , _ParentFunction(ParentFunction)
-    , _BreakBlock(Parent->getBreakBlock())
-    , _ContinueBlock(Parent->getContinueBlock()){};
-// Construct for CompileScopes with Parent
-CompileScope::CompileScope(CompileScopePtr Parent)
-    : _Parent(Parent)
-    , _Builder(Parent->_Builder)
-    , _AllocaBuilder(Parent->_AllocaBuilder)
-    , _Module(Parent->_Module)
-    , _Ctx(Parent->_Ctx)
-    , _ParentFunction(Parent->_ParentFunction)
-    , _BreakBlock(Parent->getBreakBlock())
-    , _ContinueBlock(Parent->getContinueBlock()){};
+    : _parent(std::nullopt)
+    , builder(builder)
+    , alloca_builder(alloca_builder)
+    , module(module)
+    , ctx(ctx){};
+
+// Constructor for a CompileScope in a function
+CompileScope::CompileScope(CompileScopePtr _parent, llvm::Function* function)
+    : builder(_parent->builder)
+    , alloca_builder(_parent->alloca_builder)
+    , module(_parent->module)
+    , ctx(_parent->ctx)
+    , function(function)
+    , _parent(_parent)
+    , _break_block(_parent->getBreakBlock())
+    , _continue_block(_parent->getContinueBlock()){};
+
+// Constructor for CompileScopes with _parent
+CompileScope::CompileScope(CompileScopePtr _parent)
+    : builder(_parent->builder)
+    , alloca_builder(_parent->alloca_builder)
+    , module(_parent->module)
+    , ctx(_parent->ctx)
+    , function(_parent->function)
+    , _parent(_parent)
+    , _break_block(_parent->getBreakBlock())
+    , _continue_block(_parent->getContinueBlock()){};
 
 std::optional<llvm::Value*> CompileScope::getAlloca(Symbol var) {
-    if (this->_Allocas.find(var) == this->_Allocas.end()) {
-        if (!this->_Parent.has_value()) {
-            auto var_alloc = _Module.getGlobalVariable(*var);
+    if (this->_allocas.find(var) == this->_allocas.end()) {
+        if (!this->_parent.has_value()) {
+            auto var_alloc = this->module.getGlobalVariable(*var);
             if (var_alloc != NULL) {
                 return var_alloc;
             }
-            auto function_alloc = _Module.getFunction(*var);
+            auto function_alloc = this->module.getFunction(*var);
             if (function_alloc != NULL) {
                 return function_alloc;
             }
             return std::nullopt;
         }
-        return this->_Parent.value()->getAlloca(var);
+        return this->_parent.value()->getAlloca(var);
     }
-    return this->_Allocas.at(var);
+    return this->_allocas.at(var);
 }
 
 void CompileScope::addAlloca(Symbol var, llvm::Value* allocaa) {
-    this->_Allocas.insert({var, allocaa});
+    this->_allocas.insert({var, allocaa});
 }
 
 std::optional<llvm::Type*> CompileScope::getType(Symbol var) {
-    if (this->_Types.find(var) != this->_Types.end()) {
-        return this->_Types.at(var);
+    if (this->_types.find(var) != this->_types.end()) {
+        return this->_types.at(var);
     }
 
-    if (this->_Parent.has_value()) {
-        return this->_Parent.value()->getType(var);
+    if (this->_parent.has_value()) {
+        return this->_parent.value()->getType(var);
     }
 
-    auto var_alloc = _Module.getGlobalVariable(*var);
+    auto var_alloc = this->module.getGlobalVariable(*var);
     if (var_alloc != NULL) {
         return var_alloc->getType();
     }
-    auto function_alloc = _Module.getFunction(*var);
+    auto function_alloc = this->module.getFunction(*var);
     if (function_alloc != NULL) {
         return function_alloc->getFunctionType();
     }
@@ -73,50 +75,50 @@ std::optional<llvm::Type*> CompileScope::getType(Symbol var) {
 }
 
 void CompileScope::addType(Symbol var, llvm::Type* type) {
-    this->_Types.insert({var, type});
+    this->_types.insert({var, type});
 }
 
 void CompileScope::addLabeledBlock(Symbol name, llvm::BasicBlock* LabeledBlock) {
-    this->_LabeledBlocks.insert({name, LabeledBlock});
+    this->_labeled_blocks.insert({name, LabeledBlock});
 }
 
 std::optional<llvm::BasicBlock*> CompileScope::getLabeledBlock(Symbol name) {
-    if (this->_LabeledBlocks.find(name) == this->_LabeledBlocks.end()) {
-        if (!this->_Parent.has_value()) {
+    if (this->_labeled_blocks.find(name) == this->_labeled_blocks.end()) {
+        if (!this->_parent.has_value()) {
             return std::nullopt;
         }
-        return this->_Parent.value()->getLabeledBlock(name);
+        return this->_parent.value()->getLabeledBlock(name);
     }
-    return this->_LabeledBlocks.at(name);
+    return this->_labeled_blocks.at(name);
 }
 
 void CompileScope::setBreakBlock(llvm::BasicBlock* BreakBlock) {
-    this->_BreakBlock = BreakBlock;
+    this->_break_block = BreakBlock;
 }
 std::optional<llvm::BasicBlock*> CompileScope::getBreakBlock() {
-    return this->_BreakBlock;
+    return this->_break_block;
 }
 void CompileScope::setContinueBlock(llvm::BasicBlock* ContinueBlock) {
-    this->_ContinueBlock = ContinueBlock;
+    this->_continue_block = ContinueBlock;
 }
 std::optional<llvm::BasicBlock*> CompileScope::getContinueBlock() {
-    return this->_ContinueBlock;
+    return this->_continue_block;
 }
 
 void CompileScope::addFunctionPointer(std::string var, std::string function) {
-    this->_FunctionPointers.insert({var, function});
+    this->_function_pointers.insert({var, function});
 }
 
 std::optional<llvm::Function*> CompileScope::getFunctionPointer(std::string var) {
-    if (this->_FunctionPointers.find(var) == this->_FunctionPointers.end()) {
-        if (!this->_Parent.has_value()) {
-            auto function_alloc = _Module.getFunction(var);
+    if (this->_function_pointers.find(var) == this->_function_pointers.end()) {
+        if (!this->_parent.has_value()) {
+            auto function_alloc = this->module.getFunction(var);
             if (function_alloc != NULL) {
                 return function_alloc;
             }
             return std::nullopt;
         }
-        return this->_Parent.value()->getFunctionPointer(var);
+        return this->_parent.value()->getFunctionPointer(var);
     }
-    return this->getFunctionPointer(this->_FunctionPointers.at(var));
+    return this->getFunctionPointer(this->_function_pointers.at(var));
 }

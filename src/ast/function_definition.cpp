@@ -57,13 +57,13 @@ void FunctionDefinition::compile(CompileScopePtr compile_scope) {
     auto llvm_type = this->_type->toLLVMType(compile_scope);
     std::string name(*(this->_declaration.declarator->getName().value()));
     // Check if function was already declared, if yes, choose it, otherwise create a new one
-    llvm::Function* Func = compile_scope->_Module.getFunction(name);
+    llvm::Function* Func = compile_scope->module.getFunction(name);
     if (Func == nullptr) {
         Func = llvm::Function::Create(
             llvm_type /* FunctionType *Ty */,
             llvm::GlobalValue::ExternalLinkage /* LinkageType */,
             name /* const Twine &N="" */,
-            compile_scope->_Module /* Module *M=0 */
+            compile_scope->module /* Module *M=0 */
         );
     }
 
@@ -83,24 +83,24 @@ void FunctionDefinition::compile(CompileScopePtr compile_scope) {
         count++;
     }
     llvm::BasicBlock* FuncEntryBB = llvm::BasicBlock::Create(
-        compile_scope->_Ctx /* LLVMContext &Context */,
+        compile_scope->ctx /* LLVMContext &Context */,
         "entry" /* const Twine &Name="" */,
         Func /* Function *Parent=0 */,
         0 /* BasicBlock *InsertBefore=0 */
     );
-    compile_scope->_Builder.SetInsertPoint(FuncEntryBB);
-    compile_scope->_AllocaBuilder.SetInsertPoint(FuncEntryBB);
+    compile_scope->builder.SetInsertPoint(FuncEntryBB);
+    compile_scope->alloca_builder.SetInsertPoint(FuncEntryBB);
 
     count = 0;
     FuncArgIt = Func->arg_begin();
     auto FuncLLVMTypeIt = llvm_type->param_begin();
     while (FuncArgIt != Func->arg_end()) {
-        compile_scope->_AllocaBuilder.SetInsertPoint(
-            compile_scope->_AllocaBuilder.GetInsertBlock(), compile_scope->_AllocaBuilder.GetInsertBlock()->begin()
+        compile_scope->alloca_builder.SetInsertPoint(
+            compile_scope->alloca_builder.GetInsertBlock(), compile_scope->alloca_builder.GetInsertBlock()->begin()
         );
         llvm::Argument* Arg = FuncArgIt;
-        llvm::Value* ArgVarPtr = compile_scope->_AllocaBuilder.CreateAlloca(Arg->getType());
-        compile_scope->_Builder.CreateStore(Arg, ArgVarPtr);
+        llvm::Value* ArgVarPtr = compile_scope->alloca_builder.CreateAlloca(Arg->getType());
+        compile_scope->builder.CreateStore(Arg, ArgVarPtr);
         // fill compile_scope
         auto name = param_func_type->params[count].name.value();
         inner_compile_scope->addAlloca(name, ArgVarPtr);
@@ -111,19 +111,19 @@ void FunctionDefinition::compile(CompileScopePtr compile_scope) {
 
     for (auto label : this->_labels) {
         llvm::BasicBlock* labeledBlock = llvm::BasicBlock::Create(
-            inner_compile_scope->_Ctx, *label + "_BLOCK", inner_compile_scope->_ParentFunction.value()
+            inner_compile_scope->ctx, *label + "_BLOCK", inner_compile_scope->function.value()
         );
         inner_compile_scope->addLabeledBlock(label, labeledBlock);
     }
 
     this->_block.compile(inner_compile_scope);
 
-    if (compile_scope->_Builder.GetInsertBlock()->getTerminator() == nullptr) {
-        llvm::Type* CurFuncReturnType = compile_scope->_Builder.getCurrentFunctionReturnType();
+    if (compile_scope->builder.GetInsertBlock()->getTerminator() == nullptr) {
+        llvm::Type* CurFuncReturnType = compile_scope->builder.getCurrentFunctionReturnType();
         if (CurFuncReturnType->isVoidTy()) {
-            compile_scope->_Builder.CreateRetVoid();
+            compile_scope->builder.CreateRetVoid();
         } else {
-            compile_scope->_Builder.CreateRet(llvm::Constant::getNullValue(CurFuncReturnType));
+            compile_scope->builder.CreateRet(llvm::Constant::getNullValue(CurFuncReturnType));
         }
     }
 }

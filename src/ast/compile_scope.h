@@ -14,12 +14,14 @@
 struct CompileScope {
     // Constructor for first CompileScope
     CompileScope(
-        llvm::IRBuilder<>& Builder, llvm::IRBuilder<>& AllocaBuilder, llvm::Module& Module, llvm::LLVMContext& Ctx
+        llvm::IRBuilder<>& builder, llvm::IRBuilder<>& alloca_builder, llvm::Module& module, llvm::LLVMContext& ctx
     );
-    // Construct for CompileScopes with Parent and ParentFunction
-    CompileScope(std::shared_ptr<CompileScope> Parent, llvm::Function* ParentFunction);
-    // Construct for CompileScopes with Parent
-    CompileScope(std::shared_ptr<CompileScope> Parent);
+
+    // Constructor for a CompileScope in a function
+    CompileScope(std::shared_ptr<CompileScope> parent, llvm::Function* function);
+
+    // Constructor for CompileScopes with _parent
+    CompileScope(std::shared_ptr<CompileScope> parent);
 
     std::optional<llvm::Value*> getAlloca(Symbol var);
 
@@ -45,22 +47,21 @@ struct CompileScope {
 
     std::optional<llvm::Function*> getFunctionPointer(std::string var);
 
-    // TODO: rename all of these according to convention
-    // TODO: Make these either private or change casing
-    std::optional<std::shared_ptr<CompileScope>> _Parent;
-    llvm::IRBuilder<>& _Builder;
-    llvm::IRBuilder<>& _AllocaBuilder;
-    llvm::Module& _Module;
-    llvm::LLVMContext& _Ctx;
-    std::optional<llvm::Function*> _ParentFunction;
+    llvm::IRBuilder<>& builder;
+    llvm::IRBuilder<>& alloca_builder;
+    llvm::Module& module;
+    llvm::LLVMContext& ctx;
+    std::optional<llvm::Function*> function;
 
   private:
-    std::unordered_map<Symbol, llvm::Value*> _Allocas;
-    std::unordered_map<Symbol, llvm::Type*> _Types;
-    std::unordered_map<Symbol, llvm::BasicBlock*> _LabeledBlocks;
-    std::unordered_map<std::string, std::string> _FunctionPointers;
-    std::optional<llvm::BasicBlock*> _BreakBlock;
-    std::optional<llvm::BasicBlock*> _ContinueBlock;
+    std::optional<std::shared_ptr<CompileScope>> _parent;
+
+    std::unordered_map<Symbol, llvm::Value*> _allocas;
+    std::unordered_map<Symbol, llvm::Type*> _types;
+    std::unordered_map<Symbol, llvm::BasicBlock*> _labeled_blocks;
+    std::unordered_map<std::string, std::string> _function_pointers;
+    std::optional<llvm::BasicBlock*> _break_block;
+    std::optional<llvm::BasicBlock*> _continue_block;
 };
 
 typedef std::shared_ptr<CompileScope> CompileScopePtr;

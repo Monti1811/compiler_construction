@@ -67,7 +67,7 @@ llvm::FunctionType* ParamFunctionType::toLLVMType(CompileScopePtr compile_scope)
     std::vector<llvm::Type*> FuncParamTypes;
     for (auto param : this->params) {
         if (param.type->kind == TypeKind::TY_FUNCTION) {
-            FuncParamTypes.push_back(compile_scope->_Builder.getPtrTy());
+            FuncParamTypes.push_back(compile_scope->builder.getPtrTy());
         } else {
             llvm::Type* FuncParamType = param.type->toLLVMType(compile_scope);
             FuncParamTypes.push_back(FuncParamType);

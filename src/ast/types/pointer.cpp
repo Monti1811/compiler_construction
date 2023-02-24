@@ -29,5 +29,5 @@ llvm::Type* PointerType::toLLVMType(CompileScopePtr compile_scope) {
         auto inner_type = this->inner->toLLVMType(compile_scope);
         return llvm::PointerType::getUnqual(inner_type);
     }
-    return compile_scope->_Builder.getPtrTy();
+    return compile_scope->builder.getPtrTy();
 }

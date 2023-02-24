@@ -175,9 +175,9 @@ std::optional<std::shared_ptr<FunctionType>> Type::unwrapFunctionPointer() {
 llvm::Type* Type::toLLVMType(CompileScopePtr compile_scope) {
     switch (this->kind) {
         case TY_INT:
-            return compile_scope->_Builder.getInt32Ty();
+            return compile_scope->builder.getInt32Ty();
         case TY_CHAR:
-            return compile_scope->_Builder.getInt8Ty();
+            return compile_scope->builder.getInt8Ty();
         case TY_STRUCT:
             if (this->isComplete()) {
                 return (static_cast<CompleteStructType*>(this))->toLLVMType(compile_scope);
@@ -190,6 +190,6 @@ llvm::Type* Type::toLLVMType(CompileScopePtr compile_scope) {
         case TY_POINTER:
             return (static_cast<PointerType*>(this))->toLLVMType(compile_scope);
         default:
-            return compile_scope->_Builder.getVoidTy();
+            return compile_scope->builder.getVoidTy();
     }
 }

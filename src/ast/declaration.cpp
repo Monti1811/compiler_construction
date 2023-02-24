@@ -79,7 +79,7 @@ void Declaration::compile(CompileScopePtr compile_scope) {
             llvm_type /* FunctionType *Ty */,
             llvm::GlobalValue::ExternalLinkage /* LinkageType */,
             *name /* const Twine &N="" */,
-            compile_scope->_Module /* Module *M=0 */
+            compile_scope->module /* Module *M=0 */
         );
     } else {
         llvm::Type* llvm_type = type->toLLVMType(compile_scope);
@@ -88,7 +88,7 @@ void Declaration::compile(CompileScopePtr compile_scope) {
 
         /* Create a global variable */
         new llvm::GlobalVariable(
-            compile_scope->_Module /* Module & */,
+            compile_scope->module /* Module & */,
             llvm_type /* Type * */,
             false /* bool isConstant */,
             llvm::GlobalValue::CommonLinkage /* LinkageType */,

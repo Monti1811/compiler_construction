@@ -19,11 +19,11 @@ bool StructType::strong_equals(TypePtr const& other) {
 llvm::Type* StructType::toLLVMType(CompileScopePtr compile_scope) {
     // declarations of structs should have CompleteStructType already, so this shouldn't get called at all
     auto struct_name = "struct." + *tag.value();
-    auto def_structtype = llvm::StructType::getTypeByName(compile_scope->_Ctx, struct_name);
+    auto def_structtype = llvm::StructType::getTypeByName(compile_scope->ctx, struct_name);
     if (def_structtype) {
         return def_structtype;
     }
-    llvm::StructType* StructXType = llvm::StructType::create(compile_scope->_Ctx, struct_name);
+    llvm::StructType* StructXType = llvm::StructType::create(compile_scope->ctx, struct_name);
     std::vector<llvm::Type*> StructMemberTypes;
     StructXType->setBody(StructMemberTypes);
     return StructXType;
@@ -85,12 +85,12 @@ llvm::Type* CompleteStructType::toLLVMType(CompileScopePtr compile_scope) {
 
     // Check if struct already exists
     if (this->_llvm_name.has_value()) {
-        return llvm::StructType::getTypeByName(compile_scope->_Ctx, this->_llvm_name.value());
+        return llvm::StructType::getTypeByName(compile_scope->ctx, this->_llvm_name.value());
     }
 
     std::string struct_name = "struct." + *tag.value();
 
-    llvm::StructType* StructXType = llvm::StructType::create(compile_scope->_Ctx, struct_name);
+    llvm::StructType* StructXType = llvm::StructType::create(compile_scope->ctx, struct_name);
     this->_llvm_name = StructXType->getName();
 
     std::vector<llvm::Type*> StructMemberTypes;
@@ -112,11 +112,11 @@ llvm::Type* CompleteStructType::toLLVMType(CompileScopePtr compile_scope) {
 
 llvm::Type* CompleteStructType::toLLVMTypeAnonymous(CompileScopePtr compile_scope) {
     // Check if struct already exists
-    auto def_structtype = llvm::StructType::getTypeByName(compile_scope->_Ctx, this->alt_tag);
+    auto def_structtype = llvm::StructType::getTypeByName(compile_scope->ctx, this->alt_tag);
     if (def_structtype) {
         return def_structtype;
     }
-    llvm::StructType* StructXType = llvm::StructType::create(compile_scope->_Ctx, this->alt_tag);
+    llvm::StructType* StructXType = llvm::StructType::create(compile_scope->ctx, this->alt_tag);
     std::vector<llvm::Type*> StructMemberTypes;
     for (auto field : this->fields) {
         if (field.type->kind == TY_STRUCT) {
