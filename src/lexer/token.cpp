@@ -3,8 +3,8 @@
 
 Token::Token(Locatable& loc, TokenKind kind, Symbol text)
     : Locatable(loc)
-    , Kind(kind)
-    , Text(text) {}
+    , kind(kind)
+    , text(text) {}
 
 std::ostream& operator<<(std::ostream& stream, const Token& tok) {
     stream << static_cast<const Locatable&>(tok) << ' ';
@@ -14,13 +14,13 @@ std::ostream& operator<<(std::ostream& stream, const Token& tok) {
         stream << STR;                                                                                                 \
         break;
 
-    switch (tok.Kind) {
+    switch (tok.kind) {
 #include "tokenkinds.def"
     }
 
 #undef KIND_ACTION
 
-    stream << ' ' << *(tok.Text);
+    stream << ' ' << *(tok.text);
 
     return stream;
 }

@@ -21,9 +21,6 @@ struct FunctionDefinition {
     friend std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition);
 
     void typecheck(ScopePtr& scope);
-    std::shared_ptr<FunctionType> getFunctionType() {
-        return type.value();
-    }
 
     void compile(std::shared_ptr<CompileScope> CompileScopePtr);
 
@@ -31,8 +28,7 @@ struct FunctionDefinition {
     Declaration _declaration;
     BlockStatement _block;
     std::unordered_set<Symbol> _labels;
-    // TODO: _type
-    std::optional<std::shared_ptr<FunctionType>> type;
+    std::shared_ptr<FunctionType> _type;
 };
 
 struct Program {

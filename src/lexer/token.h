@@ -13,10 +13,8 @@ enum TokenKind {
 
 struct Token : public Locatable {
   public:
-    // TODO: kind
-    TokenKind Kind;
-    // TODO: text
-    Symbol Text;
+    TokenKind kind;
+    Symbol text;
 
     Token();
     Token(Locatable& loc, TokenKind kind, Symbol text);

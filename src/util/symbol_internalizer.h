@@ -20,7 +20,7 @@ using Symbol = const std::string*;
 class SymbolInternalizer {
   public:
     SymbolInternalizer(size_t prealloc_size = 512)
-        : StringSet(prealloc_size) {}
+        : string_set(prealloc_size) {}
 
     /// Internalize the given argument. The string is copied and does not need
     /// to be preserved by the caller.
@@ -35,6 +35,5 @@ class SymbolInternalizer {
     Symbol internalize(const char character);
 
   private:
-    // TODO: _string_set
-    std::unordered_set<std::string> StringSet;
+    std::unordered_set<std::string> string_set;
 };

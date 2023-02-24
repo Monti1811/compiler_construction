@@ -87,10 +87,8 @@ struct IntConstantExpression : public Expression {
 
 struct NullPtrExpression : public Expression {
   public:
-    // TODO: Remove _value
-    NullPtrExpression(Locatable loc, Symbol value)
-        : Expression(loc)
-        , _value(std::stoull(*value)){};
+    NullPtrExpression(Locatable loc)
+        : Expression(loc){};
 
     TypePtr typecheck(ScopePtr&);
 
@@ -98,9 +96,6 @@ struct NullPtrExpression : public Expression {
 
     llvm::Value* compileLValue(std::shared_ptr<CompileScope> CompileScopePtr);
     llvm::Value* compileRValue(std::shared_ptr<CompileScope> CompileScopePtr);
-
-  private:
-    unsigned long long _value;
 };
 
 struct CharConstantExpression : public Expression {

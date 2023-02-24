@@ -15,10 +15,10 @@ TypeSpecifierPtr Parser::parseTypeSpecifier() {
     } else if (accept(TK_STRUCT)) {
         std::optional<Symbol> tag = std::nullopt;
         if (check(TK_IDENTIFIER)) {
-            tag = peekToken().Text;
+            tag = peekToken().text;
             expect(TK_IDENTIFIER, "identifier");
         } else if (!check(TK_LBRACE)) {
-            errorloc(getLoc(), "Expected struct declaration list but got `", *peekToken().Text, "'");
+            errorloc(getLoc(), "Expected struct declaration list but got `", *peekToken().text, "'");
         }
 
         auto struct_spec = std::make_unique<StructSpecifier>(loc, tag);
@@ -34,7 +34,7 @@ TypeSpecifierPtr Parser::parseTypeSpecifier() {
 
         return struct_spec;
     } else {
-        errorloc(loc, "Expected type specifier but got `", *peekToken().Text, "'");
+        errorloc(loc, "Expected type specifier but got `", *peekToken().text, "'");
     }
 }
 
@@ -57,7 +57,7 @@ Declaration Parser::parseDeclaration(DeclKind declKind) {
 }
 
 DeclaratorPtr Parser::parseNonFunDeclarator(DeclKind declKind) {
-    switch (peekToken().Kind) {
+    switch (peekToken().kind) {
         case TK_LPAREN: {
             if (checkLookAhead(TK_RPAREN)) {
                 // type () not allowed
@@ -84,7 +84,7 @@ DeclaratorPtr Parser::parseNonFunDeclarator(DeclKind declKind) {
         }
 
         case TK_IDENTIFIER: {
-            auto res = std::make_unique<PrimitiveDeclarator>(getLoc(), peekToken().Text);
+            auto res = std::make_unique<PrimitiveDeclarator>(getLoc(), peekToken().text);
             expect(TK_IDENTIFIER, "identifier");
             return res;
         }
@@ -130,8 +130,8 @@ ExpressionPtr Parser::parseExpression() {
 
 ExpressionPtr Parser::parsePrimaryExpression() {
     Token token = peekToken();
-    Symbol sym = token.Text;
-    switch (token.Kind) {
+    Symbol sym = token.text;
+    switch (token.kind) {
         case TokenKind::TK_IDENTIFIER: {
             expect(TokenKind::TK_IDENTIFIER, "identifier");
             auto expr = std::make_unique<IdentExpression>(token, sym);
@@ -139,7 +139,7 @@ ExpressionPtr Parser::parsePrimaryExpression() {
         }
         case TokenKind::TK_ZERO_CONSTANT: {
             expect(TokenKind::TK_ZERO_CONSTANT, "zero constant");
-            auto expr = std::make_unique<NullPtrExpression>(token, sym);
+            auto expr = std::make_unique<NullPtrExpression>(token);
             return expr;
         }
         case TokenKind::TK_DECIMAL_CONSTANT: {
@@ -176,7 +176,7 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
         postfixExpression = parsePrimaryExpression();
     }
     Token token = peekToken();
-    switch (token.Kind) {
+    switch (token.kind) {
         // [expr]
         case TokenKind::TK_LBRACKET: {
             expect(TK_LBRACKET, "[");
@@ -212,7 +212,7 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
             Token ident_token = peekToken();
             expect(TK_IDENTIFIER, "Identifier"); // expect id
             auto newPostfixExpr =
-                std::make_unique<DotExpression>(token, std::move(postfixExpression.value()), ident_token.Text);
+                std::make_unique<DotExpression>(token, std::move(postfixExpression.value()), ident_token.text);
             return parsePostfixExpression(std::move(newPostfixExpr));
         }
         // -> id
@@ -221,7 +221,7 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
             Token ident_token = peekToken();
             expect(TK_IDENTIFIER, "Identifier"); // expect id
             auto newPostfixExpr =
-                std::make_unique<ArrowExpression>(token, std::move(postfixExpression.value()), ident_token.Text);
+                std::make_unique<ArrowExpression>(token, std::move(postfixExpression.value()), ident_token.text);
             return parsePostfixExpression(std::move(newPostfixExpr));
         }
         // no postfix found
@@ -233,7 +233,7 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
 
 ExpressionPtr Parser::parseUnaryExpression() {
     Token token = peekToken();
-    switch (token.Kind) {
+    switch (token.kind) {
         // &unaryexpr
         case TokenKind::TK_AND: {
             expect(TokenKind::TK_AND, "&");
@@ -349,7 +349,7 @@ ExpressionPtr Parser::parseBinaryExpression(int minPrec = 0, std::optional<Expre
 
     while (true) {
         Token token = peekToken();
-        int precLevel = getPrecedenceLevel(token.Kind);
+        int precLevel = getPrecedenceLevel(token.kind);
 
         if (minPrec > precLevel) {
             return std::move(left.value());
@@ -364,7 +364,7 @@ ExpressionPtr Parser::parseBinaryExpression(int minPrec = 0, std::optional<Expre
         popToken();
 
         auto right = parseBinaryExpression(precLevel);
-        switch (token.Kind) {
+        switch (token.kind) {
             // binaryOp = *
             case TK_ASTERISK: {
                 auto multExpr = std::make_unique<MultiplyExpression>(token, std::move(left.value()), std::move(right));
@@ -464,7 +464,7 @@ BlockStatement Parser::parseBlockStatement() {
 
 StatementPtr Parser::parseStatement() {
     Token token = peekToken();
-    switch (token.Kind) {
+    switch (token.kind) {
         case TK_IF: {
             expect(TK_IF, "if");
             expect(TK_LPAREN, "(");
@@ -509,19 +509,19 @@ StatementPtr Parser::parseStatement() {
             Token curr = peekToken();
             expect(TK_IDENTIFIER, "identifier");
             expect(TokenKind::TK_SEMICOLON, ";");
-            return std::make_unique<GotoStatement>(token, token.Text, curr.Text);
+            return std::make_unique<GotoStatement>(token, token.text, curr.text);
         }
 
         case TK_CONTINUE: {
             expect(TK_CONTINUE, "continue");
-            auto statement = std::make_unique<ContinueStatement>(token, token.Text);
+            auto statement = std::make_unique<ContinueStatement>(token, token.text);
             expect(TokenKind::TK_SEMICOLON, ";");
             return statement;
         }
 
         case TK_BREAK: {
             expect(TK_BREAK, "break");
-            auto statement = std::make_unique<BreakStatement>(token, token.Text);
+            auto statement = std::make_unique<BreakStatement>(token, token.text);
             expect(TokenKind::TK_SEMICOLON, ";");
             return statement;
         }
@@ -531,10 +531,10 @@ StatementPtr Parser::parseStatement() {
             if (!check(TK_SEMICOLON)) {
                 ExpressionPtr returnvalue = parseExpression();
                 expect(TokenKind::TK_SEMICOLON, ";");
-                return std::make_unique<ReturnStatement>(token, token.Text, std::move(returnvalue));
+                return std::make_unique<ReturnStatement>(token, token.text, std::move(returnvalue));
             } else {
                 expect(TokenKind::TK_SEMICOLON, ";");
-                return std::make_unique<ReturnStatement>(token, token.Text);
+                return std::make_unique<ReturnStatement>(token, token.text);
             }
         }
 
@@ -549,13 +549,13 @@ StatementPtr Parser::parseStatement() {
                 expect(TK_IDENTIFIER, "identifier");
                 expect(TK_COLON, ":");
 
-                auto new_label = this->_labels.insert(token.Text).second;
+                auto new_label = this->_labels.insert(token.text).second;
                 if (!new_label) {
                     errorloc(token, "Duplicate label");
                 }
 
                 StatementPtr stat = parseNonDeclStatement();
-                return std::make_unique<LabeledStatement>(token, token.Text, std::move(stat));
+                return std::make_unique<LabeledStatement>(token, token.text, std::move(stat));
             }
             [[fallthrough]];
         }
@@ -582,7 +582,7 @@ Program Parser::parseProgram() {
     while (!check(TokenKind::TK_EOI)) {
         auto declaration = parseDeclaration(DeclKind::CONCRETE);
 
-        switch (peekToken().Kind) {
+        switch (peekToken().kind) {
             case TokenKind::TK_SEMICOLON: {
                 expect(TK_SEMICOLON, ";");
                 // adds any declaration to the program (including abstract function declarations)
@@ -605,11 +605,11 @@ Program Parser::parseProgram() {
 }
 
 void Parser::popToken() {
-    if (_currentToken.Kind == TokenKind::TK_EOI) {
+    if (_currentToken.kind == TokenKind::TK_EOI) {
         errorloc(getLoc(), "Parsing State cannot be advance - unexpected end of input");
     }
     _currentToken = _nextToken;
-    if (_currentToken.Kind != TokenKind::TK_EOI) {
+    if (_currentToken.kind != TokenKind::TK_EOI) {
         _nextToken = _lexer.next();
     }
 }
@@ -623,19 +623,19 @@ const Locatable& Parser::getLoc() {
 }
 
 void Parser::expect(TokenKind tk, const char* txt) {
-    if (_currentToken.Kind == tk) {
+    if (_currentToken.kind == tk) {
         popToken();
     } else {
         errorloc(
             getLoc(),
-            "TokenKind '" + std::string(txt) + "' was expected, but it was '" + *_currentToken.Text
-                + "', next token is '" + *_nextToken.Text + "'"
+            "TokenKind '" + std::string(txt) + "' was expected, but it was '" + *_currentToken.text
+                + "', next token is '" + *_nextToken.text + "'"
         );
     }
 }
 
 bool Parser::accept(TokenKind tk) {
-    if (_currentToken.Kind == tk) {
+    if (_currentToken.kind == tk) {
         popToken();
         return true;
     }
@@ -643,9 +643,9 @@ bool Parser::accept(TokenKind tk) {
 }
 
 bool Parser::check(TokenKind tk) {
-    return _currentToken.Kind == tk;
+    return _currentToken.kind == tk;
 }
 
 bool Parser::checkLookAhead(TokenKind tk) {
-    return _nextToken.Kind == tk;
+    return _nextToken.kind == tk;
 }

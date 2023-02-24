@@ -8,20 +8,20 @@ std::ostream& operator<<(std::ostream& stream, Declaration& declaration) {
 }
 
 void Declaration::print(std::ostream& stream) {
-    stream << this->_specifier;
+    stream << this->specifier;
 
-    auto declarator_empty = this->_declarator->kind == DeclaratorKind::PRIMITIVE && this->_declarator->isAbstract();
+    auto declarator_empty = this->declarator->kind == DeclaratorKind::PRIMITIVE && this->declarator->isAbstract();
 
     if (!declarator_empty) {
-        stream << ' ' << this->_declarator;
+        stream << ' ' << this->declarator;
     }
 }
 
 void Declaration::typecheck(ScopePtr& scope) {
     auto decl = this->toType(scope);
-    if (this->_declarator->isAbstract()) {
+    if (this->declarator->isAbstract()) {
         if (decl.type->kind != TypeKind::TY_STRUCT) {
-            errorloc(this->_loc, "Declaration without declarator");
+            errorloc(this->loc, "Declaration without declarator");
         }
         this->_typeDecl = decl;
         return;
@@ -34,13 +34,13 @@ void Declaration::typecheck(ScopePtr& scope) {
             auto param_function = std::static_pointer_cast<ParamFunctionType>(function_type);
             for (auto& param : param_function->params) {
                 if (!param.isAbstract() && function_scope->addDeclaration(param, true)) {
-                    errorloc(this->_declarator->loc, "parameter names have to be unique");
+                    errorloc(this->declarator->loc, "parameter names have to be unique");
                 }
             }
         }
     }
     if (scope->addDeclaration(decl)) {
-        errorloc(this->_declarator->loc, "Duplicate variable");
+        errorloc(this->declarator->loc, "Duplicate variable");
     }
     this->_typeDecl = decl;
 }
@@ -50,16 +50,16 @@ TypeDecl Declaration::getTypeDecl() {
 }
 
 TypeDecl Declaration::toType(ScopePtr& scope) {
-    auto name = this->_declarator->getName();
-    auto type = this->_declarator->wrapType(this->_specifier->toType(scope), scope);
+    auto name = this->declarator->getName();
+    auto type = this->declarator->wrapType(this->specifier->toType(scope), scope);
     return TypeDecl(name, type);
 }
 
 void Declaration::compile(std::shared_ptr<CompileScope> compile_scope_ptr) {
     // does not declare a variable
-    if (this->_declarator->isAbstract()) {
+    if (this->declarator->isAbstract()) {
         // If it's a struct, add it to the declared structs
-        if (this->_specifier->_kind == SpecifierKind::STRUCT) {
+        if (this->specifier->kind == SpecifierKind::STRUCT) {
             std::shared_ptr<Type> type = this->getTypeDecl().type;
             type->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx);
         }

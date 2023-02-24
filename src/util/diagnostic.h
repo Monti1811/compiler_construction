@@ -5,12 +5,11 @@
 /// Base class of everything that has a source code location.
 struct Locatable {
   public:
-    // TODO: file_name, line, column
-    const std::string& FileName;
-    size_t Line;
-    size_t Column;
+    const std::string& file_name;
+    size_t line;
+    size_t column;
 
-    Locatable(const std::string& FileName, size_t Line, size_t Column);
+    Locatable(const std::string& file_name, size_t line, size_t column);
     Locatable(const Locatable& loc);
     Locatable& operator=(const Locatable& loc);
     virtual ~Locatable(void);

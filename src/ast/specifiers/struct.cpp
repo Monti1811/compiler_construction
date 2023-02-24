@@ -35,7 +35,7 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
         auto type = std::make_shared<StructType>(this->_tag, scope->scope_counter);
 
         if (scope->addStruct(type)) {
-            errorloc(this->_loc, "Cannot redefine already defined struct");
+            errorloc(this->loc, "Cannot redefine already defined struct");
         }
 
         return type;
@@ -47,11 +47,11 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
         auto field = field_decl.toType(scope);
 
         if (!field.type->isComplete()) {
-            errorloc(field_decl._loc, "Struct fields must be complete");
+            errorloc(field_decl.loc, "Struct fields must be complete");
         }
 
         if (field.type->kind == TY_FUNCTION) {
-            errorloc(field_decl._loc, "Struct fields cannot have function type");
+            errorloc(field_decl.loc, "Struct fields cannot have function type");
         }
 
         if (field.type->kind == TY_STRUCT) {
@@ -71,18 +71,18 @@ TypePtr StructSpecifier::toType(ScopePtr& scope) {
         }
 
         if (type->addField(field)) {
-            errorloc(field_decl._loc, "duplicate field");
+            errorloc(field_decl.loc, "duplicate field");
         }
     }
 
     if (!type->validateFields()) {
         errorloc(
-            this->_loc, "Structs must have at least one named field, and must not have unnamed fields at the beginning"
+            this->loc, "Structs must have at least one named field, and must not have unnamed fields at the beginning"
         );
     }
 
     if (scope->addStruct(type)) {
-        errorloc(this->_loc, "Cannot redefine already defined struct");
+        errorloc(this->loc, "Cannot redefine already defined struct");
     }
 
     return type;

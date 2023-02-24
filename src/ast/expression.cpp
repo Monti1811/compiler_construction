@@ -23,7 +23,7 @@ void IntConstantExpression::print(std::ostream& stream) {
 }
 
 void NullPtrExpression::print(std::ostream& stream) {
-    stream << this->_value;
+    stream << "0";
 }
 
 void CharConstantExpression::print(std::ostream& stream) {

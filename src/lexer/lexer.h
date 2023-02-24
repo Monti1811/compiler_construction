@@ -11,8 +11,8 @@
 class Lexer {
   public:
     Lexer(std::string const& filename, SymbolInternalizer& internalizer)
-        : m_stream(LocatableStream(filename))
-        , m_internalizer(internalizer) {}
+        : _stream(LocatableStream(filename))
+        , _internalizer(internalizer) {}
 
     void printTokens(void);
 
@@ -38,7 +38,6 @@ class Lexer {
     void fail(std::string message);
     void fail(std::string message, Locatable& loc);
 
-    // TODO: _stream, _internalizer
-    LocatableStream m_stream;
-    SymbolInternalizer& m_internalizer;
+    LocatableStream _stream;
+    SymbolInternalizer& _internalizer;
 };

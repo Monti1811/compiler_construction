@@ -7,34 +7,29 @@
 
 class LocatableStream {
   public:
-    LocatableStream(std::string const& filename)
-        : m_stream(std::ifstream(filename))
-        , m_filename(filename) {
-        if (!m_stream.good()) {
-            error("File '", filename, "' does not exist");
+    LocatableStream(std::string const& file_name)
+        : _stream(std::ifstream(file_name))
+        , _file_name(file_name) {
+        if (!this->_stream.good()) {
+            error("File '", file_name, "' does not exist");
         }
     }
 
     unsigned char get();
-    // TODO: getStr()
-    std::string get_str(size_t length);
-    // TODO: getLine()
-    std::string get_line();
+    std::string getStr(size_t length);
+    std::string getLine();
 
     unsigned char peek(size_t offset = 0);
-    // TODO: peekStr()
-    std::string peek_str(size_t length);
+    std::string peekStr(size_t length);
 
     Locatable loc();
 
   private:
-    // TODO: getOrEof()
-    unsigned char get_or_eof();
+    unsigned char getOrEof();
 
-    // TODO: _stream, _filename
-    std::ifstream m_stream;
+    std::ifstream _stream;
 
-    std::string const& m_filename;
-    size_t m_line = 1;
-    size_t m_column = 1;
+    std::string const& _file_name;
+    size_t _line = 1;
+    size_t _column = 1;
 };

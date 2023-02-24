@@ -14,14 +14,14 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     auto function = this->_declaration.toType(scope);
 
     if (function.type->kind != TypeKind::TY_FUNCTION) {
-        errorloc(this->_declaration._loc, "Internal error: Expected function definition to have function type");
+        errorloc(this->_declaration.loc, "Internal error: Expected function definition to have function type");
     }
 
     auto function_type = std::static_pointer_cast<FunctionType>(function.type);
 
     // Add this function's signature to the scope given as an argument
     if (scope->addFunctionDeclaration(function)) {
-        errorloc(this->_declaration._loc, "Duplicate function");
+        errorloc(this->_declaration.loc, "Duplicate function");
     }
 
     // Create inner function scope and add function arguments
@@ -31,7 +31,7 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
     // 6.9.1.3: The return type of a function shall be void or a complete object type other than array type.
     auto return_type = function_type->return_type;
     if (return_type->kind != TypeKind::TY_VOID && !(return_type->isObjectType() && return_type->isComplete())) {
-        errorloc(this->_declaration._declarator->loc, "Function return type must be void or a complete object type");
+        errorloc(this->_declaration.declarator->loc, "Function return type must be void or a complete object type");
     }
 
     if (function_type->has_params) {
@@ -39,26 +39,23 @@ void FunctionDefinition::typecheck(ScopePtr& scope) {
 
         for (auto& param : param_function->params) {
             if (param.isAbstract()) {
-                errorloc(this->_declaration._declarator->loc, "parameters must not be abstract");
+                errorloc(this->_declaration.declarator->loc, "parameters must not be abstract");
             }
             if (function_scope->addDeclaration(param, true)) {
-                errorloc(this->_declaration._declarator->loc, "parameter names have to be unique");
+                errorloc(this->_declaration.declarator->loc, "parameter names have to be unique");
             }
         }
     }
 
     this->_block.typecheckInner(function_scope);
-    // for compilation
-    this->type = function_type;
+    this->_type = function_type;
 }
 
 void FunctionDefinition::compile(std::shared_ptr<CompileScope> compile_scope_ptr) {
-    std::shared_ptr<FunctionType> func_type_ptr = this->getFunctionType();
-    auto llvm_type = !func_type_ptr->has_params
-                         ? func_type_ptr->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx)
-                         : std::static_pointer_cast<ParamFunctionType>(func_type_ptr)
-                               ->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx);
-    std::string name(*(this->_declaration._declarator->getName().value()));
+    // TODO cleanup needed
+    std::shared_ptr<FunctionType> func_type_ptr = this->_type;
+    auto llvm_type = this->_type->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx);
+    std::string name(*(this->_declaration.declarator->getName().value()));
     // Check if function was already declared, if yes, choose it, otherwise create a new one
     llvm::Function* Func = compile_scope_ptr->_Module.getFunction(name);
     if (Func == nullptr) {
