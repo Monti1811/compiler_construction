@@ -1,7 +1,7 @@
 ; ModuleID = 'tests/compiler/nullptr_in_binaries.c4'
 source_filename = "tests/compiler/nullptr_in_binaries.c4"
 
-define i32 @main() {
+define i32 @main(...) {
 entry:
   %0 = alloca ptr, align 8
   %1 = alloca i32, align 4

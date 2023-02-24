@@ -92,7 +92,7 @@ DEAD_BLOCK13:                                     ; No predecessors!
   br label %if-end12
 }
 
-define i32 @main() {
+define i32 @main(...) {
 entry:
   %0 = alloca i32, align 4
   %1 = call i32 @ack(i32 3, i32 4)

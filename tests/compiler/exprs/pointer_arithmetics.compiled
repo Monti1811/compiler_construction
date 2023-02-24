@@ -3,7 +3,7 @@ source_filename = "tests/compiler/exprs/pointer_arithmetics.c4"
 
 @0 = private unnamed_addr constant [12 x i8] c"hello world\00", align 1
 
-define i32 @main() {
+define i32 @main(...) {
 entry:
   %0 = alloca i32, align 4
   %1 = alloca i32, align 4
