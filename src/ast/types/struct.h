@@ -9,6 +9,8 @@ struct StructType : public Type {
         , tag(tag)
         , scope_counter(scope_counter){};
 
+    // Note: We do not consider fields in the equality check.
+    // (Hence they are not overridden in `CompleteStructType`)
     bool equals(TypePtr const& other) override;
     bool strong_equals(TypePtr const& other) override;
 
@@ -25,9 +27,6 @@ struct CompleteStructType : public StructType {
   public:
     CompleteStructType(std::optional<Symbol> tag, int scope_counter)
         : StructType(tag, scope_counter){};
-
-    // TODO: Do we need to also consider fields in the equality check?
-    // If so, we need to override equals() and maybe strong_equals() here.
 
     bool isComplete() override;
 
