@@ -11,7 +11,7 @@
 #include "declarators/declarator.h"
 #include "expressions.h"
 #include "program.h"
-#include "statement.h"
+#include "statements.h"
 
 // Declarators and abstract declarators share a lot of syntactical and
 // semantical properties. Therefore, we use the same AST data structures to

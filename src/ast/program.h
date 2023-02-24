@@ -4,11 +4,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include "compile_scope.h"
 #include "declaration.h"
-#include "expressions.h"
 #include "function_definition.h"
-#include "statement.h"
 
 struct Program {
   public:
@@ -19,7 +16,9 @@ struct Program {
 
     void addDeclaration(Declaration declaration);
     void addFunctionDefinition(FunctionDefinition definition);
+
     void typecheck();
+
     void compile(int argc, char const* argv[], std::string filename);
 
   private:

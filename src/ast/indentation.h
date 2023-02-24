@@ -10,13 +10,13 @@ class IndentManager {
         return instance;
     }
 
+    friend std::ostream& operator<<(std::ostream& stream, const IndentManager& ident);
+
     int getCurrIndentation();
     void setCurrIndentation(int value);
     void increaseCurrIndentation(int value);
     void decreaseCurrIndentation(int value);
     void printCurrIndentation(std::ostream& stream);
-
-    friend std::ostream& operator<<(std::ostream& stream, const IndentManager& ident);
 
     int currIndent = 0;
 
