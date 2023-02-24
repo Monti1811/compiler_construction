@@ -1,138 +1,5 @@
 #include "program.h"
 
-std::ostream& operator<<(std::ostream& stream, FunctionDefinition& definition) {
-    definition.print(stream);
-    return stream;
-}
-
-void FunctionDefinition::print(std::ostream& stream) {
-    stream << this->_declaration << '\n';
-    this->_block.print(stream);
-}
-
-void FunctionDefinition::typecheck(ScopePtr& scope) {
-    auto function = this->_declaration.toType(scope);
-
-    if (function.type->kind != TypeKind::TY_FUNCTION) {
-        errorloc(this->_declaration._loc, "Internal error: Expected function definition to have function type");
-    }
-
-    auto function_type = std::static_pointer_cast<FunctionType>(function.type);
-
-    // Add this function's signature to the scope given as an argument
-    if (scope->addFunctionDeclaration(function)) {
-        errorloc(this->_declaration._loc, "Duplicate function");
-    }
-
-    // Create inner function scope and add function arguments
-    auto function_scope = function_type->scope;
-    function_scope->setLabels(this->_labels);
-
-    // 6.9.1.3: The return type of a function shall be void or a complete object type other than array type.
-    auto return_type = function_type->return_type;
-    if (return_type->kind != TypeKind::TY_VOID && !(return_type->isObjectType() && return_type->isComplete())) {
-        errorloc(this->_declaration._declarator->loc, "Function return type must be void or a complete object type");
-    }
-
-    if (function_type->has_params) {
-        auto param_function = std::static_pointer_cast<ParamFunctionType>(function_type);
-
-        for (auto& param : param_function->params) {
-            if (param.isAbstract()) {
-                errorloc(this->_declaration._declarator->loc, "parameters must not be abstract");
-            }
-            if (function_scope->addDeclaration(param, true)) {
-                errorloc(this->_declaration._declarator->loc, "parameter names have to be unique");
-            }
-        }
-    }
-
-    this->_block.typecheckInner(function_scope);
-    // for compilation
-    this->type = function_type;
-}
-
-void FunctionDefinition::compile(std::shared_ptr<CompileScope> compile_scope_ptr) {
-    std::shared_ptr<FunctionType> func_type_ptr = this->getFunctionType();
-    auto llvm_type = 
-        !func_type_ptr->has_params 
-        ?
-        func_type_ptr->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx) 
-        :
-        std::static_pointer_cast<ParamFunctionType>(func_type_ptr)->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx);
-    std::string name(*(this->_declaration._declarator->getName().value()));
-    // Check if function was already declared, if yes, choose it, otherwise create a new one
-    llvm::Function *Func = compile_scope_ptr->_Module.getFunction(name);
-    if (Func == nullptr) {
-        Func = llvm::Function::Create(
-            llvm_type                                       /* FunctionType *Ty */,
-            llvm::GlobalValue::ExternalLinkage              /* LinkageType */,
-            name                                           /* const Twine &N="" */,
-            compile_scope_ptr->_Module                      /* Module *M=0 */);
-
-    }
-
-    llvm::Function::arg_iterator FuncArgIt = Func->arg_begin();
-    auto inner_compile_scope_ptr = std::make_shared<CompileScope>(compile_scope_ptr, Func);
-
-    int count = 0;
-    auto param_func_type = std::static_pointer_cast<ParamFunctionType>(func_type_ptr);
-    while (FuncArgIt != Func->arg_end()) {
-        llvm::Argument *Arg = FuncArgIt;
-        if (param_func_type->params[count].name.has_value()) {
-            Arg->setName(*(param_func_type->params[count].name.value()));
-        } else {
-            Arg->setName("");
-        }
-        FuncArgIt++;
-        count++;
-    }
-    llvm::BasicBlock *FuncEntryBB = llvm::BasicBlock::Create(
-        compile_scope_ptr->_Ctx                 /* LLVMContext &Context */,
-        "entry"                                 /* const Twine &Name="" */,
-        Func                                    /* Function *Parent=0 */,
-        0                                       /* BasicBlock *InsertBefore=0 */);
-    compile_scope_ptr->_Builder.SetInsertPoint(FuncEntryBB);
-    compile_scope_ptr->_AllocaBuilder.SetInsertPoint(FuncEntryBB);
-    
-    count = 0;
-    FuncArgIt = Func->arg_begin();
-    auto FuncLLVMTypeIt = llvm_type->param_begin();
-    while (FuncArgIt != Func->arg_end()) {
-        compile_scope_ptr->_AllocaBuilder.SetInsertPoint(compile_scope_ptr->_AllocaBuilder.GetInsertBlock(),
-                        compile_scope_ptr->_AllocaBuilder.GetInsertBlock()->begin());
-        llvm::Argument *Arg = FuncArgIt; 
-        llvm::Value *ArgVarPtr = compile_scope_ptr->_AllocaBuilder.CreateAlloca(Arg->getType());
-        compile_scope_ptr->_Builder.CreateStore(Arg, ArgVarPtr);
-        // fill compile_scope
-        auto name = param_func_type->params[count].name.value();
-        inner_compile_scope_ptr->addAlloca(name, ArgVarPtr);
-        inner_compile_scope_ptr->addType(name, FuncLLVMTypeIt[count]);
-        FuncArgIt++;
-        count++;
-    }
-    
-    for (auto label : this->_labels) {
-        llvm::BasicBlock *labeledBlock = llvm::BasicBlock::Create(
-            inner_compile_scope_ptr->_Ctx,
-            *label + "_BLOCK",
-            inner_compile_scope_ptr->_ParentFunction.value()
-        );
-        inner_compile_scope_ptr->addLabeledBlock(label, labeledBlock);
-    }
-
-    this->_block.compile(inner_compile_scope_ptr);
-
-    if (compile_scope_ptr->_Builder.GetInsertBlock()->getTerminator() == nullptr) {
-        llvm::Type *CurFuncReturnType = compile_scope_ptr->_Builder.getCurrentFunctionReturnType();
-        if (CurFuncReturnType->isVoidTy()) {
-            compile_scope_ptr->_Builder.CreateRetVoid();
-        } else {
-            compile_scope_ptr->_Builder.CreateRet(llvm::Constant::getNullValue(CurFuncReturnType));
-        }
-    } 
-}
-
 void Program::addDeclaration(Declaration declaration) {
     this->_declarations.push_back(std::move(declaration));
     this->_is_declaration.push_back(true);
@@ -227,15 +94,19 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
     llvm::sys::PrintStackTraceOnErrorSignal(filename);
     llvm::PrettyStackTraceProgram X(argc, argv);
 
-    /* Make a global context (only one needed) */
-    llvm::LLVMContext Ctx;
+    // Make a global context
+    llvm::LLVMContext llvm_ctx;
 
-     /* Create a Module (only one needed) */
-    llvm::Module M(filename, Ctx);
+    // Create a module
+    llvm::Module module(filename, llvm_ctx);
 
-    /* Two IR-Builder to output intermediate instructions but also types, ... */
-    llvm::IRBuilder<> Builder(Ctx), AllocaBuilder(Ctx);
-    auto compile_scope_ptr = std::make_shared<CompileScope>(Builder, AllocaBuilder, M, Ctx);
+    // Two IRBuilders to output intermediate instructions but also types etc.
+    llvm::IRBuilder<> Builder(llvm_ctx), AllocaBuilder(llvm_ctx);
+
+    // Create the compile scope
+    auto compile_scope = std::make_shared<CompileScope>(Builder, AllocaBuilder, module, llvm_ctx);
+
+    // Iterate through all declarations and function definitions, and compile them
     auto decl_iter = this->_declarations.begin();
     auto func_iter = this->_functions.begin();
 
@@ -244,21 +115,22 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
             if (decl_iter == this->_declarations.end()) {
                 error("Internal error: Tried to read non-existent declaration");
             }
-            decl_iter.base()->compile(compile_scope_ptr);
+            decl_iter.base()->compile(compile_scope);
             decl_iter++;
         } else {
             if (func_iter == this->_functions.end()) {
                 error("Internal error: Tried to read non-existent function definition");
             }
-            func_iter.base()->compile(compile_scope_ptr);
+            func_iter.base()->compile(compile_scope);
             func_iter++;
         }
     }
-    /* Ensure that we created a 'valid' module */
-    verifyModule(M);
-    
+
+    // Ensure that we created a 'valid' module
+    verifyModule(module);
+
+    // Print resulting module to file
     std::error_code EC;
     llvm::raw_fd_ostream stream(filename_to_print, EC, llvm::sys::fs::OpenFlags::OF_Text);
-    M.print(stream, nullptr); /* M is a llvm::Module */
-
+    module.print(stream, nullptr);
 }

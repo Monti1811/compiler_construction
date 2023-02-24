@@ -12,9 +12,9 @@
 // type-specifier
 struct Declaration {
     Declaration(Locatable loc, TypeSpecifierPtr specifier, DeclaratorPtr declarator)
-        : _loc(loc)
-        , _specifier(std::move(specifier))
-        , _declarator(std::move(declarator)) {};
+        : loc(loc)
+        , specifier(std::move(specifier))
+        , declarator(std::move(declarator)){};
 
     void print(std::ostream& stream);
     friend std::ostream& operator<<(std::ostream& stream, Declaration& declaration);
@@ -23,11 +23,12 @@ struct Declaration {
     TypeDecl toType(ScopePtr& scope);
     TypeDecl getTypeDecl();
 
-    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
+    void compile(CompileScopePtr compile_scope);
 
-    Locatable _loc;
-    TypeSpecifierPtr _specifier;
-    DeclaratorPtr _declarator;
-    private:
+    Locatable loc;
+    TypeSpecifierPtr specifier;
+    DeclaratorPtr declarator;
+
+  private:
     std::optional<TypeDecl> _typeDecl;
 };

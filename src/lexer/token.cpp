@@ -2,23 +2,25 @@
 #include <unordered_map>
 
 Token::Token(Locatable& loc, TokenKind kind, Symbol text)
-    : Locatable(loc), Kind(kind), Text(text) {}
+    : Locatable(loc)
+    , kind(kind)
+    , text(text) {}
 
 std::ostream& operator<<(std::ostream& stream, const Token& tok) {
     stream << static_cast<const Locatable&>(tok) << ' ';
 
-#define KIND_ACTION(KD, STR) \
-    case KD:                 \
-        stream << STR;       \
+#define KIND_ACTION(KD, STR)                                                                                           \
+    case KD:                                                                                                           \
+        stream << STR;                                                                                                 \
         break;
 
-    switch (tok.Kind) {
+    switch (tok.kind) {
 #include "tokenkinds.def"
     }
 
 #undef KIND_ACTION
 
-    stream << ' ' << *(tok.Text);
+    stream << ' ' << *(tok.text);
 
     return stream;
 }
@@ -80,31 +82,11 @@ TokenKind Token::getKeywordToken(std::string str) {
 }
 
 const std::unordered_map<char, TokenKind> PUNCTUATORS = {
-    {'*', TK_ASTERISK},
-    {',', TK_COMMA},
-    {';', TK_SEMICOLON},
-    {'(', TK_LPAREN},
-    {')', TK_RPAREN},
-    {'{', TK_LBRACE},
-    {'}', TK_RBRACE},
-    {'[', TK_LBRACKET},
-    {']', TK_RBRACKET},
-    {'?', TK_QUESTION_MARK},
-    {'.', TK_DOT},
-    {'#', TK_POUND},
-    {'+', TK_PLUS},
-    {'-', TK_MINUS},
-    {'&', TK_AND},
-    {'|', TK_PIPE},
-    {'~', TK_TILDE},
-    {'!', TK_BANG},
-    {'=', TK_EQUAL},
-    {':', TK_COLON},
-    {'^', TK_HAT},
-    {'/', TK_SLASH},
-    {'%', TK_PERCENT},
-    {'<', TK_LESS},
-    {'>', TK_GREATER},
+    {'*', TK_ASTERISK}, {',', TK_COMMA},  {';', TK_SEMICOLON}, {'(', TK_LPAREN},   {')', TK_RPAREN},
+    {'{', TK_LBRACE},   {'}', TK_RBRACE}, {'[', TK_LBRACKET},  {']', TK_RBRACKET}, {'?', TK_QUESTION_MARK},
+    {'.', TK_DOT},      {'#', TK_POUND},  {'+', TK_PLUS},      {'-', TK_MINUS},    {'&', TK_AND},
+    {'|', TK_PIPE},     {'~', TK_TILDE},  {'!', TK_BANG},      {'=', TK_EQUAL},    {':', TK_COLON},
+    {'^', TK_HAT},      {'/', TK_SLASH},  {'%', TK_PERCENT},   {'<', TK_LESS},     {'>', TK_GREATER},
 };
 
 bool Token::isPunctuator(char ch) {

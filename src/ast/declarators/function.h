@@ -6,12 +6,12 @@
 #include "../types.h"
 
 struct FunctionDeclarator : public Declarator {
-    public:
+  public:
     FunctionDeclarator(Locatable loc, DeclaratorPtr decl)
         : Declarator(loc, decl->isAbstract(), DeclaratorKind::FUNCTION)
-        , _name(std::move(decl)) {};
+        , _name(std::move(decl)){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
     std::optional<Symbol> getName();
     TypePtr wrapType(TypePtr const& type, ScopePtr& scope);
@@ -20,6 +20,7 @@ struct FunctionDeclarator : public Declarator {
 
     void addParameter(Declaration param);
 
+  private:
     DeclaratorPtr _name;
     std::vector<Declaration> _parameters;
 };

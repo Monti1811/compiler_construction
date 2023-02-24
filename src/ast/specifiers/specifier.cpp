@@ -6,7 +6,7 @@ std::ostream& operator<<(std::ostream& stream, const TypeSpecifierPtr& type) {
 }
 
 void TypeSpecifier::print(std::ostream& stream) {
-    switch (this->_kind) {
+    switch (this->kind) {
         case SpecifierKind::CHAR:
             stream << "char";
             return;
@@ -22,7 +22,7 @@ void TypeSpecifier::print(std::ostream& stream) {
 }
 
 TypePtr TypeSpecifier::toType(ScopePtr&) {
-    switch (this->_kind) {
+    switch (this->kind) {
         case SpecifierKind::CHAR:
             return CHAR_TYPE;
         case SpecifierKind::INT:

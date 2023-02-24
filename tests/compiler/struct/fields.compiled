@@ -5,7 +5,7 @@ source_filename = "tests/compiler/struct/fields.c4"
 
 @GS = common global %struct.S zeroinitializer
 
-define i32 @main() {
+define i32 @main(...) {
 entry:
   %0 = alloca i32, align 4
   %1 = alloca ptr, align 8
@@ -42,6 +42,6 @@ entry:
   %25 = load i32, ptr %0, align 4
   ret i32 %25
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }

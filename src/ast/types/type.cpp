@@ -1,8 +1,8 @@
 #include "type.h"
 
 #include "function.h"
-#include "struct.h"
 #include "pointer.h"
+#include "struct.h"
 
 std::ostream& operator<<(std::ostream& stream, const std::shared_ptr<Type>& type) {
     type->print(stream);
@@ -83,11 +83,8 @@ void Type::print(std::ostream& stream) {
 
 bool Type::equals(TypePtr const& other) {
     if (this->kind != other->kind) {
-        if (
-            (this->isInteger() && other->isInteger())
-            || (this->kind == TY_NULLPTR && other->kind == TY_POINTER)
-            || (this->kind == TY_POINTER && other->kind == TY_NULLPTR)
-        ) {
+        if ((this->isInteger() && other->isInteger()) || (this->kind == TY_NULLPTR && other->kind == TY_POINTER)
+            || (this->kind == TY_POINTER && other->kind == TY_NULLPTR)) {
             return true;
         }
         return false;
@@ -134,8 +131,7 @@ bool Type::isArithmetic() {
 }
 
 bool Type::isObjectType() {
-    switch (this->kind)
-    {
+    switch (this->kind) {
         case TypeKind::TY_FUNCTION:
         case TypeKind::TY_VOID:
             return false;
@@ -155,7 +151,8 @@ bool Type::isComplete() {
 }
 
 bool Type::isString() {
-    if (this->kind != TypeKind::TY_POINTER) return false;
+    if (this->kind != TypeKind::TY_POINTER)
+        return false;
     auto pointer_type = static_cast<PointerType*>(this);
     return pointer_type->inner->kind == TypeKind::TY_CHAR;
 }
@@ -175,25 +172,24 @@ std::optional<std::shared_ptr<FunctionType>> Type::unwrapFunctionPointer() {
     return std::static_pointer_cast<FunctionType>(function_ptr_inner_type);
 }
 
-llvm::Type* Type::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
-    switch(this->kind) {
+llvm::Type* Type::toLLVMType(CompileScopePtr compile_scope) {
+    switch (this->kind) {
         case TY_INT:
-            return Builder.getInt32Ty();
+            return compile_scope->builder.getInt32Ty();
         case TY_CHAR:
-            return Builder.getInt8Ty();
+            return compile_scope->builder.getInt8Ty();
         case TY_STRUCT:
             if (this->isComplete()) {
-                return (static_cast<CompleteStructType*>(this))->toLLVMType(Builder, Ctx);
+                return (static_cast<CompleteStructType*>(this))->toLLVMType(compile_scope);
             } else {
-                return (static_cast<StructType*>(this))->toLLVMType(Builder, Ctx);
+                return (static_cast<StructType*>(this))->toLLVMType(compile_scope);
             }
-            
         case TY_FUNCTION:
-            return (static_cast<FunctionType*>(this))->toLLVMType(Builder, Ctx);
+            return (static_cast<FunctionType*>(this))->toLLVMType(compile_scope);
         case TY_NULLPTR:
         case TY_POINTER:
-            return (static_cast<PointerType*>(this))->toLLVMType(Builder, Ctx);
+            return (static_cast<PointerType*>(this))->toLLVMType(compile_scope);
         default:
-            return Builder.getVoidTy();
+            return compile_scope->builder.getVoidTy();
     }
 }

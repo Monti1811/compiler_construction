@@ -16,15 +16,15 @@ bool StructType::strong_equals(TypePtr const& other) {
     return this->equals(other);
 }
 
-llvm::Type* StructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+llvm::Type* StructType::toLLVMType(CompileScopePtr compile_scope) {
     // declarations of structs should have CompleteStructType already, so this shouldn't get called at all
     auto struct_name = "struct." + *tag.value();
-    auto def_structtype = llvm::StructType::getTypeByName(Ctx, struct_name);
+    auto def_structtype = llvm::StructType::getTypeByName(compile_scope->ctx, struct_name);
     if (def_structtype) {
         return def_structtype;
     }
-    llvm::StructType *StructXType = llvm::StructType::create(Ctx, struct_name);
-    std::vector<llvm::Type *> StructMemberTypes;
+    llvm::StructType* StructXType = llvm::StructType::create(compile_scope->ctx, struct_name);
+    std::vector<llvm::Type*> StructMemberTypes;
     StructXType->setBody(StructMemberTypes);
     return StructXType;
 }
@@ -34,7 +34,7 @@ bool CompleteStructType::isComplete() {
 }
 
 bool CompleteStructType::addField(StructField field) {
-    if (field.name.has_value() && !this->_field_names.insert({ field.name.value(), this->fields.size() }).second) {
+    if (field.name.has_value() && !this->_field_names.insert({field.name.value(), this->fields.size()}).second) {
         return true;
     }
 
@@ -78,56 +78,56 @@ std::optional<TypePtr> CompleteStructType::typeOfField(Symbol& ident) {
     return this->fields.at(this->_field_names.at(ident)).type;
 }
 
-llvm::Type* CompleteStructType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+llvm::Type* CompleteStructType::toLLVMType(CompileScopePtr compile_scope) {
     if (!tag.has_value()) {
-        return this->toLLVMTypeAnonymous(Builder, Ctx);
+        return this->toLLVMTypeAnonymous(compile_scope);
     }
 
     // Check if struct already exists
     if (this->_llvm_name.has_value()) {
-        return llvm::StructType::getTypeByName(Ctx, this->_llvm_name.value());
+        return llvm::StructType::getTypeByName(compile_scope->ctx, this->_llvm_name.value());
     }
 
     std::string struct_name = "struct." + *tag.value();
 
-    llvm::StructType *StructXType = llvm::StructType::create(Ctx, struct_name);
+    llvm::StructType* StructXType = llvm::StructType::create(compile_scope->ctx, struct_name);
     this->_llvm_name = StructXType->getName();
 
-    std::vector<llvm::Type *> StructMemberTypes;
+    std::vector<llvm::Type*> StructMemberTypes;
     for (auto field : this->fields) {
         if (field.type->kind == TY_STRUCT) {
             auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(field.type);
-            complete_struct_ty->alt_tag = struct_name + '.' +  *field.name.value();
+            complete_struct_ty->_alt_tag = struct_name + '.' + *field.name.value();
             if (!complete_struct_ty->tag.has_value()) {
-                StructMemberTypes.push_back(complete_struct_ty->toLLVMTypeAnonymous(Builder, Ctx));
+                StructMemberTypes.push_back(complete_struct_ty->toLLVMTypeAnonymous(compile_scope));
                 continue;
             }
         }
-        StructMemberTypes.push_back(field.type->toLLVMType(Builder, Ctx));
+        StructMemberTypes.push_back(field.type->toLLVMType(compile_scope));
     }
     StructXType->setBody(StructMemberTypes);
 
     return StructXType;
 }
 
-llvm::Type* CompleteStructType::toLLVMTypeAnonymous(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+llvm::Type* CompleteStructType::toLLVMTypeAnonymous(CompileScopePtr compile_scope) {
     // Check if struct already exists
-    auto def_structtype = llvm::StructType::getTypeByName(Ctx, this->alt_tag);
+    auto def_structtype = llvm::StructType::getTypeByName(compile_scope->ctx, this->_alt_tag);
     if (def_structtype) {
         return def_structtype;
     }
-    llvm::StructType *StructXType = llvm::StructType::create(Ctx, this->alt_tag);
-    std::vector<llvm::Type *> StructMemberTypes;
+    llvm::StructType* StructXType = llvm::StructType::create(compile_scope->ctx, this->_alt_tag);
+    std::vector<llvm::Type*> StructMemberTypes;
     for (auto field : this->fields) {
         if (field.type->kind == TY_STRUCT) {
             auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(field.type);
-            complete_struct_ty->alt_tag = this->alt_tag + '.' +  *field.name.value();
+            complete_struct_ty->_alt_tag = this->_alt_tag + '.' + *field.name.value();
             if (!complete_struct_ty->tag.has_value()) {
-                StructMemberTypes.push_back(complete_struct_ty->toLLVMTypeAnonymous(Builder, Ctx));
+                StructMemberTypes.push_back(complete_struct_ty->toLLVMTypeAnonymous(compile_scope));
                 continue;
             }
         }
-        StructMemberTypes.push_back(field.type->toLLVMType(Builder, Ctx));
+        StructMemberTypes.push_back(field.type->toLLVMType(compile_scope));
     }
     StructXType->setBody(StructMemberTypes);
     return StructXType;

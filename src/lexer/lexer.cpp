@@ -9,9 +9,17 @@
 bool isNumber(unsigned char x);
 bool isAlphabetic(unsigned char x);
 
+void Lexer::printTokens(void) {
+    Token token = this->next();
+    while (token.kind != TokenKind::TK_EOI) {
+        std::cout << token << std::endl;
+        token = this->next();
+    }
+}
+
 Token Lexer::next() {
     while (true) {
-        unsigned char next_char = m_stream.peek();
+        unsigned char next_char = this->_stream.peek();
 
         switch (next_char) {
             case ' ':
@@ -19,7 +27,7 @@ Token Lexer::next() {
             case '\n':
             case '\r':
             case '\v': {
-                m_stream.get();
+                this->_stream.get();
                 continue;
             }
             case '\'':
@@ -42,7 +50,7 @@ Token Lexer::next() {
 
         // Comments
         if (next_char == '/') {
-            unsigned char comment_char = m_stream.peek(1);
+            unsigned char comment_char = this->_stream.peek(1);
             if (comment_char == '/') {
                 readLineComment();
                 continue;
@@ -64,21 +72,21 @@ Token Lexer::next() {
 
 Token Lexer::readIdentOrKeyword() {
     // Save location
-    Locatable loc = m_stream.loc();
+    Locatable loc = this->_stream.loc();
 
     // Buffer for the number
     std::string str;
 
     // Add the first read character to the buffer
-    unsigned char next_char = m_stream.get();
+    unsigned char next_char = this->_stream.get();
     str += next_char;
 
     // While there is still another valid char, add it to the buffer
-    next_char = m_stream.peek();
+    next_char = this->_stream.peek();
     while (isNumber(next_char) || isAlphabetic(next_char)) {
         str += next_char;
-        m_stream.get();
-        next_char = m_stream.peek();
+        this->_stream.get();
+        next_char = this->_stream.peek();
     }
 
     TokenKind kind;
@@ -93,9 +101,9 @@ Token Lexer::readIdentOrKeyword() {
 }
 
 unsigned char Lexer::readEscapeChar() {
-    Locatable loc = m_stream.loc();
+    Locatable loc = this->_stream.loc();
 
-    switch(unsigned char c = m_stream.get()) {
+    switch (unsigned char c = this->_stream.get()) {
         case '\'':
         case '"':
         case '?':
@@ -118,16 +126,16 @@ unsigned char Lexer::readEscapeChar() {
 }
 
 Token Lexer::readCharConstant() {
-    Locatable loc = m_stream.loc();
+    Locatable loc = this->_stream.loc();
 
     // Read initial quotation mark
-    m_stream.get();
+    this->_stream.get();
 
-    Locatable err_loc = m_stream.loc();
+    Locatable err_loc = this->_stream.loc();
 
     std::string inner;
 
-    switch (unsigned char c = m_stream.get()) {
+    switch (unsigned char c = this->_stream.get()) {
         case '\0':
             fail("Unexpected end of file", err_loc);
             break;
@@ -146,10 +154,10 @@ Token Lexer::readCharConstant() {
             inner += c;
     }
 
-    err_loc = m_stream.loc();
+    err_loc = this->_stream.loc();
 
     // Read final quotation mark
-    if (m_stream.get() != '\'') {
+    if (this->_stream.get() != '\'') {
         fail("Character literals must only contain a single character", err_loc);
     }
 
@@ -158,23 +166,23 @@ Token Lexer::readCharConstant() {
 
 Token Lexer::readNumberConstant() {
     // Save location
-    Locatable loc = m_stream.loc();
-    unsigned char next_char_val = m_stream.get();
-    // Check if the character is a 0 
+    Locatable loc = this->_stream.loc();
+    unsigned char next_char_val = this->_stream.get();
+    // Check if the character is a 0
     if (next_char_val == '0') {
         return makeToken(loc, TokenKind::TK_ZERO_CONSTANT, next_char_val);
-    // Character is a digit
+        // Character is a digit
     } else {
         // Buffer for the number
         std::string num;
         // Add the first read character to the buffer
         num += next_char_val;
-        unsigned char next_char = m_stream.peek();
+        unsigned char next_char = this->_stream.peek();
         // While there is still another number, add it to the buffer and go to the next character
         while (isNumber(next_char)) {
             num += next_char;
-            m_stream.get();
-            next_char = m_stream.peek();
+            this->_stream.get();
+            next_char = this->_stream.peek();
         }
 
         return makeToken(loc, TokenKind::TK_DECIMAL_CONSTANT, num);
@@ -183,14 +191,14 @@ Token Lexer::readNumberConstant() {
 
 Token Lexer::readStringLiteral() {
     // Save location
-    Locatable loc = m_stream.loc();
+    Locatable loc = this->_stream.loc();
 
     // Read initial quotation mark
-    m_stream.get();
+    this->_stream.get();
 
     std::string inner;
 
-    unsigned char c = m_stream.peek();
+    unsigned char c = this->_stream.peek();
     while (c != '"') {
         if (c == '\0') {
             fail("Unexpected end of file");
@@ -198,54 +206,54 @@ Token Lexer::readStringLiteral() {
             fail("String literals must not contain newline characters");
         }
 
-        m_stream.get();
+        this->_stream.get();
         inner += c;
         if (c == '\\') {
             inner += readEscapeChar();
         }
 
-        c = m_stream.peek();
+        c = this->_stream.peek();
     }
 
-    m_stream.get();
+    this->_stream.get();
 
     return makeToken(loc, TokenKind::TK_STRING_LITERAL, '"' + inner + '"');
 }
 
 Token Lexer::readPunctuator() {
-    Locatable loc = m_stream.loc();
+    Locatable loc = this->_stream.loc();
 
-    char ch = m_stream.get();
+    char ch = this->_stream.get();
     TokenKind kind = Token::getPunctuatorToken(ch);
     std::string symbol(1, ch);
 
     auto setToken = [&](TokenKind new_kind, size_t length = 1) {
         kind = new_kind;
-        symbol += m_stream.get_str(length);
+        symbol += this->_stream.getStr(length);
     };
 
     switch (kind) {
         case TK_ASTERISK: {
-            if (m_stream.peek() == '=') {
+            if (this->_stream.peek() == '=') {
                 setToken(TokenKind::TK_ASTERISK_EQUAL);
             }
             break;
         }
         case TK_DOT: {
-            if (m_stream.peek_str(2) == "..") {
+            if (this->_stream.peekStr(2) == "..") {
                 setToken(TokenKind::TK_DOT_DOT_DOT, 2);
             }
             break;
         }
         case TK_POUND: {
-            if (m_stream.peek() == '#') {
+            if (this->_stream.peek() == '#') {
                 setToken(TokenKind::TK_POUND_POUND);
             }
             break;
-        } 
+        }
         // Check if it's '+', '++' or '+='
         case TK_PLUS: {
-            switch (m_stream.peek()) {
+            switch (this->_stream.peek()) {
                 case '+':
                     setToken(TokenKind::TK_PLUS_PLUS);
                     break;
@@ -254,10 +262,10 @@ Token Lexer::readPunctuator() {
                     break;
             }
             break;
-        } 
+        }
         // Check if it's '-', '->', '--' or '-='
         case TK_MINUS: {
-            switch (m_stream.peek()) {
+            switch (this->_stream.peek()) {
                 case '>':
                     setToken(TokenKind::TK_ARROW);
                     break;
@@ -269,10 +277,10 @@ Token Lexer::readPunctuator() {
                     break;
             }
             break;
-        } 
+        }
         // Check if it's '&', '&&' or '&='
         case TK_AND: {
-            switch (m_stream.peek()) {
+            switch (this->_stream.peek()) {
                 case '&':
                     setToken(TokenKind::TK_AND_AND);
                     break;
@@ -281,10 +289,10 @@ Token Lexer::readPunctuator() {
                     break;
             }
             break;
-        } 
+        }
         // Check if it's '|', '||' or '|='
         case TK_PIPE: {
-            switch (m_stream.peek()) {
+            switch (this->_stream.peek()) {
                 case '|':
                     setToken(TokenKind::TK_PIPE_PIPE);
                     break;
@@ -293,40 +301,40 @@ Token Lexer::readPunctuator() {
                     break;
             }
             break;
-        } 
+        }
         case TK_BANG: {
-            if (m_stream.peek() == '=') {
+            if (this->_stream.peek() == '=') {
                 setToken(TokenKind::TK_NOT_EQUAL);
             }
             break;
         }
         case TK_EQUAL: {
-            if (m_stream.peek() == '=') {
+            if (this->_stream.peek() == '=') {
                 setToken(TokenKind::TK_EQUAL_EQUAL);
             }
             break;
         }
         case TK_COLON: {
-            if (m_stream.peek() == '>') {
+            if (this->_stream.peek() == '>') {
                 setToken(TokenKind::TK_RBRACKET);
             }
             break;
         }
         case TK_HAT: {
-            if (m_stream.peek() == '=') {
+            if (this->_stream.peek() == '=') {
                 setToken(TokenKind::TK_HAT_EQUAL);
             }
             break;
         }
         case TK_SLASH: {
-            if (m_stream.peek() == '=') {
+            if (this->_stream.peek() == '=') {
                 setToken(TokenKind::TK_SLASH_EQUAL);
             }
             break;
         }
         // Checks if it's a '%', '%=', '%>', '%:' or '%:%:'
         case TK_PERCENT: {
-            switch (m_stream.peek()) {
+            switch (this->_stream.peek()) {
                 case '=':
                     setToken(TokenKind::TK_PERCENT_EQUAL);
                     break;
@@ -334,7 +342,7 @@ Token Lexer::readPunctuator() {
                     setToken(TokenKind::TK_RBRACE);
                     break;
                 case ':': {
-                    std::string str = m_stream.peek_str(3);
+                    std::string str = this->_stream.peekStr(3);
                     if (str == ":%:") {
                         setToken(TokenKind::TK_POUND_POUND, 3);
                     } else {
@@ -347,9 +355,9 @@ Token Lexer::readPunctuator() {
         }
         // Check if it's '<', '<<', '<<=', '<%', '<:' or '<='
         case TK_LESS: {
-            switch (m_stream.peek()) {
+            switch (this->_stream.peek()) {
                 case '<': {
-                    if (m_stream.peek(1) == '=') {
+                    if (this->_stream.peek(1) == '=') {
                         setToken(TokenKind::TK_LESS_LESS_EQUAL, 2);
                     } else {
                         setToken(TokenKind::TK_LESS_LESS);
@@ -367,12 +375,12 @@ Token Lexer::readPunctuator() {
                     break;
             }
             break;
-        } 
+        }
         // Check if it's '>', '>>', '>>=' or '>='
         case TK_GREATER: {
-            switch (m_stream.peek()) {
+            switch (this->_stream.peek()) {
                 case '>': {
-                    if (m_stream.peek(1) == '=') {
+                    if (this->_stream.peek(1) == '=') {
                         setToken(TokenKind::TK_GREATER_GREATER_EQUAL, 2);
                     } else {
                         setToken(TokenKind::TK_GREATER_GREATER);
@@ -394,22 +402,22 @@ Token Lexer::readPunctuator() {
 }
 
 void Lexer::readMultiComment() {
-    Locatable loc = m_stream.loc();
+    Locatable loc = this->_stream.loc();
 
     // read initial `/*`
-    m_stream.get_str(2);
+    this->_stream.getStr(2);
 
     while (true) {
-        unsigned char c = m_stream.peek();
+        unsigned char c = this->_stream.peek();
 
         if (c == '\0') {
             fail("Multiline comment was not closed");
         }
-        
-        m_stream.get();
+
+        this->_stream.get();
         if (c == '*') {
             while (true) {
-                c = m_stream.get();
+                c = this->_stream.get();
                 if (c == '/') {
                     return;
                 } else if (c != '*') {
@@ -422,22 +430,21 @@ void Lexer::readMultiComment() {
 
 void Lexer::readLineComment() {
     // The '//' has already been peeked - we can just read everything until the next newline
-    m_stream.get_line();
+    this->_stream.getLine();
 }
 
 Token Lexer::eof() {
-    Locatable loc = m_stream.loc();
+    Locatable loc = this->_stream.loc();
     return makeToken(loc, TokenKind::TK_EOI, "");
 }
 
-template<typename T>
-Token Lexer::makeToken(Locatable loc, TokenKind kind, T symbol) {
-    Symbol sym = m_internalizer.internalize(symbol);
+template <typename T> Token Lexer::makeToken(Locatable loc, TokenKind kind, T symbol) {
+    Symbol sym = this->_internalizer.internalize(symbol);
     return Token(loc, kind, sym);
 }
 
 void Lexer::fail(std::string message) {
-    errorloc(m_stream.loc(), message);
+    errorloc(this->_stream.loc(), message);
 }
 
 void Lexer::fail(std::string message, Locatable& loc) {

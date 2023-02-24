@@ -1,14 +1,15 @@
 #pragma once
 
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <unordered_map>
 #include <vector>
-#include <iostream>
 
-#include "../../util/symbol_internalizer.h"
 #include "../../llvm.h"
+#include "../../util/symbol_internalizer.h"
 
+#include "../compile_scope.h"
 #include "../type_decl.h"
 
 enum TypeKind {
@@ -24,9 +25,9 @@ enum TypeKind {
 struct FunctionType;
 
 struct Type {
-    public:
+  public:
     Type(const TypeKind kind)
-        : kind(kind) {};
+        : kind(kind){};
 
     // Just for debugging purposes
     friend std::ostream& operator<<(std::ostream& stream, const std::shared_ptr<Type>& type);
@@ -42,7 +43,8 @@ struct Type {
     bool isObjectType();
     bool isString();
     virtual bool isComplete();
-    llvm::Type* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
+
+    llvm::Type* toLLVMType(CompileScopePtr compile_scope);
 
     // If this is a function pointer, extract the function type
     std::optional<std::shared_ptr<FunctionType>> unwrapFunctionPointer();

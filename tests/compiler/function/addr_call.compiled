@@ -10,7 +10,7 @@ entry:
   %3 = mul i32 %2, 2
   ret i32 %3
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }
 
@@ -21,6 +21,6 @@ entry:
   %1 = call i32 @f(ptr %0)
   ret i32 %1
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }

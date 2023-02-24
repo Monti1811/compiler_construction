@@ -8,21 +8,20 @@ std::ostream& operator<<(std::ostream& stream, Declaration& declaration) {
 }
 
 void Declaration::print(std::ostream& stream) {
-    stream << this->_specifier;
+    stream << this->specifier;
 
-    auto declarator_empty =
-        this->_declarator->kind == DeclaratorKind::PRIMITIVE && this->_declarator->isAbstract();
+    auto declarator_empty = this->declarator->kind == DeclaratorKind::PRIMITIVE && this->declarator->isAbstract();
 
     if (!declarator_empty) {
-        stream << ' ' << this->_declarator;
+        stream << ' ' << this->declarator;
     }
 }
 
 void Declaration::typecheck(ScopePtr& scope) {
     auto decl = this->toType(scope);
-    if (this->_declarator->isAbstract()) {
+    if (this->declarator->isAbstract()) {
         if (decl.type->kind != TypeKind::TY_STRUCT) {
-            errorloc(this->_loc, "Declaration without declarator");
+            errorloc(this->loc, "Declaration without declarator");
         }
         this->_typeDecl = decl;
         return;
@@ -35,13 +34,13 @@ void Declaration::typecheck(ScopePtr& scope) {
             auto param_function = std::static_pointer_cast<ParamFunctionType>(function_type);
             for (auto& param : param_function->params) {
                 if (!param.isAbstract() && function_scope->addDeclaration(param, true)) {
-                    errorloc(this->_declarator->loc, "parameter names have to be unique");
+                    errorloc(this->declarator->loc, "parameter names have to be unique");
                 }
             }
         }
     }
     if (scope->addDeclaration(decl)) {
-        errorloc(this->_declarator->loc, "Duplicate variable");
+        errorloc(this->declarator->loc, "Duplicate variable");
     }
     this->_typeDecl = decl;
 }
@@ -51,55 +50,45 @@ TypeDecl Declaration::getTypeDecl() {
 }
 
 TypeDecl Declaration::toType(ScopePtr& scope) {
-    auto name = this->_declarator->getName();
-    auto type = this->_declarator->wrapType(this->_specifier->toType(scope), scope);
+    auto name = this->declarator->getName();
+    auto type = this->declarator->wrapType(this->specifier->toType(scope), scope);
     return TypeDecl(name, type);
 }
 
-void Declaration::compile(std::shared_ptr<CompileScope> compile_scope_ptr) {
-    // does not declare a variable
-    if (this->_declarator->isAbstract()) {
-        // If it's a struct, add it to the declared structs
-        if (this->_specifier->_kind == SpecifierKind::STRUCT) {
+void Declaration::compile(CompileScopePtr compile_scope) {
+    // For abstract declarators, we generally don't need to generate any code
+    if (this->declarator->isAbstract()) {
+        // However, if it's a struct, we need to add it to the declared structs
+        if (this->specifier->kind == SpecifierKind::STRUCT) {
             std::shared_ptr<Type> type = this->getTypeDecl().type;
-            type->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx);
+            type->toLLVMType(compile_scope);
         }
         return;
     }
 
-    // The same thing as for concrete function definitions
     auto type_decl = this->getTypeDecl();
-    std::shared_ptr<Type> type = type_decl.type;
+    TypePtr type = type_decl.type;
     auto name = type_decl.name.value();
 
     if (type->kind == TypeKind::TY_FUNCTION) {
-        std::shared_ptr<FunctionType> func_type_ptr = std::static_pointer_cast<FunctionType>(type);
-        auto llvm_type = func_type_ptr->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx);
+        // If the declaration declares a function, create the new LLVM function
+        std::shared_ptr<FunctionType> function_type = std::static_pointer_cast<FunctionType>(type);
+        auto llvm_type = function_type->toLLVMType(compile_scope);
 
-        llvm::Function* llvm_function = llvm::Function::Create(
-            llvm_type                                       /* FunctionType *Ty */,
-            llvm::GlobalValue::ExternalLinkage              /* LinkageType */,
-            *name                                           /* const Twine &N="" */,
-            compile_scope_ptr->_Module                      /* Module *M=0 */
-        );
+        llvm::Function::Create(llvm_type, llvm::GlobalValue::ExternalLinkage, *name, compile_scope->module);
     } else {
-        llvm::Type* llvm_type = type->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx);
-
-        compile_scope_ptr->addType(name, llvm_type);
+        // Otherwise, declare a variable
+        llvm::Type* llvm_type = type->toLLVMType(compile_scope);
+        compile_scope->addType(name, llvm_type);
 
         /* Create a global variable */
         new llvm::GlobalVariable(
-            compile_scope_ptr->_Module                      /* Module & */,
-            llvm_type                                       /* Type * */,
-            false                                           /* bool isConstant */,
-            llvm::GlobalValue::CommonLinkage                /* LinkageType */,
-            llvm::Constant::getNullValue(llvm_type)         /* Constant * Initializer */,
-            *name                                            /* const Twine &Name = "" */,
-            /* --------- We do not need this part (=> use defaults) ---------- */
-            0                                               /* GlobalVariable *InsertBefore = 0 */,
-            llvm::GlobalVariable::NotThreadLocal            /* ThreadLocalMode TLMode = NotThreadLocal */,
-            0                                               /* unsigned AddressSpace = 0 */,
-            false                                           /* bool isExternallyInitialized = false */
+            compile_scope->module,
+            llvm_type,
+            /* isConstant: */ false,
+            llvm::GlobalValue::CommonLinkage,
+            /* initializer: */ llvm::Constant::getNullValue(llvm_type),
+            *name
         );
     }
 }

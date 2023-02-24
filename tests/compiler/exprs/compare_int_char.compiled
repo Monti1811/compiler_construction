@@ -1,7 +1,7 @@
 ; ModuleID = 'tests/compiler/exprs/compare_int_char.c4'
 source_filename = "tests/compiler/exprs/compare_int_char.c4"
 
-define i32 @main() {
+define i32 @main(...) {
 entry:
   %0 = alloca i32, align 4
   %1 = alloca i8, align 1
@@ -14,17 +14,17 @@ if-header:                                        ; preds = %entry
   %3 = sext i8 %2 to i32
   %4 = load i32, ptr %0, align 4
   %if-condition = icmp slt i32 %3, %4
-  br i1 %if-condition, label %if-consequence, label %if-end
+  br i1 %if-condition, label %if-then, label %if-end
 
-if-consequence:                                   ; preds = %if-header
+if-then:                                          ; preds = %if-header
   ret i32 1
 
-if-end:                                           ; preds = %DEAD_BLOCK, %if-header
+if-end:                                           ; preds = %dead-after-return, %if-header
   ret i32 0
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   br label %if-end
 
-DEAD_BLOCK1:                                      ; No predecessors!
+dead-after-return1:                               ; No predecessors!
   ret i32 0
 }

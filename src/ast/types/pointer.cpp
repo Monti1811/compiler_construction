@@ -24,10 +24,10 @@ bool PointerType::strong_equals(TypePtr const& other) {
     return this->inner->strong_equals(other_pointer->inner);
 }
 
-llvm::Type* PointerType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+llvm::Type* PointerType::toLLVMType(CompileScopePtr compile_scope) {
     if (this->inner->kind == TY_STRUCT) {
-        auto inner_type = this->inner->toLLVMType(Builder, Ctx);
+        auto inner_type = this->inner->toLLVMType(compile_scope);
         return llvm::PointerType::getUnqual(inner_type);
     }
-    return Builder.getPtrTy();
+    return compile_scope->builder.getPtrTy();
 }

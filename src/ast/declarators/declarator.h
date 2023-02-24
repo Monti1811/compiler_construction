@@ -7,18 +7,14 @@
 
 #include "../scope.h"
 
-enum DeclaratorKind {
-    PRIMITIVE,
-    FUNCTION,
-    POINTER
-};
+enum DeclaratorKind { PRIMITIVE, FUNCTION, POINTER };
 
 struct Declarator {
-    public:
+  public:
     Declarator(const Locatable loc, const bool abstract, const DeclaratorKind kind)
         : loc(loc)
         , kind(kind)
-        , _abstract(abstract) {};
+        , _abstract(abstract){};
 
     virtual void print(std::ostream& stream) = 0;
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Declarator>& declarator);
@@ -32,23 +28,23 @@ struct Declarator {
     const Locatable loc;
     const DeclaratorKind kind;
 
-    private:
+  private:
     bool _abstract = false;
 };
 
 typedef std::unique_ptr<Declarator> DeclaratorPtr;
 
-struct PrimitiveDeclarator: public Declarator {
-    public:
+struct PrimitiveDeclarator : public Declarator {
+  public:
     PrimitiveDeclarator(Locatable loc, Symbol ident)
         : Declarator(loc, false, DeclaratorKind::PRIMITIVE)
-        , _ident(ident) {};
+        , _ident(ident){};
 
     PrimitiveDeclarator(Locatable loc)
         : Declarator(loc, true, DeclaratorKind::PRIMITIVE)
-        , _ident(std::nullopt) {};
+        , _ident(std::nullopt){};
 
-    void print(std::ostream& stream);
+    void print(std::ostream& stream) override;
 
     std::optional<Symbol> getName();
     TypePtr wrapType(TypePtr const& type, ScopePtr&);
@@ -56,5 +52,6 @@ struct PrimitiveDeclarator: public Declarator {
     bool isAbstract();
     bool isFunction();
 
+  private:
     std::optional<Symbol> _ident;
 };

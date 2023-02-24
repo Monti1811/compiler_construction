@@ -3,7 +3,7 @@ source_filename = "tests/compiler/exprs/pointer_arithmetics.c4"
 
 @0 = private unnamed_addr constant [12 x i8] c"hello world\00", align 1
 
-define i32 @main() {
+define i32 @main(...) {
 entry:
   %0 = alloca i32, align 4
   %1 = alloca i32, align 4
@@ -37,28 +37,28 @@ while-end:                                        ; preds = %while-header
 if-header:                                        ; preds = %while-body
   %14 = load i32, ptr %1, align 4
   %if-condition = icmp eq i32 %14, 0
-  br i1 %if-condition, label %if-consequence, label %if-alternative
+  br i1 %if-condition, label %if-then, label %if-else
 
-if-consequence:                                   ; preds = %if-header
+if-then:                                          ; preds = %if-header
   %15 = load ptr, ptr %2, align 8
   %16 = getelementptr inbounds i8, ptr %15, i32 1
   store ptr %16, ptr %2, align 8
   store i32 1, ptr %1, align 4
   br label %if-end
 
-if-alternative:                                   ; preds = %if-header
+if-else:                                          ; preds = %if-header
   %17 = load ptr, ptr %2, align 8
   %18 = getelementptr inbounds i8, ptr %17, i32 1
   store ptr %18, ptr %2, align 8
   store i32 0, ptr %1, align 4
   br label %if-end
 
-if-end:                                           ; preds = %if-alternative, %if-consequence
+if-end:                                           ; preds = %if-else, %if-then
   %19 = load i32, ptr %0, align 4
   %20 = add i32 %19, 1
   store i32 %20, ptr %0, align 4
   br label %while-header
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }

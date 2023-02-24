@@ -1,20 +1,24 @@
 #include "diagnostic.h"
 
-Locatable::Locatable(const std::string& FileName, size_t Line, size_t Column)
-    : FileName(FileName), Line(Line), Column(Column) {}
+Locatable::Locatable(const std::string& file_name, size_t line, size_t column)
+    : file_name(file_name)
+    , line(line)
+    , column(column) {}
 
 Locatable::Locatable(const Locatable& loc)
-    : FileName(loc.FileName), Line(loc.Line), Column(loc.Column) {}
+    : file_name(loc.file_name)
+    , line(loc.line)
+    , column(loc.column) {}
 
 Locatable::~Locatable(void) {}
 
 Locatable& Locatable::operator=(const Locatable& loc) {
-    this->Line = loc.Line;
-    this->Column = loc.Column;
+    this->line = loc.line;
+    this->column = loc.column;
     return *this;
 }
 
 std::ostream& operator<<(std::ostream& stream, const Locatable& loc) {
-    stream << loc.FileName << ':' << loc.Line << ':' << loc.Column << ":";
+    stream << loc.file_name << ':' << loc.line << ':' << loc.column << ":";
     return stream;
 }

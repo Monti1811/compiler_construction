@@ -1,18 +1,18 @@
 #pragma once
 
-#include <optional>
 #include <memory>
-#include "../util/symbol_internalizer.h"
+#include <optional>
 
+#include "../util/symbol_internalizer.h"
 
 struct Type;
 typedef std::shared_ptr<Type> TypePtr;
 
 struct TypeDecl {
-    public:
+  public:
     TypeDecl(std::optional<Symbol> name, TypePtr type)
         : name(name)
-        , type(type) {};
+        , type(type){};
 
     bool isAbstract() {
         return !this->name.has_value();

@@ -4,21 +4,21 @@ source_filename = "tests/compiler/function/label_after.c4"
 define i32 @main() {
 entry:
   %0 = alloca i32, align 4
-  br label %start_BLOCK
+  br label %label-start
 
-start_BLOCK:                                      ; preds = %DEAD_BLOCK1, %entry
+label-start:                                      ; preds = %dead-after-return, %entry
   store i32 100, ptr %0, align 4
   %1 = load i32, ptr %0, align 4
   ret i32 %1
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-goto:                                  ; No predecessors!
   store i32 50, ptr %0, align 4
   %2 = load i32, ptr %0, align 4
   ret i32 %2
 
-DEAD_BLOCK1:                                      ; No predecessors!
-  br label %start_BLOCK
+dead-after-return:                                ; No predecessors!
+  br label %label-start
 
-DEAD_BLOCK2:                                      ; No predecessors!
+dead-after-return1:                               ; No predecessors!
   ret i32 0
 }

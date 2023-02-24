@@ -1,0 +1,14 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+PointerAlignment: Left
+IndentCaseLabels: true
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Empty
+BreakConstructorInitializers: BeforeComma
+PackConstructorInitializers: Never
+BinPackArguments: false
+BinPackParameters: false
+AlignAfterOpenBracket: BlockIndent
+ColumnLimit: 120
+BreakBeforeBinaryOperators: NonAssignment

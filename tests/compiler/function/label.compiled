@@ -1,36 +1,36 @@
 ; ModuleID = 'tests/compiler/function/label.c4'
 source_filename = "tests/compiler/function/label.c4"
 
-define i32 @main() {
+define i32 @main(...) {
 entry:
   %0 = alloca i32, align 4
   store i32 0, ptr %0, align 4
-  br label %label_BLOCK
+  br label %label-label
 
-label_BLOCK:                                      ; preds = %if-consequence, %entry
+label-label:                                      ; preds = %if-then, %entry
   %1 = load i32, ptr %0, align 4
   %2 = add i32 %1, 1
   store i32 %2, ptr %0, align 4
   br label %if-header
 
-if-header:                                        ; preds = %label_BLOCK
+if-header:                                        ; preds = %label-label
   %3 = load i32, ptr %0, align 4
   %if-condition = icmp slt i32 %3, 10
-  br i1 %if-condition, label %if-consequence, label %if-alternative
+  br i1 %if-condition, label %if-then, label %if-else
 
-if-consequence:                                   ; preds = %if-header
-  br label %label_BLOCK
+if-then:                                          ; preds = %if-header
+  br label %label-label
 
-if-alternative:                                   ; preds = %if-header
+if-else:                                          ; preds = %if-header
   %4 = load i32, ptr %0, align 4
   ret i32 %4
 
-if-end:                                           ; preds = %DEAD_BLOCK1, %DEAD_BLOCK
+if-end:                                           ; preds = %dead-after-return, %dead-after-goto
   ret i32 0
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-goto:                                  ; No predecessors!
   br label %if-end
 
-DEAD_BLOCK1:                                      ; No predecessors!
+dead-after-return:                                ; No predecessors!
   br label %if-end
 }

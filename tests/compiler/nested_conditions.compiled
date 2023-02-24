@@ -12,23 +12,23 @@ entry:
 while-header:                                     ; preds = %if-end, %entry
   %2 = load i32, ptr %1, align 4
   %3 = icmp slt i32 %2, 20
-  br i1 %3, label %or-end, label %or-consequence
+  br i1 %3, label %or-end, label %or-rhs
 
-or-consequence:                                   ; preds = %while-header
+or-rhs:                                           ; preds = %while-header
   %4 = load i32, ptr %1, align 4
   %5 = icmp slt i32 %4, 30
   br label %or-end
 
-or-end:                                           ; preds = %or-consequence, %while-header
-  %6 = phi i1 [ %3, %while-header ], [ %5, %or-consequence ]
+or-end:                                           ; preds = %or-rhs, %while-header
+  %6 = phi i1 [ %3, %while-header ], [ %5, %or-rhs ]
   %7 = zext i1 %6 to i32
   %8 = icmp ne i32 0, %7
-  br i1 %8, label %and-consequence, label %and-end
+  br i1 %8, label %and-rhs, label %and-end
 
-and-consequence:                                  ; preds = %or-end
+and-rhs:                                          ; preds = %or-end
   %9 = load i32, ptr %0, align 4
   %10 = icmp eq i32 %9, 0
-  br i1 %10, label %or-end2, label %or-consequence1
+  br i1 %10, label %or-end2, label %or-rhs1
 
 and-end:                                          ; preds = %or-end2, %or-end
   %11 = phi i1 [ %8, %or-end ], [ %18, %or-end2 ]
@@ -36,13 +36,13 @@ and-end:                                          ; preds = %or-end2, %or-end
   %13 = icmp ne i32 %12, 0
   br i1 %13, label %while-body, label %while-end
 
-or-consequence1:                                  ; preds = %and-consequence
+or-rhs1:                                          ; preds = %and-rhs
   %14 = load i32, ptr %0, align 4
   %15 = icmp slt i32 %14, 100
   br label %or-end2
 
-or-end2:                                          ; preds = %or-consequence1, %and-consequence
-  %16 = phi i1 [ %10, %and-consequence ], [ %15, %or-consequence1 ]
+or-end2:                                          ; preds = %or-rhs1, %and-rhs
+  %16 = phi i1 [ %10, %and-rhs ], [ %15, %or-rhs1 ]
   %17 = zext i1 %16 to i32
   %18 = icmp ne i32 0, %17
   br label %and-end
@@ -60,16 +60,16 @@ while-end:                                        ; preds = %and-end
 if-header:                                        ; preds = %while-body
   %22 = load i32, ptr %1, align 4
   %if-condition = icmp eq i32 %22, 20
-  br i1 %if-condition, label %if-consequence, label %if-end
+  br i1 %if-condition, label %if-then, label %if-end
 
-if-consequence:                                   ; preds = %if-header
+if-then:                                          ; preds = %if-header
   %23 = load i32, ptr %1, align 4
   store i32 %23, ptr %0, align 4
   br label %if-end
 
-if-end:                                           ; preds = %if-consequence, %if-header
+if-end:                                           ; preds = %if-then, %if-header
   br label %while-header
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }

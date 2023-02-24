@@ -13,21 +13,17 @@ bool FunctionType::strong_equals(TypePtr const& other) {
     return this->return_type->strong_equals(other_type->return_type);
 }
 
-llvm::FunctionType* FunctionType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+llvm::FunctionType* FunctionType::toLLVMType(CompileScopePtr compile_scope) {
     if (this->has_params) {
         auto param_function_type = static_cast<ParamFunctionType*>(this);
-        return param_function_type->toLLVMType(Builder, Ctx);
+        return param_function_type->toLLVMType(compile_scope);
     }
 
-    /* Create the return type */
-    llvm::Type *FuncReturnType = this->return_type->toLLVMType(Builder, Ctx);
+    // Create the return type
+    llvm::Type* FuncReturnType = this->return_type->toLLVMType(compile_scope);
 
-    /* Create a vector to store all parameter types */
-    std::vector<llvm::Type *> FuncParamTypes;
-
-    /* Create the (function) type of the function */
-    return llvm::FunctionType::get(
-        FuncReturnType, FuncParamTypes, /* isVarArg */ false);
+    // Create the (function) type of the function
+    return llvm::FunctionType::get(FuncReturnType, /* isVarArg */ true);
 }
 
 bool ParamFunctionType::strong_equals(TypePtr const& other) {
@@ -60,21 +56,21 @@ void ParamFunctionType::addParameter(FunctionParam const& param) {
     this->params.push_back(param);
 }
 
-llvm::FunctionType* ParamFunctionType::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
-    /* Create the return type */
-    llvm::Type *FuncReturnType = this->return_type->toLLVMType(Builder, Ctx);
+llvm::FunctionType* ParamFunctionType::toLLVMType(CompileScopePtr compile_scope) {
+    // Create the return type
+    llvm::Type* return_type = this->return_type->toLLVMType(compile_scope);
 
-    /* Create a vector to store all parameter types */
-    std::vector<llvm::Type *> FuncParamTypes;
+    // Create a vector to store all parameter types
+    std::vector<llvm::Type*> param_types;
     for (auto param : this->params) {
         if (param.type->kind == TypeKind::TY_FUNCTION) {
-            FuncParamTypes.push_back(Builder.getPtrTy());
+            param_types.push_back(compile_scope->builder.getPtrTy());
         } else {
-            llvm::Type *FuncParamType = param.type->toLLVMType(Builder, Ctx);
-            FuncParamTypes.push_back(FuncParamType);
+            llvm::Type* FuncParamType = param.type->toLLVMType(compile_scope);
+            param_types.push_back(FuncParamType);
         }
     }
-    /* Create the (function) type of the function */
-    return llvm::FunctionType::get(
-        FuncReturnType, FuncParamTypes, /* isVarArg */ false);
+
+    // Create the (function) type of the function
+    return llvm::FunctionType::get(return_type, param_types, /* isVarArg */ false);
 }
