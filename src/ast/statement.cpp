@@ -115,7 +115,6 @@ void EmptyStatement::print(std::ostream &stream)
 
 void EmptyStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
 {
-    // TODO
 }
 
 void DeclarationStatement::print(std::ostream &stream)
@@ -130,7 +129,6 @@ void DeclarationStatement::typecheck(ScopePtr &scope)
 
 void DeclarationStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
 {
-    // TODO
     TypePtr type_dcl = this->_declaration.getTypeDecl().type;
     auto name = this->_declaration.getTypeDecl().name;
     // do nothing if it is abstract
@@ -161,7 +159,6 @@ void ExpressionStatement::typecheck(ScopePtr &scope)
 
 void ExpressionStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
 {
-    // TODO
     this->_expr->compileRValue(CompileScopePtr);
 }
 
@@ -345,7 +342,6 @@ void WhileStatement::typecheck(ScopePtr &scope)
 
 void WhileStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
 {
-    // TODO
     /* Add a basic block for the header of the WhileStmt */
     llvm::BasicBlock *WhileHeaderBlock = llvm::BasicBlock::Create(
         CompileScopePtr->_Ctx /* LLVMContext &Context */,
@@ -406,7 +402,6 @@ void JumpStatement::print(std::ostream &stream)
 
 void JumpStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
 {
-    // TODO
 }
 
 void GotoStatement::print(std::ostream &stream)
@@ -450,7 +445,6 @@ void ContinueStatement::typecheck(ScopePtr &scope)
 
 void ContinueStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
 {
-    // TODO
     std::optional<llvm::BasicBlock*> ContinueBlock = CompileScopePtr->getContinueBlock();
     if (ContinueBlock.has_value()) {
         CompileScopePtr->_Builder.CreateBr(ContinueBlock.value());
@@ -473,7 +467,6 @@ void BreakStatement::typecheck(ScopePtr &scope)
 
 void BreakStatement::compile(std::shared_ptr<CompileScope> CompileScopePtr)
 {
-    // TODO
     std::optional<llvm::BasicBlock*> BreakBlock = CompileScopePtr->getBreakBlock();
     if (BreakBlock.has_value()) {
         CompileScopePtr->_Builder.CreateBr(BreakBlock.value());

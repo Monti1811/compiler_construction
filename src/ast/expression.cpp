@@ -935,7 +935,6 @@ llvm::Value* ArrowExpression::compileLValue(std::shared_ptr<CompileScope> Compil
     }
     auto struct_ty = std::static_pointer_cast<StructType>(struct_ptr_ty->inner);
     if (!struct_ty->isComplete()) {
-        // TODO: Structs that declare themselves as pointers in their fields are incomplete
         errorloc(this->loc, "Tried to access field of incomplete struct during codegen");
     }
     
