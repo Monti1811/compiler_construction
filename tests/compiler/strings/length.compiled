@@ -37,7 +37,7 @@ while-end:                                        ; preds = %while-header
   %15 = load i32, ptr %0, align 4
   ret i32 %15
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }
 
@@ -46,6 +46,6 @@ entry:
   %0 = call i32 @strlen(ptr @0)
   ret i32 %0
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }

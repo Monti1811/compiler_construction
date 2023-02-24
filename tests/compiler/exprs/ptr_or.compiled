@@ -5,7 +5,7 @@ define void @foo() {
 entry:
   ret void
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret void
 }
 
@@ -15,17 +15,17 @@ entry:
   %1 = load ptr, ptr %0, align 8
   %2 = ptrtoint ptr %1 to i32
   %3 = icmp ne i32 0, %2
-  br i1 %3, label %or-end, label %or-consequence
+  br i1 %3, label %or-end, label %or-rhs
 
-or-consequence:                                   ; preds = %entry
+or-rhs:                                           ; preds = %entry
   br label %or-end
 
-or-end:                                           ; preds = %or-consequence, %entry
-  %4 = phi i1 [ %3, %entry ], [ icmp ne (i32 ptrtoint (ptr @foo to i32), i32 0), %or-consequence ]
+or-end:                                           ; preds = %or-rhs, %entry
+  %4 = phi i1 [ %3, %entry ], [ icmp ne (i32 ptrtoint (ptr @foo to i32), i32 0), %or-rhs ]
   %5 = zext i1 %4 to i32
   %6 = mul i32 %5, 42
   ret i32 %6
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }

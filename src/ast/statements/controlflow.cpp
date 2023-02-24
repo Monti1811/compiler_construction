@@ -83,7 +83,7 @@ void IfStatement::compile(CompileScopePtr compile_scope) {
     // Add a basic block for the then case of the if statement
     llvm::BasicBlock* then_block = llvm::BasicBlock::Create(
         compile_scope->ctx,
-        "if-consequence",
+        "if-then",
         compile_scope->function.value()
     );
 
@@ -93,7 +93,7 @@ void IfStatement::compile(CompileScopePtr compile_scope) {
         // Add a basic block for the else case of the if statement
         llvm::BasicBlock* else_block = llvm::BasicBlock::Create(
             compile_scope->ctx,
-            "if-alternative",
+            "if-else",
             compile_scope->function.value()
         );
 

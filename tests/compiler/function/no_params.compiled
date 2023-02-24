@@ -5,7 +5,7 @@ define i32 @f(...) {
 entry:
   ret i32 42
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }
 
@@ -14,6 +14,6 @@ entry:
   %0 = call i32 (...) @f(i32 123, i32 456)
   ret i32 %0
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }

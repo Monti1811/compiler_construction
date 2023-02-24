@@ -46,6 +46,6 @@ entry:
   %31 = add i32 %27, %30
   ret i32 %31
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }

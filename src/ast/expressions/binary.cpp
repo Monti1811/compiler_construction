@@ -316,7 +316,7 @@ llvm::Value* AndExpression::compileRValue(CompileScopePtr compile_scope) {
     // Add a basic block for the rhs expression
     llvm::BasicBlock* rhs_block = llvm::BasicBlock::Create(
         compile_scope->ctx,
-        "and-consequence",
+        "and-rhs",
         compile_scope->function.value()
     );
 
@@ -384,7 +384,7 @@ llvm::Value* OrExpression::compileRValue(CompileScopePtr compile_scope) {
     // Add a basic block for the rhs expression
     llvm::BasicBlock* rhs_block = llvm::BasicBlock::Create(
         compile_scope->ctx,
-        "or-consequence",
+        "or-rhs",
         compile_scope->function.value()
     );
 

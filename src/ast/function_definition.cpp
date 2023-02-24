@@ -65,7 +65,6 @@ void FunctionDefinition::compile(CompileScopePtr compile_scope) {
 
     auto inner_compile_scope = std::make_shared<CompileScope>(compile_scope, llvm_function);
 
-
     if (this->_type->has_params) {
         // Set the parameter names
         auto llvm_arg_iter = llvm_function->arg_begin();
@@ -118,7 +117,7 @@ void FunctionDefinition::compile(CompileScopePtr compile_scope) {
 
     for (auto label : this->_labels) {
         llvm::BasicBlock* labeled_block = llvm::BasicBlock::Create(
-            inner_compile_scope->ctx, *label + "_BLOCK", inner_compile_scope->function.value()
+            inner_compile_scope->ctx, "label-" + *label, inner_compile_scope->function.value()
         );
         inner_compile_scope->addLabeledBlock(label, labeled_block);
     }

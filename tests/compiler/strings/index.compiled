@@ -13,6 +13,6 @@ entry:
   %4 = sext i8 %3 to i32
   ret i32 %4
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }

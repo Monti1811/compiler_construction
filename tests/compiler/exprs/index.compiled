@@ -47,6 +47,6 @@ while-body:                                       ; preds = %while-header
 while-end:                                        ; preds = %while-header
   ret i32 10
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }

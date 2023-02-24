@@ -5,7 +5,7 @@ define void @f() {
 entry:
   ret void
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret void
 }
 
@@ -14,6 +14,6 @@ entry:
   call void @f()
   ret i32 42
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }

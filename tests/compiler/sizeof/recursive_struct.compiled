@@ -18,6 +18,6 @@ entry:
   %6 = load i32, ptr %0, align 4
   ret i32 %6
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }

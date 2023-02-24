@@ -12,32 +12,32 @@ entry:
 if-header:                                        ; preds = %entry
   %2 = load ptr, ptr %0, align 8
   %if-condition = icmp eq ptr %2, null
-  br i1 %if-condition, label %if-consequence, label %if-end
+  br i1 %if-condition, label %if-then, label %if-end
 
-if-consequence:                                   ; preds = %if-header
+if-then:                                          ; preds = %if-header
   %3 = load i32, ptr %1, align 4
   %4 = add i32 %3, 100
   store i32 %4, ptr %1, align 4
   br label %if-end
 
-if-end:                                           ; preds = %if-consequence, %if-header
+if-end:                                           ; preds = %if-then, %if-header
   br label %if-header1
 
 if-header1:                                       ; preds = %if-end
   %5 = load ptr, ptr %0, align 8
   %if-condition2 = icmp ne ptr %5, null
-  br i1 %if-condition2, label %if-consequence3, label %if-end4
+  br i1 %if-condition2, label %if-then3, label %if-end4
 
-if-consequence3:                                  ; preds = %if-header1
+if-then3:                                         ; preds = %if-header1
   %6 = load i32, ptr %1, align 4
   %7 = add i32 %6, 200
   store i32 %7, ptr %1, align 4
   br label %if-end4
 
-if-end4:                                          ; preds = %if-consequence3, %if-header1
+if-end4:                                          ; preds = %if-then3, %if-header1
   %8 = load i32, ptr %1, align 4
   ret i32 %8
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }

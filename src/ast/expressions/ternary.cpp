@@ -49,14 +49,14 @@ llvm::Value* TernaryExpression::compileRValue(CompileScopePtr compile_scope) {
     // Add a basic block for the lhs expression
     llvm::BasicBlock* lhs_block = llvm::BasicBlock::Create(
         compile_scope->ctx,
-        "ternary-consequence",
+        "ternary-lhs",
         compile_scope->function.value()
     );
 
     // Add a basic block for the rhs expression
     llvm::BasicBlock* rhs_block = llvm::BasicBlock::Create(
         compile_scope->ctx,
-        "ternary-alternative",
+        "ternary-rhs",
         compile_scope->function.value()
     );
 

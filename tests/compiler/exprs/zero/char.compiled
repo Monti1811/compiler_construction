@@ -12,6 +12,6 @@ entry:
   store i8 0, ptr %2, align 1
   ret i32 42
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }

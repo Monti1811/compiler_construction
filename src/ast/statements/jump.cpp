@@ -29,12 +29,12 @@ void GotoStatement::compile(CompileScopePtr compile_scope) {
     }
 
     // Create an extra dead block that extra code after the goto statement is added to
-    llvm::BasicBlock* return_dead_block = llvm::BasicBlock::Create(
+    llvm::BasicBlock* dead_block = llvm::BasicBlock::Create(
         compile_scope->ctx,
-        "DEAD_BLOCK",
+        "dead-after-goto",
         compile_scope->function.value()
     );
-    compile_scope->builder.SetInsertPoint(return_dead_block);
+    compile_scope->builder.SetInsertPoint(dead_block);
 }
 
 // ContinueStatement
@@ -53,12 +53,12 @@ void ContinueStatement::compile(CompileScopePtr compile_scope) {
     }
 
     // Create an extra dead block that extra code after the continue statement is added to
-    llvm::BasicBlock* return_dead_block = llvm::BasicBlock::Create(
+    llvm::BasicBlock* dead_block = llvm::BasicBlock::Create(
         compile_scope->ctx,
-        "DEAD_BLOCK",
+        "dead-after-continue",
         compile_scope->function.value()
     );
-    compile_scope->builder.SetInsertPoint(return_dead_block);
+    compile_scope->builder.SetInsertPoint(dead_block);
 }
 
 // BreakStatement
@@ -77,12 +77,12 @@ void BreakStatement::compile(CompileScopePtr compile_scope) {
     }
 
     // Create an extra dead block that extra code after the break statement is added to
-    llvm::BasicBlock* return_dead_block = llvm::BasicBlock::Create(
+    llvm::BasicBlock* dead_block = llvm::BasicBlock::Create(
         compile_scope->ctx,
-        "DEAD_BLOCK",
+        "dead-after-break",
         compile_scope->function.value()
     );
-    compile_scope->builder.SetInsertPoint(return_dead_block);
+    compile_scope->builder.SetInsertPoint(dead_block);
 }
 
 // ReturnStatement
@@ -140,10 +140,10 @@ void ReturnStatement::compile(CompileScopePtr compile_scope) {
     }
 
     // Create an extra dead block that extra code after the return statement is added to
-    llvm::BasicBlock* return_dead_block = llvm::BasicBlock::Create(
+    llvm::BasicBlock* dead_block = llvm::BasicBlock::Create(
         compile_scope->ctx,
-        "DEAD_BLOCK",
+        "dead-after-return",
         compile_scope->function.value()
     );
-    compile_scope->builder.SetInsertPoint(return_dead_block);
+    compile_scope->builder.SetInsertPoint(dead_block);
 }

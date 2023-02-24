@@ -8,25 +8,25 @@ entry:
 
 define i32 @main() {
 entry:
-  br i1 true, label %ternary-consequence, label %ternary-alternative
+  br i1 true, label %ternary-lhs, label %ternary-rhs
 
-ternary-consequence:                              ; preds = %entry
+ternary-lhs:                                      ; preds = %entry
   br label %ternary-end
 
-ternary-alternative:                              ; preds = %entry
+ternary-rhs:                                      ; preds = %entry
   call void @foo()
   br label %ternary-end
 
-ternary-end:                                      ; preds = %ternary-alternative, %ternary-consequence
-  br i1 false, label %ternary-consequence1, label %ternary-alternative2
+ternary-end:                                      ; preds = %ternary-rhs, %ternary-lhs
+  br i1 false, label %ternary-lhs1, label %ternary-rhs2
 
-ternary-consequence1:                             ; preds = %ternary-end
+ternary-lhs1:                                     ; preds = %ternary-end
   call void @foo()
   br label %ternary-end3
 
-ternary-alternative2:                             ; preds = %ternary-end
+ternary-rhs2:                                     ; preds = %ternary-end
   br label %ternary-end3
 
-ternary-end3:                                     ; preds = %ternary-alternative2, %ternary-consequence1
+ternary-end3:                                     ; preds = %ternary-rhs2, %ternary-lhs1
   ret i32 0
 }

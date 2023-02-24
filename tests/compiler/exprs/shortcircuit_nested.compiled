@@ -9,97 +9,97 @@ entry:
   store i32 0, ptr %0, align 4
   %2 = load i32, ptr %0, align 4
   %3 = icmp ne i32 0, %2
-  br i1 %3, label %ternary-consequence, label %ternary-alternative
+  br i1 %3, label %ternary-lhs, label %ternary-rhs
 
-ternary-consequence:                              ; preds = %entry
+ternary-lhs:                                      ; preds = %entry
   %4 = load i32, ptr %1, align 4
   %5 = icmp ne i32 0, %4
-  br i1 %5, label %and-consequence, label %and-end
+  br i1 %5, label %and-rhs, label %and-end
 
-ternary-alternative:                              ; preds = %entry
+ternary-rhs:                                      ; preds = %entry
   %6 = load i32, ptr %0, align 4
   %7 = icmp ne i32 0, %6
-  br i1 %7, label %and-consequence3, label %and-end4
+  br i1 %7, label %and-rhs3, label %and-end4
 
 ternary-end:                                      ; preds = %or-end6, %or-end
   %8 = phi i32 [ %18, %or-end ], [ %32, %or-end6 ]
   %9 = icmp ne i32 0, %8
-  br i1 %9, label %ternary-consequence9, label %ternary-alternative10
+  br i1 %9, label %ternary-lhs9, label %ternary-rhs10
 
-and-consequence:                                  ; preds = %ternary-consequence
+and-rhs:                                          ; preds = %ternary-lhs
   %10 = load i32, ptr %1, align 4
   %11 = icmp ne i32 0, %10
   br label %and-end
 
-and-end:                                          ; preds = %and-consequence, %ternary-consequence
-  %12 = phi i1 [ %5, %ternary-consequence ], [ %11, %and-consequence ]
+and-end:                                          ; preds = %and-rhs, %ternary-lhs
+  %12 = phi i1 [ %5, %ternary-lhs ], [ %11, %and-rhs ]
   %13 = zext i1 %12 to i32
   %14 = icmp ne i32 0, %13
-  br i1 %14, label %or-end, label %or-consequence
+  br i1 %14, label %or-end, label %or-rhs
 
-or-consequence:                                   ; preds = %and-end
+or-rhs:                                           ; preds = %and-end
   %15 = load i32, ptr %0, align 4
   %16 = icmp ne i32 0, %15
-  br i1 %16, label %and-consequence1, label %and-end2
+  br i1 %16, label %and-rhs1, label %and-end2
 
 or-end:                                           ; preds = %and-end2, %and-end
   %17 = phi i1 [ %14, %and-end ], [ %23, %and-end2 ]
   %18 = zext i1 %17 to i32
   br label %ternary-end
 
-and-consequence1:                                 ; preds = %or-consequence
+and-rhs1:                                         ; preds = %or-rhs
   %19 = load i32, ptr %0, align 4
   %20 = icmp ne i32 0, %19
   br label %and-end2
 
-and-end2:                                         ; preds = %and-consequence1, %or-consequence
-  %21 = phi i1 [ %16, %or-consequence ], [ %20, %and-consequence1 ]
+and-end2:                                         ; preds = %and-rhs1, %or-rhs
+  %21 = phi i1 [ %16, %or-rhs ], [ %20, %and-rhs1 ]
   %22 = zext i1 %21 to i32
   %23 = icmp ne i32 0, %22
   br label %or-end
 
-and-consequence3:                                 ; preds = %ternary-alternative
+and-rhs3:                                         ; preds = %ternary-rhs
   %24 = load i32, ptr %0, align 4
   %25 = icmp ne i32 0, %24
   br label %and-end4
 
-and-end4:                                         ; preds = %and-consequence3, %ternary-alternative
-  %26 = phi i1 [ %7, %ternary-alternative ], [ %25, %and-consequence3 ]
+and-end4:                                         ; preds = %and-rhs3, %ternary-rhs
+  %26 = phi i1 [ %7, %ternary-rhs ], [ %25, %and-rhs3 ]
   %27 = zext i1 %26 to i32
   %28 = icmp ne i32 0, %27
-  br i1 %28, label %or-end6, label %or-consequence5
+  br i1 %28, label %or-end6, label %or-rhs5
 
-or-consequence5:                                  ; preds = %and-end4
+or-rhs5:                                          ; preds = %and-end4
   %29 = load i32, ptr %1, align 4
   %30 = icmp ne i32 0, %29
-  br i1 %30, label %and-consequence7, label %and-end8
+  br i1 %30, label %and-rhs7, label %and-end8
 
 or-end6:                                          ; preds = %and-end8, %and-end4
   %31 = phi i1 [ %28, %and-end4 ], [ %37, %and-end8 ]
   %32 = zext i1 %31 to i32
   br label %ternary-end
 
-and-consequence7:                                 ; preds = %or-consequence5
+and-rhs7:                                         ; preds = %or-rhs5
   %33 = load i32, ptr %1, align 4
   %34 = icmp ne i32 0, %33
   br label %and-end8
 
-and-end8:                                         ; preds = %and-consequence7, %or-consequence5
-  %35 = phi i1 [ %30, %or-consequence5 ], [ %34, %and-consequence7 ]
+and-end8:                                         ; preds = %and-rhs7, %or-rhs5
+  %35 = phi i1 [ %30, %or-rhs5 ], [ %34, %and-rhs7 ]
   %36 = zext i1 %35 to i32
   %37 = icmp ne i32 0, %36
   br label %or-end6
 
-ternary-consequence9:                             ; preds = %ternary-end
+ternary-lhs9:                                     ; preds = %ternary-end
   br label %ternary-end11
 
-ternary-alternative10:                            ; preds = %ternary-end
+ternary-rhs10:                                    ; preds = %ternary-end
   br label %ternary-end11
 
-ternary-end11:                                    ; preds = %ternary-alternative10, %ternary-consequence9
-  %38 = phi i32 [ 42, %ternary-consequence9 ], [ 0, %ternary-alternative10 ]
+ternary-end11:                                    ; preds = %ternary-rhs10, %ternary-lhs9
+  %38 = phi i32 [ 42, %ternary-lhs9 ], [ 0, %ternary-rhs10 ]
   ret i32 %38
 
-DEAD_BLOCK:                                       ; No predecessors!
+dead-after-return:                                ; No predecessors!
   ret i32 0
 }
