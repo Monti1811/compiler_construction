@@ -621,7 +621,6 @@ const Token& Parser::peekToken() {
 }
 
 const Locatable& Parser::getLoc() {
-    // TODO: test if this works
     return _currentToken;
 }
 
