@@ -11,9 +11,12 @@ struct StructType : public Type {
 
     bool equals(TypePtr const& other) override;
     bool strong_equals(TypePtr const& other) override;
-    llvm::Type* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
+
+    llvm::Type* toLLVMType(CompileScopePtr compile_scope);
 
     std::optional<Symbol> tag;
+
+    // TODO: rename alt_tag -> _llvm_name
     std::string alt_tag;
     int scope_counter;
 };
@@ -38,8 +41,8 @@ struct CompleteStructType : public StructType {
     // Returns false if the constraints for named fields are not satisfied, true otherwise.
     bool validateFields();
 
-    llvm::Type* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
-    llvm::Type* toLLVMTypeAnonymous(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
+    llvm::Type* toLLVMType(CompileScopePtr compile_scope);
+    llvm::Type* toLLVMTypeAnonymous(CompileScopePtr compile_scope);
 
     std::optional<TypePtr> typeOfField(Symbol& ident);
     size_t getIndexOfField(Symbol field);

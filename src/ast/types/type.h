@@ -9,6 +9,7 @@
 #include "../../llvm.h"
 #include "../../util/symbol_internalizer.h"
 
+#include "../compile_scope.h"
 #include "../type_decl.h"
 
 enum TypeKind {
@@ -42,7 +43,8 @@ struct Type {
     bool isObjectType();
     bool isString();
     virtual bool isComplete();
-    llvm::Type* toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx);
+
+    llvm::Type* toLLVMType(CompileScopePtr compile_scope);
 
     // If this is a function pointer, extract the function type
     std::optional<std::shared_ptr<FunctionType>> unwrapFunctionPointer();

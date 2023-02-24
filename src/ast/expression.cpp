@@ -1,6 +1,6 @@
 #include "expression.h"
 
-llvm::Value* toBoolTy(llvm::Value* to_convert, std::shared_ptr<CompileScope> CompileScopePtr);
+llvm::Value* toBoolTy(llvm::Value* to_convert, CompileScopePtr compile_scope);
 
 // print functions
 
@@ -727,39 +727,39 @@ TypePtr CastExpression::typecheck(ScopePtr&) {
     return this->type;
 }
 
-llvm::Value* IdentExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* IdentExpression::compileRValue(CompileScopePtr compile_scope) {
     // identifier should always exist since we typechecked the program already
-    llvm::Value* saved_alloca = this->compileLValue(CompileScopePtr);
-    llvm::Type* var_type = CompileScopePtr->getType(this->_ident).value();
+    llvm::Value* saved_alloca = this->compileLValue(compile_scope);
+    llvm::Type* var_type = compile_scope->getType(this->_ident).value();
 
     // If the identifier denotes a function, return the function directly
     if (var_type->isFunctionTy()) {
         return saved_alloca;
     }
 
-    return CompileScopePtr->_Builder.CreateLoad(var_type, saved_alloca);
+    return compile_scope->_Builder.CreateLoad(var_type, saved_alloca);
 }
 
-llvm::Value* IdentExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* saved_alloca = CompileScopePtr->getAlloca(this->_ident).value();
+llvm::Value* IdentExpression::compileLValue(CompileScopePtr compile_scope) {
+    llvm::Value* saved_alloca = compile_scope->getAlloca(this->_ident).value();
     return saved_alloca;
 }
 
-llvm::Value* IntConstantExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    return CompileScopePtr->_Builder.getInt32(this->_value);
+llvm::Value* IntConstantExpression::compileRValue(CompileScopePtr compile_scope) {
+    return compile_scope->_Builder.getInt32(this->_value);
 }
 
-llvm::Value* IntConstantExpression::compileLValue(std::shared_ptr<CompileScope>) {
+llvm::Value* IntConstantExpression::compileLValue(CompileScopePtr) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
-llvm::Value* NullPtrExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* NullPtrExpression::compileRValue(CompileScopePtr compile_scope) {
     // We assume that all null pointer constants that are of type int or char have already been cast
-    auto type = CompileScopePtr->_Builder.getPtrTy();
+    auto type = compile_scope->_Builder.getPtrTy();
     return llvm::ConstantPointerNull::get(type);
 }
 
-llvm::Value* NullPtrExpression::compileLValue(std::shared_ptr<CompileScope>) {
+llvm::Value* NullPtrExpression::compileLValue(CompileScopePtr) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
@@ -792,11 +792,11 @@ char CharConstantExpression::getChar() {
     return result;
 }
 
-llvm::Value* CharConstantExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    return CompileScopePtr->_Builder.getInt32(this->getChar());
+llvm::Value* CharConstantExpression::compileRValue(CompileScopePtr compile_scope) {
+    return compile_scope->_Builder.getInt32(this->getChar());
 }
 
-llvm::Value* CharConstantExpression::compileLValue(std::shared_ptr<CompileScope>) {
+llvm::Value* CharConstantExpression::compileLValue(CompileScopePtr) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
@@ -828,35 +828,35 @@ std::optional<size_t> StringLiteralExpression::getStringLength(void) {
     return this->getString().length() + 1;
 }
 
-llvm::Value* StringLiteralExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    return CompileScopePtr->_Builder.CreateGlobalStringPtr(this->getString());
+llvm::Value* StringLiteralExpression::compileRValue(CompileScopePtr compile_scope) {
+    return compile_scope->_Builder.CreateGlobalStringPtr(this->getString());
 }
 
-llvm::Value* StringLiteralExpression::compileLValue(std::shared_ptr<CompileScope>) {
+llvm::Value* StringLiteralExpression::compileLValue(CompileScopePtr) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
-llvm::Value* IndexExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* IndexExpression::compileRValue(CompileScopePtr compile_scope) {
     // Get the type of this expression
-    llvm::Type* index_type = this->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-    llvm::Value* offset_ptr = this->compileLValue(CompileScopePtr);
+    llvm::Type* index_type = this->type->toLLVMType(compile_scope);
+    llvm::Value* offset_ptr = this->compileLValue(compile_scope);
     // Load the value at the index
-    return CompileScopePtr->_Builder.CreateLoad(index_type, offset_ptr);
+    return compile_scope->_Builder.CreateLoad(index_type, offset_ptr);
 }
 
-llvm::Value* IndexExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* IndexExpression::compileLValue(CompileScopePtr compile_scope) {
     // Get the type of this expression
-    llvm::Type* index_type = this->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    llvm::Type* index_type = this->type->toLLVMType(compile_scope);
     // Get the pointer of the array
-    llvm::Value* array_alloca = this->_expression->compileRValue(CompileScopePtr);
+    llvm::Value* array_alloca = this->_expression->compileRValue(compile_scope);
     // Get the value of the index
-    llvm::Value* index_value = this->_index->compileRValue(CompileScopePtr);
+    llvm::Value* index_value = this->_index->compileRValue(compile_scope);
     // Get a pointer to the element at the index
-    return CompileScopePtr->_Builder.CreateInBoundsGEP(index_type, array_alloca, index_value);
+    return compile_scope->_Builder.CreateInBoundsGEP(index_type, array_alloca, index_value);
 }
 
-llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    auto fun = this->_expression->compileRValue(CompileScopePtr);
+llvm::Value* CallExpression::compileRValue(CompileScopePtr compile_scope) {
+    auto fun = this->_expression->compileRValue(compile_scope);
 
     auto function_type = this->_expression->type->unwrapFunctionPointer();
     if (!function_type.has_value()) {
@@ -867,30 +867,29 @@ llvm::Value* CallExpression::compileRValue(std::shared_ptr<CompileScope> Compile
         }
     }
 
-    llvm::FunctionType* llvm_function_type =
-        function_type.value()->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+    llvm::FunctionType* llvm_function_type = function_type.value()->toLLVMType(compile_scope);
 
     std::vector<llvm::Value*> args;
     for (auto& arg : this->_arguments) {
-        llvm::Value* val = arg->compileRValue(CompileScopePtr);
+        llvm::Value* val = arg->compileRValue(compile_scope);
         args.push_back(val);
     }
 
-    return CompileScopePtr->_Builder.CreateCall(llvm_function_type, fun, llvm::makeArrayRef(args));
+    return compile_scope->_Builder.CreateCall(llvm_function_type, fun, llvm::makeArrayRef(args));
 }
 
-llvm::Value* CallExpression::compileLValue(std::shared_ptr<CompileScope>) {
+llvm::Value* CallExpression::compileLValue(CompileScopePtr) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
-llvm::Value* DotExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* field_alloca = this->compileLValue(CompileScopePtr);
+llvm::Value* DotExpression::compileRValue(CompileScopePtr compile_scope) {
+    llvm::Value* field_alloca = this->compileLValue(compile_scope);
     // Get type of the element
-    llvm::Type* index_type = this->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-    return CompileScopePtr->_Builder.CreateLoad(index_type, field_alloca);
+    llvm::Type* index_type = this->type->toLLVMType(compile_scope);
+    return compile_scope->_Builder.CreateLoad(index_type, field_alloca);
 }
 
-llvm::Value* DotExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* DotExpression::compileLValue(CompileScopePtr compile_scope) {
     auto expr_type = this->_expression->type;
 
     if (expr_type->kind != TY_STRUCT) {
@@ -906,23 +905,23 @@ llvm::Value* DotExpression::compileLValue(std::shared_ptr<CompileScope> CompileS
     auto index = complete_struct_ty->getIndexOfField(this->_ident);
 
     std::vector<llvm::Value*> ElementIndexes;
-    ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(0));
-    ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(index));
+    ElementIndexes.push_back(compile_scope->_Builder.getInt32(0));
+    ElementIndexes.push_back(compile_scope->_Builder.getInt32(index));
 
-    llvm::Type* struct_type = complete_struct_ty->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-    llvm::Value* struct_alloca = this->_expression->compileLValue(CompileScopePtr);
+    llvm::Type* struct_type = complete_struct_ty->toLLVMType(compile_scope);
+    llvm::Value* struct_alloca = this->_expression->compileLValue(compile_scope);
 
-    return CompileScopePtr->_Builder.CreateInBoundsGEP(struct_type, struct_alloca, ElementIndexes);
+    return compile_scope->_Builder.CreateInBoundsGEP(struct_type, struct_alloca, ElementIndexes);
 }
 
-llvm::Value* ArrowExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* field_alloca = this->compileLValue(CompileScopePtr);
+llvm::Value* ArrowExpression::compileRValue(CompileScopePtr compile_scope) {
+    llvm::Value* field_alloca = this->compileLValue(compile_scope);
     // Get type of the element
-    llvm::Type* index_type = this->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-    return CompileScopePtr->_Builder.CreateLoad(index_type, field_alloca);
+    llvm::Type* index_type = this->type->toLLVMType(compile_scope);
+    return compile_scope->_Builder.CreateLoad(index_type, field_alloca);
 }
 
-llvm::Value* ArrowExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* ArrowExpression::compileLValue(CompileScopePtr compile_scope) {
     auto expr_type = this->_expression->type;
 
     if (expr_type->kind != TY_POINTER) {
@@ -942,36 +941,36 @@ llvm::Value* ArrowExpression::compileLValue(std::shared_ptr<CompileScope> Compil
     auto index = complete_struct_ty->getIndexOfField(this->_ident);
 
     std::vector<llvm::Value*> ElementIndexes;
-    ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(0));
-    ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(index));
+    ElementIndexes.push_back(compile_scope->_Builder.getInt32(0));
+    ElementIndexes.push_back(compile_scope->_Builder.getInt32(index));
 
-    llvm::Type* struct_type = complete_struct_ty->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-    llvm::Value* struct_alloca = this->_expression->compileRValue(CompileScopePtr);
-    // llvm::Value* struct_alloca = CompileScopePtr->_Builder.CreateLoad(struct_type, struct_alloca_ptr);
+    llvm::Type* struct_type = complete_struct_ty->toLLVMType(compile_scope);
+    llvm::Value* struct_alloca = this->_expression->compileRValue(compile_scope);
+    // llvm::Value* struct_alloca = compile_scope->_Builder.CreateLoad(struct_type, struct_alloca_ptr);
 
-    return CompileScopePtr->_Builder.CreateInBoundsGEP(struct_type, struct_alloca, ElementIndexes);
+    return compile_scope->_Builder.CreateInBoundsGEP(struct_type, struct_alloca, ElementIndexes);
 }
 
-llvm::Value* SizeofExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* SizeofExpression::compileRValue(CompileScopePtr compile_scope) {
     auto string_length = this->_inner->getStringLength();
     if (this->_inner->type->isString() && string_length.has_value()) {
         // String literals and expressions like *&"foo"
-        return CompileScopePtr->_Builder.getInt32(string_length.value());
+        return compile_scope->_Builder.getInt32(string_length.value());
     }
-    auto inner_type = this->_inner->type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-    return CompileScopePtr->_Builder.getInt32(CompileScopePtr->_Module.getDataLayout().getTypeAllocSize(inner_type));
+    auto inner_type = this->_inner->type->toLLVMType(compile_scope);
+    return compile_scope->_Builder.getInt32(compile_scope->_Module.getDataLayout().getTypeAllocSize(inner_type));
 }
 
-llvm::Value* SizeofExpression::compileLValue(std::shared_ptr<CompileScope>) {
+llvm::Value* SizeofExpression::compileLValue(CompileScopePtr) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
-llvm::Value* SizeofTypeExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    auto llvm_type = this->_inner_type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-    return CompileScopePtr->_Builder.getInt32(CompileScopePtr->_Module.getDataLayout().getTypeAllocSize(llvm_type));
+llvm::Value* SizeofTypeExpression::compileRValue(CompileScopePtr compile_scope) {
+    auto llvm_type = this->_inner_type->toLLVMType(compile_scope);
+    return compile_scope->_Builder.getInt32(compile_scope->_Module.getDataLayout().getTypeAllocSize(llvm_type));
 }
 
-llvm::Value* SizeofTypeExpression::compileLValue(std::shared_ptr<CompileScope>) {
+llvm::Value* SizeofTypeExpression::compileLValue(CompileScopePtr) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
@@ -983,11 +982,11 @@ std::optional<size_t> ReferenceExpression::getStringLength(void) {
     return this->_inner->getStringLength();
 }
 
-llvm::Value* ReferenceExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    return this->_inner->compileLValue(CompileScopePtr);
+llvm::Value* ReferenceExpression::compileRValue(CompileScopePtr compile_scope) {
+    return this->_inner->compileLValue(compile_scope);
 }
 
-llvm::Value* ReferenceExpression::compileLValue(std::shared_ptr<CompileScope>) {
+llvm::Value* ReferenceExpression::compileLValue(CompileScopePtr) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
@@ -999,8 +998,8 @@ std::optional<size_t> DerefExpression::getStringLength(void) {
     return this->_inner->getStringLength();
 }
 
-llvm::Value* DerefExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    auto expr_value = this->compileLValue(CompileScopePtr);
+llvm::Value* DerefExpression::compileRValue(CompileScopePtr compile_scope) {
+    auto expr_value = this->compileLValue(compile_scope);
     auto expr_type = this->_inner->type;
 
     // If we try to dereference a function, don't do anything and just return the function
@@ -1019,82 +1018,81 @@ llvm::Value* DerefExpression::compileRValue(std::shared_ptr<CompileScope> Compil
         return expr_value;
     }
 
-    auto inner_expr_type = ptr_ty->inner->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-    return CompileScopePtr->_Builder.CreateLoad(inner_expr_type, expr_value);
+    auto inner_expr_type = ptr_ty->inner->toLLVMType(compile_scope);
+    return compile_scope->_Builder.CreateLoad(inner_expr_type, expr_value);
 }
 
-llvm::Value* DerefExpression::compileLValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    return this->_inner->compileRValue(CompileScopePtr);
+llvm::Value* DerefExpression::compileLValue(CompileScopePtr compile_scope) {
+    return this->_inner->compileRValue(compile_scope);
 }
 
-llvm::Value* NegationExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* inner_value = this->_inner->compileRValue(CompileScopePtr);
-    inner_value =
-        CompileScopePtr->_Builder.CreateIntCast(inner_value, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true);
-    return CompileScopePtr->_Builder.CreateMul(CompileScopePtr->_Builder.getInt32(-1), inner_value);
+llvm::Value* NegationExpression::compileRValue(CompileScopePtr compile_scope) {
+    llvm::Value* inner_value = this->_inner->compileRValue(compile_scope);
+    inner_value = compile_scope->_Builder.CreateIntCast(inner_value, llvm::Type::getInt32Ty(compile_scope->_Ctx), true);
+    return compile_scope->_Builder.CreateMul(compile_scope->_Builder.getInt32(-1), inner_value);
 }
 
-llvm::Value* NegationExpression::compileLValue(std::shared_ptr<CompileScope>) {
+llvm::Value* NegationExpression::compileLValue(CompileScopePtr) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
-llvm::Value* LogicalNegationExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* inner_value = toBoolTy(this->_inner->compileRValue(CompileScopePtr), CompileScopePtr);
-    auto result = CompileScopePtr->_Builder.CreateICmpEQ(CompileScopePtr->_Builder.getInt1(0), inner_value);
-    return CompileScopePtr->_Builder.CreateIntCast(result, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false);
+llvm::Value* LogicalNegationExpression::compileRValue(CompileScopePtr compile_scope) {
+    llvm::Value* inner_value = toBoolTy(this->_inner->compileRValue(compile_scope), compile_scope);
+    auto result = compile_scope->_Builder.CreateICmpEQ(compile_scope->_Builder.getInt1(0), inner_value);
+    return compile_scope->_Builder.CreateIntCast(result, llvm::Type::getInt32Ty(compile_scope->_Ctx), false);
 }
 
-llvm::Value* LogicalNegationExpression::compileLValue(std::shared_ptr<CompileScope>) {
+llvm::Value* LogicalNegationExpression::compileLValue(CompileScopePtr) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
-llvm::Value* BinaryExpression::compileLValue(std::shared_ptr<CompileScope>) {
+llvm::Value* BinaryExpression::compileLValue(CompileScopePtr) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
-llvm::Value* MultiplyExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
-    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateMul(
-        CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true),
-        CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
+llvm::Value* MultiplyExpression::compileRValue(CompileScopePtr compile_scope) {
+    llvm::Value* value_lhs = this->_left->compileRValue(compile_scope);
+    llvm::Value* value_rhs = this->_right->compileRValue(compile_scope);
+    return compile_scope->_Builder.CreateMul(
+        compile_scope->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(compile_scope->_Ctx), true),
+        compile_scope->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(compile_scope->_Ctx), true)
     );
 }
 
-llvm::Value* AddExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
-    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+llvm::Value* AddExpression::compileRValue(CompileScopePtr compile_scope) {
+    llvm::Value* value_lhs = this->_left->compileRValue(compile_scope);
+    llvm::Value* value_rhs = this->_right->compileRValue(compile_scope);
 
     // If one of them is pointer, get the pointer shifted by the value of the second operand
     if (this->_left->type->isPointer()) {
         auto ptr_type = std::static_pointer_cast<PointerType>(this->_left->type);
-        auto inner_llvm_type = ptr_type->inner->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-        return CompileScopePtr->_Builder.CreateInBoundsGEP(
+        auto inner_llvm_type = ptr_type->inner->toLLVMType(compile_scope);
+        return compile_scope->_Builder.CreateInBoundsGEP(
             inner_llvm_type,
             value_lhs,
-            CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false)
+            compile_scope->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(compile_scope->_Ctx), false)
         );
     }
 
     if (this->_right->type->isPointer()) {
         auto ptr_type = std::static_pointer_cast<PointerType>(this->_right->type);
-        auto inner_llvm_type = ptr_type->inner->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-        return CompileScopePtr->_Builder.CreateInBoundsGEP(
+        auto inner_llvm_type = ptr_type->inner->toLLVMType(compile_scope);
+        return compile_scope->_Builder.CreateInBoundsGEP(
             inner_llvm_type,
             value_rhs,
-            CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false)
+            compile_scope->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(compile_scope->_Ctx), false)
         );
     }
 
-    return CompileScopePtr->_Builder.CreateAdd(
-        CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true),
-        CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
+    return compile_scope->_Builder.CreateAdd(
+        compile_scope->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(compile_scope->_Ctx), true),
+        compile_scope->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(compile_scope->_Ctx), true)
     );
 }
 
-llvm::Value* SubtractExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
-    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
+llvm::Value* SubtractExpression::compileRValue(CompileScopePtr compile_scope) {
+    llvm::Value* value_lhs = this->_left->compileRValue(compile_scope);
+    llvm::Value* value_rhs = this->_right->compileRValue(compile_scope);
 
     if (value_lhs->getType()->isPointerTy() && value_rhs->getType()->isPointerTy()) {
         auto type = this->_left->type;
@@ -1103,183 +1101,183 @@ llvm::Value* SubtractExpression::compileRValue(std::shared_ptr<CompileScope> Com
 
         auto ptr_type = std::static_pointer_cast<PointerType>(type);
         auto inner_type = ptr_type->inner;
-        auto inner_llvm_type = inner_type->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
+        auto inner_llvm_type = inner_type->toLLVMType(compile_scope);
 
-        auto int_diff = CompileScopePtr->_Builder.CreatePtrDiff(inner_llvm_type, value_lhs, value_rhs);
-        return CompileScopePtr->_Builder.CreateIntCast(int_diff, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false);
+        auto int_diff = compile_scope->_Builder.CreatePtrDiff(inner_llvm_type, value_lhs, value_rhs);
+        return compile_scope->_Builder.CreateIntCast(int_diff, llvm::Type::getInt32Ty(compile_scope->_Ctx), false);
     }
 
     if (this->_left->type->isPointer()) {
         auto ptr_type = std::static_pointer_cast<PointerType>(this->_left->type);
-        auto inner_llvm_type = ptr_type->inner->toLLVMType(CompileScopePtr->_Builder, CompileScopePtr->_Ctx);
-        return CompileScopePtr->_Builder.CreateInBoundsGEP(
+        auto inner_llvm_type = ptr_type->inner->toLLVMType(compile_scope);
+        return compile_scope->_Builder.CreateInBoundsGEP(
             inner_llvm_type,
             value_lhs,
-            CompileScopePtr->_Builder.CreateMul(
-                CompileScopePtr->_Builder.getInt32(-1),
-                CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false)
+            compile_scope->_Builder.CreateMul(
+                compile_scope->_Builder.getInt32(-1),
+                compile_scope->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(compile_scope->_Ctx), false)
             )
         );
     }
 
-    return CompileScopePtr->_Builder.CreateSub(
-        CompileScopePtr->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true),
-        CompileScopePtr->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), true)
+    return compile_scope->_Builder.CreateSub(
+        compile_scope->_Builder.CreateIntCast(value_lhs, llvm::Type::getInt32Ty(compile_scope->_Ctx), true),
+        compile_scope->_Builder.CreateIntCast(value_rhs, llvm::Type::getInt32Ty(compile_scope->_Ctx), true)
     );
 }
 
-llvm::Value* LessThanExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
-    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateICmpSLT(value_lhs, value_rhs);
+llvm::Value* LessThanExpression::compileRValue(CompileScopePtr compile_scope) {
+    llvm::Value* value_lhs = this->_left->compileRValue(compile_scope);
+    llvm::Value* value_rhs = this->_right->compileRValue(compile_scope);
+    return compile_scope->_Builder.CreateICmpSLT(value_lhs, value_rhs);
 }
 
-llvm::Value* EqualExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
-    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateICmpEQ(value_lhs, value_rhs);
+llvm::Value* EqualExpression::compileRValue(CompileScopePtr compile_scope) {
+    llvm::Value* value_lhs = this->_left->compileRValue(compile_scope);
+    llvm::Value* value_rhs = this->_right->compileRValue(compile_scope);
+    return compile_scope->_Builder.CreateICmpEQ(value_lhs, value_rhs);
 }
 
-llvm::Value* UnequalExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* value_lhs = this->_left->compileRValue(CompileScopePtr);
-    llvm::Value* value_rhs = this->_right->compileRValue(CompileScopePtr);
-    return CompileScopePtr->_Builder.CreateICmpNE(value_lhs, value_rhs);
+llvm::Value* UnequalExpression::compileRValue(CompileScopePtr compile_scope) {
+    llvm::Value* value_lhs = this->_left->compileRValue(compile_scope);
+    llvm::Value* value_rhs = this->_right->compileRValue(compile_scope);
+    return compile_scope->_Builder.CreateICmpNE(value_lhs, value_rhs);
 }
 
-llvm::Value* AndExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(CompileScopePtr), CompileScopePtr);
-    auto lhs_block = CompileScopePtr->_Builder.GetInsertBlock();
+llvm::Value* AndExpression::compileRValue(CompileScopePtr compile_scope) {
+    llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(compile_scope), compile_scope);
+    auto lhs_block = compile_scope->_Builder.GetInsertBlock();
     /* Add a basic block for the consequence of the OrExpression */
     llvm::BasicBlock* OrConsequenceBlock = llvm::BasicBlock::Create(
-        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        compile_scope->_Ctx /* LLVMContext &Context */,
         "and-consequence" /* const Twine &Name="" */,
-        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        compile_scope->_ParentFunction.value() /* Function *Parent=0 */,
         0 /* BasicBlock *InsertBefore=0 */
     );
     /* Add a basic block for the end of the TernaryExpression (after the Ternary) */
     llvm::BasicBlock* OrEndBlock = llvm::BasicBlock::Create(
-        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        compile_scope->_Ctx /* LLVMContext &Context */,
         "and-end" /* const Twine &Name="" */,
-        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        compile_scope->_ParentFunction.value() /* Function *Parent=0 */,
         0 /* BasicBlock *InsertBefore=0 */
     );
     // If first expr is true, we jump to the second term, otherwise we skip the second term.
-    CompileScopePtr->_Builder.CreateCondBr(value_lhs, OrConsequenceBlock, OrEndBlock);
+    compile_scope->_Builder.CreateCondBr(value_lhs, OrConsequenceBlock, OrEndBlock);
     // Create the compiled value of the second term
-    CompileScopePtr->_Builder.SetInsertPoint(OrConsequenceBlock);
-    llvm::Value* value_rhs = toBoolTy(this->_right->compileRValue(CompileScopePtr), CompileScopePtr);
-    auto rhs_block = CompileScopePtr->_Builder.GetInsertBlock();
+    compile_scope->_Builder.SetInsertPoint(OrConsequenceBlock);
+    llvm::Value* value_rhs = toBoolTy(this->_right->compileRValue(compile_scope), compile_scope);
+    auto rhs_block = compile_scope->_Builder.GetInsertBlock();
     /* Insert the jump to the Ternary end block */
-    CompileScopePtr->_Builder.CreateBr(OrEndBlock);
+    compile_scope->_Builder.CreateBr(OrEndBlock);
     /* Continue in the Ternary end block */
-    CompileScopePtr->_Builder.SetInsertPoint(OrEndBlock);
-    llvm::PHINode* phi = CompileScopePtr->_Builder.CreatePHI(CompileScopePtr->_Builder.getInt1Ty(), 2);
+    compile_scope->_Builder.SetInsertPoint(OrEndBlock);
+    llvm::PHINode* phi = compile_scope->_Builder.CreatePHI(compile_scope->_Builder.getInt1Ty(), 2);
     phi->addIncoming(value_lhs, lhs_block);
     phi->addIncoming(value_rhs, rhs_block);
-    return CompileScopePtr->_Builder.CreateIntCast(phi, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false);
+    return compile_scope->_Builder.CreateIntCast(phi, llvm::Type::getInt32Ty(compile_scope->_Ctx), false);
 }
 
-llvm::Value* OrExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(CompileScopePtr), CompileScopePtr);
-    auto lhs_block = CompileScopePtr->_Builder.GetInsertBlock();
+llvm::Value* OrExpression::compileRValue(CompileScopePtr compile_scope) {
+    llvm::Value* value_lhs = toBoolTy(this->_left->compileRValue(compile_scope), compile_scope);
+    auto lhs_block = compile_scope->_Builder.GetInsertBlock();
     /* Add a basic block for the consequence of the OrExpression */
     llvm::BasicBlock* OrConsequenceBlock = llvm::BasicBlock::Create(
-        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        compile_scope->_Ctx /* LLVMContext &Context */,
         "or-consequence" /* const Twine &Name="" */,
-        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        compile_scope->_ParentFunction.value() /* Function *Parent=0 */,
         0 /* BasicBlock *InsertBefore=0 */
     );
     /* Add a basic block for the end of the TernaryExpression (after the Ternary) */
     llvm::BasicBlock* OrEndBlock = llvm::BasicBlock::Create(
-        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        compile_scope->_Ctx /* LLVMContext &Context */,
         "or-end" /* const Twine &Name="" */,
-        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        compile_scope->_ParentFunction.value() /* Function *Parent=0 */,
         0 /* BasicBlock *InsertBefore=0 */
     );
     // If first expr is true, we skip the second term, otherwise we jump to the second term.
-    CompileScopePtr->_Builder.CreateCondBr(value_lhs, OrEndBlock, OrConsequenceBlock);
+    compile_scope->_Builder.CreateCondBr(value_lhs, OrEndBlock, OrConsequenceBlock);
     // Create the compiled value of the second term
-    CompileScopePtr->_Builder.SetInsertPoint(OrConsequenceBlock);
-    llvm::Value* value_rhs = toBoolTy(this->_right->compileRValue(CompileScopePtr), CompileScopePtr);
-    auto rhs_block = CompileScopePtr->_Builder.GetInsertBlock();
+    compile_scope->_Builder.SetInsertPoint(OrConsequenceBlock);
+    llvm::Value* value_rhs = toBoolTy(this->_right->compileRValue(compile_scope), compile_scope);
+    auto rhs_block = compile_scope->_Builder.GetInsertBlock();
     /* Insert the jump to the Ternary end block */
-    CompileScopePtr->_Builder.CreateBr(OrEndBlock);
+    compile_scope->_Builder.CreateBr(OrEndBlock);
     /* Continue in the Ternary end block */
-    CompileScopePtr->_Builder.SetInsertPoint(OrEndBlock);
-    llvm::PHINode* phi = CompileScopePtr->_Builder.CreatePHI(CompileScopePtr->_Builder.getInt1Ty(), 2);
+    compile_scope->_Builder.SetInsertPoint(OrEndBlock);
+    llvm::PHINode* phi = compile_scope->_Builder.CreatePHI(compile_scope->_Builder.getInt1Ty(), 2);
     phi->addIncoming(value_lhs, lhs_block);
     phi->addIncoming(value_rhs, rhs_block);
-    return CompileScopePtr->_Builder.CreateIntCast(phi, llvm::Type::getInt32Ty(CompileScopePtr->_Ctx), false);
+    return compile_scope->_Builder.CreateIntCast(phi, llvm::Type::getInt32Ty(compile_scope->_Ctx), false);
 }
 
-llvm::Value* TernaryExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    auto condition_value = toBoolTy(this->_condition->compileRValue(CompileScopePtr), CompileScopePtr);
+llvm::Value* TernaryExpression::compileRValue(CompileScopePtr compile_scope) {
+    auto condition_value = toBoolTy(this->_condition->compileRValue(compile_scope), compile_scope);
     /* Add a basic block for the consequence of the TernaryExpression */
     llvm::BasicBlock* TernaryConsequenceBlock = llvm::BasicBlock::Create(
-        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        compile_scope->_Ctx /* LLVMContext &Context */,
         "ternary-consequence" /* const Twine &Name="" */,
-        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        compile_scope->_ParentFunction.value() /* Function *Parent=0 */,
         0 /* BasicBlock *InsertBefore=0 */
     );
 
     /* Add a basic block for the alternative of the TernaryExpression */
     llvm::BasicBlock* TernaryAlternativeBlock = llvm::BasicBlock::Create(
-        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        compile_scope->_Ctx /* LLVMContext &Context */,
         "ternary-alternative" /* const Twine &Name="" */,
-        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        compile_scope->_ParentFunction.value() /* Function *Parent=0 */,
         0 /* BasicBlock *InsertBefore=0 */
     );
     /* Add a basic block for the end of the TernaryExpression (after the Ternary) */
     llvm::BasicBlock* TernaryEndBlock = llvm::BasicBlock::Create(
-        CompileScopePtr->_Ctx /* LLVMContext &Context */,
+        compile_scope->_Ctx /* LLVMContext &Context */,
         "ternary-end" /* const Twine &Name="" */,
-        CompileScopePtr->_ParentFunction.value() /* Function *Parent=0 */,
+        compile_scope->_ParentFunction.value() /* Function *Parent=0 */,
         0 /* BasicBlock *InsertBefore=0 */
     );
     /* Create the conditional branch */
-    CompileScopePtr->_Builder.CreateCondBr(condition_value, TernaryConsequenceBlock, TernaryAlternativeBlock);
+    compile_scope->_Builder.CreateCondBr(condition_value, TernaryConsequenceBlock, TernaryAlternativeBlock);
     /* Set the header of the TernaryConsequenceBlock as the new insert point */
-    CompileScopePtr->_Builder.SetInsertPoint(TernaryConsequenceBlock);
-    auto consequence_compile_scope_ptr = std::make_shared<CompileScope>(CompileScopePtr);
-    auto true_value = this->_left->compileRValue(CompileScopePtr);
-    auto true_block = CompileScopePtr->_Builder.GetInsertBlock();
+    compile_scope->_Builder.SetInsertPoint(TernaryConsequenceBlock);
+    auto consequence_compile_scope = std::make_shared<CompileScope>(compile_scope);
+    auto true_value = this->_left->compileRValue(compile_scope);
+    auto true_block = compile_scope->_Builder.GetInsertBlock();
     /* Insert the jump to the Ternary end block */
-    CompileScopePtr->_Builder.CreateBr(TernaryEndBlock);
+    compile_scope->_Builder.CreateBr(TernaryEndBlock);
     /* Set the header of the TernaryAlternativeBlock as the new insert point */
-    CompileScopePtr->_Builder.SetInsertPoint(TernaryAlternativeBlock);
-    auto alternative_compile_scope_ptr = std::make_shared<CompileScope>(CompileScopePtr);
-    auto false_value = this->_right->compileRValue(CompileScopePtr);
-    auto false_block = CompileScopePtr->_Builder.GetInsertBlock();
+    compile_scope->_Builder.SetInsertPoint(TernaryAlternativeBlock);
+    auto alternative_compile_scope = std::make_shared<CompileScope>(compile_scope);
+    auto false_value = this->_right->compileRValue(compile_scope);
+    auto false_block = compile_scope->_Builder.GetInsertBlock();
     /* Insert the jump to the Ternary end block */
-    CompileScopePtr->_Builder.CreateBr(TernaryEndBlock);
+    compile_scope->_Builder.CreateBr(TernaryEndBlock);
     /* Continue in the Ternary end block */
-    CompileScopePtr->_Builder.SetInsertPoint(TernaryEndBlock);
+    compile_scope->_Builder.SetInsertPoint(TernaryEndBlock);
 
     if (this->_left->type->kind == TypeKind::TY_VOID || this->_right->type->kind == TypeKind::TY_VOID) {
         return nullptr;
     }
-    llvm::PHINode* phi = CompileScopePtr->_Builder.CreatePHI(true_value->getType(), 2);
+    llvm::PHINode* phi = compile_scope->_Builder.CreatePHI(true_value->getType(), 2);
     phi->addIncoming(true_value, true_block);
     phi->addIncoming(false_value, false_block);
     return phi;
 }
 
-llvm::Value* TernaryExpression::compileLValue(std::shared_ptr<CompileScope>) {
+llvm::Value* TernaryExpression::compileLValue(CompileScopePtr) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
-llvm::Value* AssignExpression::compileRValue(std::shared_ptr<CompileScope> CompileScopePtr) {
-    llvm::Value* to_be_stored_in = this->_left->compileLValue(CompileScopePtr);
-    llvm::Value* value_to_be_stored = this->_right->compileRValue(CompileScopePtr);
-    CompileScopePtr->_Builder.CreateStore(value_to_be_stored, to_be_stored_in);
+llvm::Value* AssignExpression::compileRValue(CompileScopePtr compile_scope) {
+    llvm::Value* to_be_stored_in = this->_left->compileLValue(compile_scope);
+    llvm::Value* value_to_be_stored = this->_right->compileRValue(compile_scope);
+    compile_scope->_Builder.CreateStore(value_to_be_stored, to_be_stored_in);
     return value_to_be_stored;
 }
 
-llvm::Value* AssignExpression::compileLValue(std::shared_ptr<CompileScope>) {
+llvm::Value* AssignExpression::compileLValue(CompileScopePtr) {
     errorloc(this->loc, "cannot compute l-value of this expression");
 }
 
-llvm::Value* CastExpression::compileRValue(std::shared_ptr<CompileScope> compile_scope) {
+llvm::Value* CastExpression::compileRValue(CompileScopePtr compile_scope) {
     auto converted_expr = this->convertNullptrs(compile_scope);
     if (converted_expr.has_value()) {
         return converted_expr.value();
@@ -1289,7 +1287,7 @@ llvm::Value* CastExpression::compileRValue(std::shared_ptr<CompileScope> compile
     return this->castArithmetics(compile_scope, value);
 }
 
-llvm::Value* CastExpression::compileLValue(std::shared_ptr<CompileScope> compile_scope) {
+llvm::Value* CastExpression::compileLValue(CompileScopePtr compile_scope) {
     auto converted_expr = this->convertNullptrs(compile_scope);
     if (converted_expr.has_value()) {
         return converted_expr.value();
@@ -1299,7 +1297,7 @@ llvm::Value* CastExpression::compileLValue(std::shared_ptr<CompileScope> compile
     return this->castArithmetics(compile_scope, value);
 }
 
-std::optional<llvm::Value*> CastExpression::convertNullptrs(std::shared_ptr<CompileScope> compile_scope) {
+std::optional<llvm::Value*> CastExpression::convertNullptrs(CompileScopePtr compile_scope) {
     if (this->_inner->type->kind != TypeKind::TY_NULLPTR) {
         return std::nullopt;
     }
@@ -1319,7 +1317,7 @@ std::optional<llvm::Value*> CastExpression::convertNullptrs(std::shared_ptr<Comp
     }
 }
 
-llvm::Value* CastExpression::castArithmetics(std::shared_ptr<CompileScope> compile_scope, llvm::Value* value) {
+llvm::Value* CastExpression::castArithmetics(CompileScopePtr compile_scope, llvm::Value* value) {
     auto from_type = this->_inner->type;
     auto to_type = this->type;
 
@@ -1327,7 +1325,7 @@ llvm::Value* CastExpression::castArithmetics(std::shared_ptr<CompileScope> compi
         return value;
     }
 
-    auto llvm_type = to_type->toLLVMType(compile_scope->_Builder, compile_scope->_Ctx);
+    auto llvm_type = to_type->toLLVMType(compile_scope);
 
     if ((from_type->kind == TypeKind::TY_CHAR && to_type->isInteger())
         || (from_type->isInteger() && to_type->kind == TypeKind::TY_CHAR)) {
@@ -1350,16 +1348,16 @@ ExpressionPtr castExpression(ExpressionPtr expr, TypePtr type) {
     return cast;
 }
 
-llvm::Value* toBoolTy(llvm::Value* to_convert, std::shared_ptr<CompileScope> CompileScopePtr) {
+llvm::Value* toBoolTy(llvm::Value* to_convert, CompileScopePtr compile_scope) {
     if (to_convert->getType()->isIntegerTy(32)) {
-        return CompileScopePtr->_Builder.CreateICmpNE(CompileScopePtr->_Builder.getInt32(0), to_convert);
+        return compile_scope->_Builder.CreateICmpNE(compile_scope->_Builder.getInt32(0), to_convert);
     } else if (to_convert->getType()->isIntegerTy(8)) {
-        return CompileScopePtr->_Builder.CreateICmpNE(CompileScopePtr->_Builder.getInt8(0), to_convert);
+        return compile_scope->_Builder.CreateICmpNE(compile_scope->_Builder.getInt8(0), to_convert);
     } else if (to_convert->getType()->isPointerTy()) {
         // return 0 if nullptr, 1 otherwise
         llvm::Value* int_to_convert =
-            CompileScopePtr->_Builder.CreatePtrToInt(to_convert, CompileScopePtr->_Builder.getInt32Ty());
-        return CompileScopePtr->_Builder.CreateICmpNE(CompileScopePtr->_Builder.getInt32(0), int_to_convert);
+            compile_scope->_Builder.CreatePtrToInt(to_convert, compile_scope->_Builder.getInt32Ty());
+        return compile_scope->_Builder.CreateICmpNE(compile_scope->_Builder.getInt32(0), int_to_convert);
     } else {
         return to_convert;
     }

@@ -21,7 +21,7 @@ struct FunctionDefinition {
 
     void typecheck(ScopePtr& scope);
 
-    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
+    void compile(CompileScopePtr compile_scope);
 
   private:
     Declaration _declaration;

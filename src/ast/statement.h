@@ -26,7 +26,7 @@ struct Statement {
 
     friend std::ostream& operator<<(std::ostream& stream, const std::unique_ptr<Statement>& stat);
     virtual void print(std::ostream& stream) = 0;
-    virtual void compile(std::shared_ptr<CompileScope> CompileScopePtr) = 0;
+    virtual void compile(CompileScopePtr compile_scope) = 0;
 
     virtual void typecheck(ScopePtr& scope) = 0;
 };
@@ -45,7 +45,7 @@ struct LabeledStatement : public Statement {
 
     void typecheck(ScopePtr& scope);
 
-    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
+    void compile(CompileScopePtr compile_scope);
 
   private:
     Symbol _name;
@@ -69,7 +69,7 @@ struct BlockStatement : public Statement {
     void typecheck(ScopePtr& scope);
     void typecheckInner(ScopePtr& inner_scope);
 
-    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
+    void compile(CompileScopePtr compile_scope);
 
   private:
     std::vector<StatementPtr> _items;
@@ -81,7 +81,7 @@ struct EmptyStatement : public Statement {
 
     void print(std::ostream& stream);
 
-    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
+    void compile(CompileScopePtr compile_scope);
 
     void typecheck(ScopePtr&) {}
 };
@@ -94,7 +94,7 @@ struct DeclarationStatement : public Statement {
 
     void print(std::ostream& stream);
 
-    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
+    void compile(CompileScopePtr compile_scope);
 
     void typecheck(ScopePtr& scope);
 
@@ -110,7 +110,7 @@ struct ExpressionStatement : public Statement {
 
     void print(std::ostream& stream);
 
-    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
+    void compile(CompileScopePtr compile_scope);
 
     void typecheck(ScopePtr& scope);
 
@@ -136,7 +136,7 @@ struct IfStatement : public Statement {
 
     void typecheck(ScopePtr& scope);
 
-    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
+    void compile(CompileScopePtr compile_scope);
 
   private:
     ExpressionPtr _condition;
@@ -156,7 +156,7 @@ struct WhileStatement : public Statement {
 
     void typecheck(ScopePtr& scope);
 
-    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
+    void compile(CompileScopePtr compile_scope);
 
   private:
     ExpressionPtr _condition;
@@ -174,7 +174,7 @@ struct JumpStatement : public Statement {
     void typecheck(ScopePtr&) {}
 
     // TODO: make virtual
-    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
+    void compile(CompileScopePtr compile_scope);
 
   private:
     const std::string _jump_str;
@@ -190,7 +190,7 @@ struct GotoStatement : public JumpStatement {
 
     void typecheck(ScopePtr& scope);
 
-    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
+    void compile(CompileScopePtr compile_scope);
 
   private:
     Symbol _ident;
@@ -203,7 +203,7 @@ struct ContinueStatement : public JumpStatement {
 
     void typecheck(ScopePtr& scope);
 
-    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
+    void compile(CompileScopePtr compile_scope);
 };
 
 // break; (in loops)
@@ -213,7 +213,7 @@ struct BreakStatement : public JumpStatement {
 
     void typecheck(ScopePtr& scope);
 
-    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
+    void compile(CompileScopePtr compile_scope);
 };
 
 // return;
@@ -231,7 +231,7 @@ struct ReturnStatement : public JumpStatement {
 
     void typecheck(ScopePtr& scope);
 
-    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
+    void compile(CompileScopePtr compile_scope);
 
   private:
     std::optional<ExpressionPtr> _expr;

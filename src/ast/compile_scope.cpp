@@ -10,7 +10,7 @@ CompileScope::CompileScope(
     , _Module(Module)
     , _Ctx(Ctx){};
 // Construct for CompileScopes with Parent and ParentFunction
-CompileScope::CompileScope(std::shared_ptr<CompileScope> Parent, llvm::Function* ParentFunction)
+CompileScope::CompileScope(CompileScopePtr Parent, llvm::Function* ParentFunction)
     : _Parent(Parent)
     , _Builder(Parent->_Builder)
     , _AllocaBuilder(Parent->_AllocaBuilder)
@@ -20,7 +20,7 @@ CompileScope::CompileScope(std::shared_ptr<CompileScope> Parent, llvm::Function*
     , _BreakBlock(Parent->getBreakBlock())
     , _ContinueBlock(Parent->getContinueBlock()){};
 // Construct for CompileScopes with Parent
-CompileScope::CompileScope(std::shared_ptr<CompileScope> Parent)
+CompileScope::CompileScope(CompileScopePtr Parent)
     : _Parent(Parent)
     , _Builder(Parent->_Builder)
     , _AllocaBuilder(Parent->_AllocaBuilder)

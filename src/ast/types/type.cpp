@@ -172,25 +172,24 @@ std::optional<std::shared_ptr<FunctionType>> Type::unwrapFunctionPointer() {
     return std::static_pointer_cast<FunctionType>(function_ptr_inner_type);
 }
 
-llvm::Type* Type::toLLVMType(llvm::IRBuilder<>& Builder, llvm::LLVMContext& Ctx) {
+llvm::Type* Type::toLLVMType(CompileScopePtr compile_scope) {
     switch (this->kind) {
         case TY_INT:
-            return Builder.getInt32Ty();
+            return compile_scope->_Builder.getInt32Ty();
         case TY_CHAR:
-            return Builder.getInt8Ty();
+            return compile_scope->_Builder.getInt8Ty();
         case TY_STRUCT:
             if (this->isComplete()) {
-                return (static_cast<CompleteStructType*>(this))->toLLVMType(Builder, Ctx);
+                return (static_cast<CompleteStructType*>(this))->toLLVMType(compile_scope);
             } else {
-                return (static_cast<StructType*>(this))->toLLVMType(Builder, Ctx);
+                return (static_cast<StructType*>(this))->toLLVMType(compile_scope);
             }
-
         case TY_FUNCTION:
-            return (static_cast<FunctionType*>(this))->toLLVMType(Builder, Ctx);
+            return (static_cast<FunctionType*>(this))->toLLVMType(compile_scope);
         case TY_NULLPTR:
         case TY_POINTER:
-            return (static_cast<PointerType*>(this))->toLLVMType(Builder, Ctx);
+            return (static_cast<PointerType*>(this))->toLLVMType(compile_scope);
         default:
-            return Builder.getVoidTy();
+            return compile_scope->_Builder.getVoidTy();
     }
 }

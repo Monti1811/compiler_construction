@@ -23,7 +23,7 @@ struct Declaration {
     TypeDecl toType(ScopePtr& scope);
     TypeDecl getTypeDecl();
 
-    void compile(std::shared_ptr<CompileScope> CompileScopePtr);
+    void compile(CompileScopePtr compile_scope);
 
     Locatable loc;
     TypeSpecifierPtr specifier;

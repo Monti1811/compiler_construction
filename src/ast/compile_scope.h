@@ -63,4 +63,4 @@ struct CompileScope {
     std::optional<llvm::BasicBlock*> _ContinueBlock;
 };
 
-// TODO: make CompileScopePtr
+typedef std::shared_ptr<CompileScope> CompileScopePtr;

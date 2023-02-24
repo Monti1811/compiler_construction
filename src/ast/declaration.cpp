@@ -55,13 +55,13 @@ TypeDecl Declaration::toType(ScopePtr& scope) {
     return TypeDecl(name, type);
 }
 
-void Declaration::compile(std::shared_ptr<CompileScope> compile_scope_ptr) {
+void Declaration::compile(CompileScopePtr compile_scope) {
     // does not declare a variable
     if (this->declarator->isAbstract()) {
         // If it's a struct, add it to the declared structs
         if (this->specifier->kind == SpecifierKind::STRUCT) {
             std::shared_ptr<Type> type = this->getTypeDecl().type;
-            type->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx);
+            type->toLLVMType(compile_scope);
         }
         return;
     }
@@ -73,22 +73,22 @@ void Declaration::compile(std::shared_ptr<CompileScope> compile_scope_ptr) {
 
     if (type->kind == TypeKind::TY_FUNCTION) {
         std::shared_ptr<FunctionType> func_type_ptr = std::static_pointer_cast<FunctionType>(type);
-        auto llvm_type = func_type_ptr->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx);
+        auto llvm_type = func_type_ptr->toLLVMType(compile_scope);
 
         llvm::Function::Create(
             llvm_type /* FunctionType *Ty */,
             llvm::GlobalValue::ExternalLinkage /* LinkageType */,
             *name /* const Twine &N="" */,
-            compile_scope_ptr->_Module /* Module *M=0 */
+            compile_scope->_Module /* Module *M=0 */
         );
     } else {
-        llvm::Type* llvm_type = type->toLLVMType(compile_scope_ptr->_Builder, compile_scope_ptr->_Ctx);
+        llvm::Type* llvm_type = type->toLLVMType(compile_scope);
 
-        compile_scope_ptr->addType(name, llvm_type);
+        compile_scope->addType(name, llvm_type);
 
         /* Create a global variable */
         new llvm::GlobalVariable(
-            compile_scope_ptr->_Module /* Module & */,
+            compile_scope->_Module /* Module & */,
             llvm_type /* Type * */,
             false /* bool isConstant */,
             llvm::GlobalValue::CommonLinkage /* LinkageType */,

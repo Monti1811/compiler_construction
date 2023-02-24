@@ -102,7 +102,7 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
 
     /* Two IR-Builder to output intermediate instructions but also types, ... */
     llvm::IRBuilder<> Builder(Ctx), AllocaBuilder(Ctx);
-    auto compile_scope_ptr = std::make_shared<CompileScope>(Builder, AllocaBuilder, M, Ctx);
+    auto compile_scope = std::make_shared<CompileScope>(Builder, AllocaBuilder, M, Ctx);
     auto decl_iter = this->_declarations.begin();
     auto func_iter = this->_functions.begin();
 
@@ -111,13 +111,13 @@ void Program::compile(int argc, char const* argv[], std::string filename) {
             if (decl_iter == this->_declarations.end()) {
                 error("Internal error: Tried to read non-existent declaration");
             }
-            decl_iter.base()->compile(compile_scope_ptr);
+            decl_iter.base()->compile(compile_scope);
             decl_iter++;
         } else {
             if (func_iter == this->_functions.end()) {
                 error("Internal error: Tried to read non-existent function definition");
             }
-            func_iter.base()->compile(compile_scope_ptr);
+            func_iter.base()->compile(compile_scope);
             func_iter++;
         }
     }
