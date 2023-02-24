@@ -38,6 +38,7 @@ class Lexer {
     void fail(std::string message);
     void fail(std::string message, Locatable& loc);
 
+    // TODO: _stream, _internalizer
     LocatableStream m_stream;
     SymbolInternalizer& m_internalizer;
 };

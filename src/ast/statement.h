@@ -173,6 +173,7 @@ struct JumpStatement : public Statement {
 
     void typecheck(ScopePtr&) {}
 
+    // TODO: make virtual
     void compile(std::shared_ptr<CompileScope> CompileScopePtr);
 
   private:

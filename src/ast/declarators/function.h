@@ -20,6 +20,7 @@ struct FunctionDeclarator : public Declarator {
 
     void addParameter(Declaration param);
 
+  private:
     DeclaratorPtr _name;
     std::vector<Declaration> _parameters;
 };

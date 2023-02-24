@@ -211,9 +211,8 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
             expect(TK_DOT, ".");
             Token ident_token = peekToken();
             expect(TK_IDENTIFIER, "Identifier"); // expect id
-            auto ident = std::make_unique<IdentExpression>(getLoc(), ident_token.Text);
             auto newPostfixExpr =
-                std::make_unique<DotExpression>(token, std::move(postfixExpression.value()), std::move(ident));
+                std::make_unique<DotExpression>(token, std::move(postfixExpression.value()), ident_token.Text);
             return parsePostfixExpression(std::move(newPostfixExpr));
         }
         // -> id
@@ -221,9 +220,8 @@ ExpressionPtr Parser::parsePostfixExpression(std::optional<ExpressionPtr> postfi
             expect(TK_ARROW, "->");
             Token ident_token = peekToken();
             expect(TK_IDENTIFIER, "Identifier"); // expect id
-            auto ident = std::make_unique<IdentExpression>(getLoc(), ident_token.Text);
             auto newPostfixExpr =
-                std::make_unique<ArrowExpression>(token, std::move(postfixExpression.value()), std::move(ident));
+                std::make_unique<ArrowExpression>(token, std::move(postfixExpression.value()), ident_token.Text);
             return parsePostfixExpression(std::move(newPostfixExpr));
         }
         // no postfix found

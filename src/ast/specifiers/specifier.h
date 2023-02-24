@@ -18,6 +18,7 @@ struct TypeSpecifier {
 
     virtual TypePtr toType(ScopePtr& scope);
 
+    // TODO: _kind -> kind, _loc -> loc
     const Locatable _loc;
     SpecifierKind _kind;
 };

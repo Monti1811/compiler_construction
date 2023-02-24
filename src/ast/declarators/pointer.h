@@ -3,6 +3,7 @@
 #include "declarator.h"
 
 struct PointerDeclarator : public Declarator {
+  public:
     PointerDeclarator(Locatable loc, DeclaratorPtr inner)
         : Declarator(loc, inner->isAbstract(), DeclaratorKind::POINTER)
         , _inner(std::move(inner)){};
@@ -14,5 +15,6 @@ struct PointerDeclarator : public Declarator {
 
     bool isFunction();
 
+  private:
     DeclaratorPtr _inner;
 };

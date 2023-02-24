@@ -25,6 +25,7 @@ struct Declaration {
 
     void compile(std::shared_ptr<CompileScope> CompileScopePtr);
 
+    // TODO: rename
     Locatable _loc;
     TypeSpecifierPtr _specifier;
     DeclaratorPtr _declarator;

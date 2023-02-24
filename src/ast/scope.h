@@ -41,6 +41,7 @@ struct Scope {
     // Returns whether the struct was already defined
     bool addStruct(std::shared_ptr<StructType> type);
 
+    // TODO: some of these should be private
     std::optional<std::shared_ptr<Scope>> parent;
 
     std::unordered_map<Symbol, TypePtr> vars;

@@ -17,7 +17,7 @@ struct StructSpecifier : public TypeSpecifier {
     void makeComplete();
     void addComponent(Declaration declaration);
 
+  private:
     std::optional<Symbol> _tag;
-
     std::optional<std::vector<Declaration>> _components;
 };

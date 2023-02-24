@@ -35,5 +35,6 @@ class SymbolInternalizer {
     Symbol internalize(const char character);
 
   private:
+    // TODO: _string_set
     std::unordered_set<std::string> StringSet;
 };

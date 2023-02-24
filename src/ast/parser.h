@@ -94,5 +94,6 @@ class Parser {
     /// If `dKind` is `DeclKind::ANY`: do not verify abstractness.
     Declaration parseDeclaration(DeclKind declKind);
 
+  private:
     std::unordered_set<Symbol> _labels;
 };

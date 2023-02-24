@@ -9,6 +9,7 @@
 #include "expression.h"
 #include "statement.h"
 
+// TODO: move into own file
 struct FunctionDefinition {
   public:
     FunctionDefinition(Declaration declaration, BlockStatement block, std::unordered_set<Symbol> labels)
@@ -26,11 +27,11 @@ struct FunctionDefinition {
 
     void compile(std::shared_ptr<CompileScope> CompileScopePtr);
 
+  private:
     Declaration _declaration;
     BlockStatement _block;
     std::unordered_set<Symbol> _labels;
-
-  private:
+    // TODO: _type
     std::optional<std::shared_ptr<FunctionType>> type;
 };
 

@@ -57,11 +57,11 @@ void CallExpression::print(std::ostream& stream) {
 }
 
 void DotExpression::print(std::ostream& stream) {
-    stream << '(' << this->_expression << '.' << this->_ident << ')';
+    stream << '(' << this->_expression << '.' << *this->_ident << ')';
 }
 
 void ArrowExpression::print(std::ostream& stream) {
-    stream << '(' << this->_expression << "->" << this->_ident << ')';
+    stream << '(' << this->_expression << "->" << *this->_ident << ')';
 }
 
 void UnaryExpression::print(std::ostream& stream) {
@@ -240,11 +240,10 @@ TypePtr DotExpression::typecheck(ScopePtr& scope) {
     }
     auto struct_type = std::static_pointer_cast<CompleteStructType>(expr_type);
 
-    auto ident = this->_ident->_ident;
-    auto field_type = struct_type->typeOfField(ident);
+    auto field_type = struct_type->typeOfField(this->_ident);
 
     if (!field_type.has_value()) {
-        errorloc(this->loc, "Field ", *ident, " does not exist on ", expr_type);
+        errorloc(this->loc, "Field ", *this->_ident, " does not exist on ", expr_type);
     }
     this->type = field_type.value();
     return this->type;
@@ -284,11 +283,10 @@ TypePtr ArrowExpression::typecheck(ScopePtr& scope) {
     }
     auto struct_type = std::static_pointer_cast<CompleteStructType>(inner_type);
 
-    auto ident = this->_ident->_ident;
-    auto field_type = struct_type->typeOfField(ident);
+    auto field_type = struct_type->typeOfField(this->_ident);
 
     if (!field_type.has_value()) {
-        errorloc(this->loc, "Field ", *ident, " does not exist on ", inner_type);
+        errorloc(this->loc, "Field ", *this->_ident, " does not exist on ", inner_type);
     }
     this->type = field_type.value();
     return this->type;
@@ -905,7 +903,7 @@ llvm::Value* DotExpression::compileLValue(std::shared_ptr<CompileScope> CompileS
     }
 
     auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(struct_ty);
-    auto index = complete_struct_ty->getIndexOfField(this->_ident->_ident);
+    auto index = complete_struct_ty->getIndexOfField(this->_ident);
 
     std::vector<llvm::Value*> ElementIndexes;
     ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(0));
@@ -941,7 +939,7 @@ llvm::Value* ArrowExpression::compileLValue(std::shared_ptr<CompileScope> Compil
     }
 
     auto complete_struct_ty = std::static_pointer_cast<CompleteStructType>(struct_ty);
-    auto index = complete_struct_ty->getIndexOfField(this->_ident->_ident);
+    auto index = complete_struct_ty->getIndexOfField(this->_ident);
 
     std::vector<llvm::Value*> ElementIndexes;
     ElementIndexes.push_back(CompileScopePtr->_Builder.getInt32(0));

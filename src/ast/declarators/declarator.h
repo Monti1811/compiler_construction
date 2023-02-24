@@ -52,5 +52,6 @@ struct PrimitiveDeclarator : public Declarator {
     bool isAbstract();
     bool isFunction();
 
+  private:
     std::optional<Symbol> _ident;
 };

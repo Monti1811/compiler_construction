@@ -45,6 +45,8 @@ struct CompileScope {
 
     std::optional<llvm::Function*> getFunctionPointer(std::string var);
 
+    // TODO: rename all of these according to convention
+    // TODO: Make these either private or change casing
     std::optional<std::shared_ptr<CompileScope>> _Parent;
     llvm::IRBuilder<>& _Builder;
     llvm::IRBuilder<>& _AllocaBuilder;
@@ -60,3 +62,5 @@ struct CompileScope {
     std::optional<llvm::BasicBlock*> _BreakBlock;
     std::optional<llvm::BasicBlock*> _ContinueBlock;
 };
+
+// TODO: make CompileScopePtr
