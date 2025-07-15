@@ -1,6 +1,9 @@
 build/
 llvm/
 .vs
+venv/
+lib/
+projects/
 
 # Created by https://www.gitignore.io/api/c,c++
 
